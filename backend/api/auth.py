@@ -1,24 +1,111 @@
-# Auth API Routes
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, Header, Query, status
+from fastapi.responses import RedirectResponse
+from typing import Optional
+import os
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
-@router.post("/login")
-def login():
-    # TODO: Implement login
-    return {"message": "Login endpoint"}
-
-@router.post("/register")
-def register():
-    # TODO: Implement registration
-    return {"message": "Register endpoint"}
-
 @router.get("/github/login")
 def github_login():
-    # TODO: Redirect to GitHub OAuth
-    return {"message": "GitHub login - redirects to GitHub"}
+    # Load OAuth app credentials from .env
+    client_id = os.getenv("GITHUB_CLIENT_ID")
+    redirect_uri = os.getenv("GITHUB_REDIRECT_URI")
+    
+    # Build GitHub authorization URL
+    # client_id   → tells GitHub which app is requesting access
+    # redirect_uri → where GitHub sends the user after they approve
+    # scope        → permissions: repo (read repos) + read:user (read profile)
+    url = f"https://github.com/login/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&scope=repo,read:user"
+    
+    # Send user to GitHub login & authorization page
+    return RedirectResponse(url)
+
 
 @router.get("/github/callback")
-def github_callback(code: str = ""):
-    # TODO: Handle GitHub OAuth callback
-    return {"message": "GitHub callback", "code": code}
+async def github_callback(code: str = "", error: str = ""):
+    # GitHub sends a temporary `code` in the query params after user approves
+    # This code expires in 10 minutes and can only be used once
+    import httpx
+    
+    # Load credentials from .env
+    client_id = os.getenv("GITHUB_CLIENT_ID")
+    client_secret = os.getenv("GITHUB_CLIENT_SECRET")
+    frontend_url = os.getenv("FRONTEND_URL")
+
+    # If GitHub OAuth returned an error
+    if error:
+        return RedirectResponse(f"{frontend_url}/auth/callback?error={error}")
+
+    if not code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Authorization code is missing."
+        )
+
+    # Exchange the temporary code for a real access token
+    # GitHub needs client_id + client_secret to verify this request is from our app
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "https://github.com/login/oauth/access_token",
+            json={
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "code": code
+            },
+            headers={"Accept": "application/json"}  # return JSON not URL-encoded string
+        )
+    
+    token_data = response.json()
+    
+    if "error" in token_data:
+        error_desc = token_data.get("error_description", token_data["error"])
+        return RedirectResponse(f"{frontend_url}/auth/callback?error={error_desc}")
+
+    access_token = token_data.get("access_token")  # extract token from response
+    if not access_token:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Access token not found in GitHub response."
+        )
+
+    # Redirect user back to frontend, passing the token in the URL
+    # Frontend will store this token and use it for future API calls
+    return RedirectResponse(f"{frontend_url}/auth/callback?token={access_token}")
+
+
+@router.get("/github/repos")
+async def get_github_repos(
+    token: Optional[str] = Query(None),
+    authorization: Optional[str] = Header(None)
+):
+    import httpx
+    
+    # Extract token from query param or Authorization header
+    github_token = token
+    if not github_token and authorization and authorization.startswith("Bearer "):
+        github_token = authorization.split(" ")[1]
+
+    if not github_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing GitHub access token. Use Bearer token in Authorization header or pass in query."
+        )
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            "https://api.github.com/user/repos?per_page=100&sort=updated",
+            headers={
+                "Authorization": f"Bearer {github_token}",      # authenticate as the GitHub user
+                "Accept": "application/vnd.github+json",  # use latest GitHub API response format
+                "User-Agent": "Impact-IQ-Backend"
+            }
+        )
+    
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=response.status_code,
+            detail="Failed to fetch repositories from GitHub."
+        )
+    
+    # Return the list of repositories to the frontend
+    return response.json()

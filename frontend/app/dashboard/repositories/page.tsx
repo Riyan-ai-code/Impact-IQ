@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { 
   Github, 
   ShieldCheck, 
@@ -33,6 +33,12 @@ export default function RepositoriesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   
+  // OAuth and fetching states
+  const [token, setToken] = useState<string | null>(null)
+  const [repositories, setRepositories] = useState<Repository[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
   // Form states for project creation
   const [projectName, setProjectName] = useState("")
   const [description, setDescription] = useState("")
@@ -52,49 +58,67 @@ export default function RepositoriesPage() {
     { number: 5, name: "Review", active: false, completed: false },
   ]
 
-  const mockRepositories: Repository[] = [
-    {
-      name: "payment-service",
-      isPrivate: true,
-      language: "JavaScript",
-      description: "Microservice for handling payments, invoices, and transactions.",
-      branch: "main",
-      updatedAt: "Updated 2 hours ago"
-    },
-    {
-      name: "auth-service",
-      isPrivate: true,
-      language: "TypeScript",
-      description: "Authentication and authorization service with OAuth and JWT.",
-      branch: "main",
-      updatedAt: "Updated yesterday"
-    },
-    {
-      name: "inventory-service",
-      isPrivate: false,
-      language: "Python",
-      description: "Inventory management and stock tracking service.",
-      branch: "main",
-      updatedAt: "Updated 3 days ago"
-    },
-    {
-      name: "notification-service",
-      isPrivate: true,
-      language: "Go",
-      description: "Handles email, SMS, and push notifications.",
-      branch: "main",
-      updatedAt: "Updated 5 days ago"
+  // Retrieve token from localStorage
+  useEffect(() => {
+    const savedToken = localStorage.getItem("github_token")
+    setToken(savedToken)
+    if (!savedToken) {
+      setLoading(false)
     }
-  ]
+  }, [])
 
-  const filteredRepos = mockRepositories.filter(repo =>
+  // Fetch repositories from backend
+  useEffect(() => {
+    if (!token) return
+
+    const fetchRepos = async () => {
+      setLoading(true)
+      setError(null)
+      try {
+        const response = await fetch("http://localhost:8000/api/auth/github/repos", {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        })
+
+        if (response.status === 401) {
+          // Token expired or invalid
+          localStorage.removeItem("github_token")
+          setToken(null)
+          throw new Error("GitHub session expired. Please connect again.")
+        }
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch repositories.")
+        }
+
+        const data = await response.json()
+        const mappedRepos = data.map((r: any) => ({
+          name: r.name,
+          isPrivate: r.is_private,
+          language: r.language || "Unknown",
+          description: r.description || "No description provided.",
+          branch: "main",
+          updatedAt: `Updated ${new Date(r.updated_at).toLocaleDateString()}`
+        }))
+        setRepositories(mappedRepos)
+      } catch (err: any) {
+        setError(err.message || "Something went wrong.")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchRepos()
+  }, [token])
+
+  const filteredRepos = repositories.filter(repo =>
     repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    repo.description.toLowerCase().includes(searchQuery.toLowerCase())
+    (repo.description && repo.description.toLowerCase().includes(searchQuery.toLowerCase()))
   )
 
   const handleOpenCreateModal = (repoName: string) => {
     setSelectedRepo(`Riyanshah / ${repoName}`)
-    // Generate a default project name based on repo
     const formattedName = repoName
       .split("-")
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -104,8 +128,72 @@ export default function RepositoriesPage() {
     setIsModalOpen(true)
   }
 
+  const handleConnectGithub = () => {
+    window.location.href = "http://localhost:8000/api/auth/github/login"
+  }
+
+  const handleDisconnect = () => {
+    localStorage.removeItem("github_token")
+    setToken(null)
+    setRepositories([])
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] bg-white border border-slate-100 rounded-2xl shadow-sm space-y-4">
+        <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-sm font-semibold text-slate-500">Fetching GitHub repositories...</p>
+      </div>
+    )
+  }
+
+  if (!token) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 border border-dashed border-slate-200 rounded-2xl bg-white space-y-6">
+        <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700">
+          <Github className="w-8 h-8" />
+        </div>
+        <div className="text-center space-y-2">
+          <h3 className="text-lg font-bold text-slate-900">Connect your GitHub Account</h3>
+          <p className="text-xs text-slate-500 max-w-sm">
+            Connect your GitHub account to import repositories and start engineering analysis on your codebases.
+          </p>
+        </div>
+        <Button
+          variant="brand"
+          onClick={handleConnectGithub}
+          className="px-6 h-11 text-xs font-bold bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-lg flex items-center gap-2 transition-all duration-150 shadow-sm"
+        >
+          <Github className="w-4 h-4 fill-white" />
+          Connect GitHub
+        </Button>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 flex items-center justify-between text-left">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center flex-shrink-0">
+              <X className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-rose-900 leading-snug">Connection Error</h3>
+              <p className="text-xs text-rose-500 mt-0.5">{error}</p>
+            </div>
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={handleConnectGithub}
+            className="h-9 px-4 border-rose-200 bg-white hover:bg-rose-50 text-rose-700 text-xs font-semibold rounded-lg flex items-center gap-2 shadow-sm transition-all"
+          >
+            Reconnect GitHub
+          </Button>
+        </div>
+      )}
+
       {/* GitHub Connected Banner */}
       <div className="bg-[#ecfdf5]/80 border border-emerald-200/60 rounded-xl p-4 flex items-center justify-between shadow-sm text-left">
         <div className="flex items-center gap-3">
@@ -114,16 +202,26 @@ export default function RepositoriesPage() {
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-900 leading-snug">GitHub Connected Successfully</h3>
-            <p className="text-xs text-slate-500 mt-0.5">We found 12 repositories in your account.</p>
+            <p className="text-xs text-slate-500 mt-0.5">We found {repositories.length} repositories in your account.</p>
           </div>
         </div>
-        <Button 
-          variant="outline" 
-          className="h-9 px-4 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-2 shadow-sm transition-all duration-150"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          Reconnect GitHub
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleConnectGithub}
+            className="h-9 px-4 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-2 shadow-sm transition-all duration-150"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Reconnect
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={handleDisconnect}
+            className="h-9 px-4 border-rose-200 hover:bg-rose-50/50 text-rose-600 text-xs font-semibold rounded-lg flex items-center gap-2 shadow-sm transition-all duration-150"
+          >
+            Disconnect
+          </Button>
+        </div>
       </div>
 
       {/* Filter and Search Bar Row */}

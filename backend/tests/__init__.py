@@ -1,1 +1,1 @@
-# Tests package
+# Package marker

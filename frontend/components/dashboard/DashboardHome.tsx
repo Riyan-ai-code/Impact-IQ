@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Rocket,
   ShieldCheck,
@@ -22,6 +22,11 @@ import { cn } from "@/lib/utils"
 
 export default function DashboardHome() {
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isConnected, setIsConnected] = useState(false)
+
+  useEffect(() => {
+    setIsConnected(!!localStorage.getItem("github_token"))
+  }, [])
 
   const [projectName, setProjectName] = useState("Payment Platform")
   const [description, setDescription] = useState("Microservices based payment platform.")
@@ -31,6 +36,15 @@ export default function DashboardHome() {
   const [securityAnalysis, setSecurityAnalysis] = useState(true)
   const [dependencyAnalysis, setDependencyAnalysis] = useState(true)
   const [apiAnalysis, setApiAnalysis] = useState(true)
+
+  const handleConnectGithub = () => {
+    const token = localStorage.getItem("github_token")
+    if (token) {
+      window.location.href = "/dashboard/repositories"
+    } else {
+      window.location.href = "http://localhost:8000/api/auth/github/login"
+    }
+  }
 
   const steps = [
     { number: 1, name: "General", active: true, completed: false },
@@ -84,29 +98,49 @@ export default function DashboardHome() {
             No Projects Yet
           </h2>
           <p className="text-sm text-gray-500 max-w-lg mx-auto leading-relaxed">
-            Connect your GitHub account to import repositories and create your first project.
+            {isConnected 
+              ? "Your GitHub account is connected! Click below to view and import your repositories to start your first project." 
+              : "Connect your GitHub account to import repositories and create your first project."}
           </p>
         </div>
 
         <div className="flex flex-col items-center gap-3 w-full max-w-sm">
-          <Button
-            variant="brand"
-            onClick={() => setIsModalOpen(true)}
-            className="w-full h-11 text-xs font-bold flex items-center justify-center gap-2 shadow-sm rounded-lg bg-[#4f46e5] hover:bg-[#4338ca] text-white transition-all duration-200"
-          >
-            <Github className="w-4 h-4 fill-white" />
-            Connect GitHub
-          </Button>
+          {isConnected ? (
+            <Button
+              variant="brand"
+              onClick={() => window.location.href = "/dashboard/repositories"}
+              className="w-full h-11 text-xs font-bold flex items-center justify-center gap-2 shadow-sm rounded-lg bg-[#4f46e5] hover:bg-[#4338ca] text-white transition-all duration-200"
+            >
+              <FolderPlus className="w-4 h-4 text-white" />
+              Import Repositories
+            </Button>
+          ) : (
+            <Button
+              variant="brand"
+              onClick={handleConnectGithub}
+              className="w-full h-11 text-xs font-bold flex items-center justify-center gap-2 shadow-sm rounded-lg bg-[#4f46e5] hover:bg-[#4338ca] text-white transition-all duration-200"
+            >
+              <Github className="w-4 h-4 fill-white" />
+              Connect GitHub
+            </Button>
+          )}
 
-          <div className="flex items-center gap-1.5 text-gray-400 text-[11px] font-medium mt-1">
-            <Lock className="w-3.5 h-3.5" />
-            <span>We only read your public information and repositories.</span>
-          </div>
+          {isConnected ? (
+            <div className="flex items-center gap-1.5 text-emerald-600 text-[11px] font-semibold mt-1">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>GitHub account connected successfully.</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 text-gray-400 text-[11px] font-medium mt-1">
+              <Lock className="w-3.5 h-3.5" />
+              <span>We only read your public information and repositories.</span>
+            </div>
+          )}
         </div>
 
         <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-6 pt-8 border-t border-gray-100/80">
           <div
-            onClick={() => setIsModalOpen(true)}
+            onClick={handleConnectGithub}
             className="bg-slate-50/50 hover:bg-slate-50 rounded-xl p-5 border border-slate-100 flex items-start gap-4 transition-all duration-200 cursor-pointer text-left"
           >
             <div className="w-11 h-11 rounded-lg bg-indigo-50 border border-indigo-100/50 flex items-center justify-center text-indigo-600 flex-shrink-0">
