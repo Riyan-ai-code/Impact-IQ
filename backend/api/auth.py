@@ -22,7 +22,7 @@ def github_login():
 
 
 @router.get("/github/callback")
-async def github_callback(code: str = "", error: str = ""):
+async def github_callback(code: str = "", error: Optional[str] = None):
     # GitHub sends a temporary `code` in the query params after user approves
     # This code expires in 10 minutes and can only be used once
     import httpx
@@ -93,7 +93,7 @@ async def get_github_repos(
     
     async with httpx.AsyncClient() as client:
         response = await client.get(
-            "https://api.github.com/user/repos?per_page=100&sort=updated",
+            "https://api.github.com/user/repos?per_page=100",
             headers={
                 "Authorization": f"Bearer {github_token}",      # authenticate as the GitHub user
                 "Accept": "application/vnd.github+json",  # use latest GitHub API response format
@@ -109,3 +109,43 @@ async def get_github_repos(
     
     # Return the list of repositories to the frontend
     return response.json()
+
+
+@router.get("/github/repos/{owner}/{repo}/branches")
+async def get_github_repo_branches(
+    owner: str,
+    repo: str,
+    token: Optional[str] = Query(None),
+    authorization: Optional[str] = Header(None)
+):
+    import httpx
+    
+    # Extract token from query param or Authorization header
+    github_token = token
+    if not github_token and authorization and authorization.startswith("Bearer "):
+        github_token = authorization.split(" ")[1]
+
+    if not github_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing GitHub access token. Use Bearer token in Authorization header or pass in query."
+        )
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            f"https://api.github.com/repos/{owner}/{repo}/branches?per_page=100",
+            headers={
+                "Authorization": f"Bearer {github_token}",
+                "Accept": "application/vnd.github+json",
+                "User-Agent": "Impact-IQ-Backend"
+            }
+        )
+        
+    if response.status_code != 200:
+        raise HTTPException(
+            status_code=response.status_code,
+            detail="Failed to fetch branches from GitHub."
+        )
+        
+    branches_data = response.json()
+    return [b.get("name") for b in branches_data]
