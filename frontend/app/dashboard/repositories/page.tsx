@@ -22,11 +22,11 @@ import { cn } from "@/lib/utils"
 
 interface Repository {
   name: string
+  owner: string
   isPrivate: boolean
   language: string
   description: string
   branch: string
-  updatedAt: string
 }
 
 export default function RepositoriesPage() {
@@ -44,6 +44,39 @@ export default function RepositoriesPage() {
   const [description, setDescription] = useState("")
   const [selectedRepo, setSelectedRepo] = useState("")
   const [selectedBranch, setSelectedBranch] = useState("main")
+  
+  // Dynamic branches state
+  const [branches, setBranches] = useState<string[]>([])
+  const [loadingBranches, setLoadingBranches] = useState(false)
+
+  const fetchBranchesForRepo = async (ownerName: string, repoName: string) => {
+    const savedToken = localStorage.getItem("github_token") || token
+    if (!savedToken) return
+    setLoadingBranches(true)
+    try {
+      const response = await fetch(`http://localhost:8000/api/auth/github/repos/${ownerName}/${repoName}/branches`, {
+        headers: {
+          "Authorization": `Bearer ${savedToken}`
+        }
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setBranches(data)
+        if (data.length > 0) {
+          setSelectedBranch(data[0]) // select first branch by default
+        }
+      } else {
+        setBranches(["main"])
+        setSelectedBranch("main")
+      }
+    } catch (err) {
+      console.error("Error fetching branches:", err)
+      setBranches(["main"])
+      setSelectedBranch("main")
+    } finally {
+      setLoadingBranches(false)
+    }
+  }
   
   // Toggles state
   const [securityAnalysis, setSecurityAnalysis] = useState(true)
@@ -95,11 +128,11 @@ export default function RepositoriesPage() {
         const data = await response.json()
         const mappedRepos = data.map((r: any) => ({
           name: r.name,
-          isPrivate: r.is_private,
+          owner: r.owner?.login || "Riyanshah",
+          isPrivate: r.private !== undefined ? r.private : r.is_private,
           language: r.language || "Unknown",
           description: r.description || "No description provided.",
-          branch: "main",
-          updatedAt: `Updated ${new Date(r.updated_at).toLocaleDateString()}`
+          branch: r.default_branch || "main"
         }))
         setRepositories(mappedRepos)
       } catch (err: any) {
@@ -118,14 +151,24 @@ export default function RepositoriesPage() {
   )
 
   const handleOpenCreateModal = (repoName: string) => {
-    setSelectedRepo(`Riyanshah / ${repoName}`)
+    const repo = repositories.find(r => r.name === repoName)
+    const ownerName = repo ? repo.owner : "Riyanshah"
+    const repoDesc = repo ? repo.description : `AI-powered engineering analysis platform for ${repoName}.`
+    const defaultBranch = repo ? repo.branch : "main"
+
+    setSelectedRepo(`${ownerName} / ${repoName}`)
     const formattedName = repoName
       .split("-")
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ")
     setProjectName(formattedName)
-    setDescription(`AI-powered engineering analysis platform for ${repoName}.`)
+    setDescription(repoDesc)
+    setSelectedBranch(defaultBranch)
     setIsModalOpen(true)
+
+    if (ownerName && repoName) {
+      fetchBranchesForRepo(ownerName, repoName)
+    }
   }
 
   const handleConnectGithub = () => {
@@ -295,8 +338,6 @@ export default function RepositoriesPage() {
                 <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-2 font-medium">
                   <GitBranch className="w-3.5 h-3.5" />
                   <span>{repo.branch}</span>
-                  <span>•</span>
-                  <span>{repo.updatedAt}</span>
                 </div>
               </div>
             </div>
@@ -408,22 +449,39 @@ export default function RepositoriesPage() {
                       <Github className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                       <select 
                         value={selectedRepo}
-                        onChange={(e) => setSelectedRepo(e.target.value)}
+                        onChange={(e) => {
+                          const fullValue = e.target.value
+                          setSelectedRepo(fullValue)
+                          const parts = fullValue.split(" / ")
+                          const ownerName = parts[0]
+                          const repoName = parts[1]
+                          
+                          const repo = repositories.find(r => r.name === repoName)
+                          if (repo) {
+                            setProjectName(repo.name.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" "))
+                            setDescription(repo.description)
+                            setSelectedBranch(repo.branch)
+                            fetchBranchesForRepo(ownerName, repoName)
+                          }
+                        }}
                         className="w-full pl-9 pr-8 py-2 text-xs bg-white border border-gray-200 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer"
                       >
-                        <option value={`Riyanshah / ${selectedRepo.split("/ ").pop()}`}>{selectedRepo}</option>
-                        <option value="Riyanshah / payment-service">Riyanshah / payment-service</option>
-                        <option value="Riyanshah / auth-service">Riyanshah / auth-service</option>
-                        <option value="Riyanshah / order-service">Riyanshah / order-service</option>
-                        <option value="Riyanshah / inventory-service">Riyanshah / inventory-service</option>
-                        <option value="Riyanshah / notification-service">Riyanshah / notification-service</option>
+                        {repositories.length === 0 ? (
+                          <option value={selectedRepo}>{selectedRepo}</option>
+                        ) : (
+                          repositories.map((repo) => (
+                            <option key={`${repo.owner}/${repo.name}`} value={`${repo.owner} / ${repo.name}`}>
+                              {repo.owner} / {repo.name}
+                            </option>
+                          ))
+                        )}
                       </select>
                       <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-500">
                         <Plus className="w-3.5 h-3.5 rotate-45" />
                       </div>
                     </div>
                   </div>
-
+ 
                   {/* Branch Selector */}
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wide flex items-center gap-1">
@@ -435,10 +493,23 @@ export default function RepositoriesPage() {
                         value={selectedBranch}
                         onChange={(e) => setSelectedBranch(e.target.value)}
                         className="w-full pl-9 pr-8 py-2 text-xs bg-white border border-gray-200 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer"
+                        disabled={loadingBranches}
                       >
-                        <option value="main">main</option>
-                        <option value="develop">develop</option>
-                        <option value="staging">staging</option>
+                        {loadingBranches ? (
+                          <option value="">Loading branches...</option>
+                        ) : branches.length === 0 ? (
+                          <>
+                            <option value="main">main</option>
+                            <option value="develop">develop</option>
+                            <option value="staging">staging</option>
+                          </>
+                        ) : (
+                          branches.map((branch) => (
+                            <option key={branch} value={branch}>
+                              {branch}
+                            </option>
+                          ))
+                        )}
                       </select>
                       <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-500">
                         <Plus className="w-3.5 h-3.5 rotate-45" />
