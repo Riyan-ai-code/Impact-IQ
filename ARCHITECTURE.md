@@ -8,6 +8,8 @@ ImpactIQ is an AI-powered, cloud-native deployment risk analysis platform design
 
 The diagram below illustrates the end-to-end architecture and component interaction between the client browser, Next.js frontend, FastAPI backend, analysis engines, database, and external APIs.
 
+![ImpactIQ System Architecture Diagram](docs/images/architecture_diagram.jpg)
+
 ```mermaid
 graph TD
     Client["Client Browser (Next.js UI)"]
