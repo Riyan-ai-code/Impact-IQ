@@ -32,6 +32,14 @@ interface Repository {
 export default function RepositoriesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
+  const [isCreatingProject, setIsCreatingProject] = useState(false)
+
+  // Filter states
+  const [selectedVisibility, setSelectedVisibility] = useState<"all" | "public" | "private">("all")
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("all")
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
   
   // OAuth and fetching states
   const [token, setToken] = useState<string | null>(null)
@@ -145,9 +153,27 @@ export default function RepositoriesPage() {
     fetchRepos()
   }, [token])
 
-  const filteredRepos = repositories.filter(repo =>
-    repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (repo.description && repo.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  const availableLanguages = Array.from(
+    new Set(repositories.map(r => r.language).filter(Boolean))
+  )
+
+  const filteredRepos = repositories.filter(repo => {
+    const matchesSearch = repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (repo.description && repo.description.toLowerCase().includes(searchQuery.toLowerCase()))
+
+    const matchesVisibility = selectedVisibility === "all" ||
+      (selectedVisibility === "private" ? repo.isPrivate : !repo.isPrivate)
+
+    const matchesLanguage = selectedLanguage === "all" ||
+      repo.language.toLowerCase() === selectedLanguage.toLowerCase()
+
+    return matchesSearch && matchesVisibility && matchesLanguage
+  })
+
+  const totalPages = Math.ceil(filteredRepos.length / itemsPerPage) || 1
+  const paginatedRepos = filteredRepos.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
   )
 
   const handleOpenCreateModal = (repoName: string) => {
@@ -169,6 +195,37 @@ export default function RepositoriesPage() {
     if (ownerName && repoName) {
       fetchBranchesForRepo(ownerName, repoName)
     }
+  }
+
+  const handleCreateProject = () => {
+    setIsCreatingProject(true)
+    const finalProjectName = projectName.trim() || selectedRepo.split(" / ")[1] || "New Project"
+
+    const newProject = {
+      id: Date.now().toString(),
+      name: finalProjectName,
+      description: description || `AI-powered engineering analysis platform for ${finalProjectName}.`,
+      repository: selectedRepo,
+      branch: selectedBranch || "main",
+      securityAnalysis,
+      dependencyAnalysis,
+      apiAnalysis,
+      createdAt: new Date().toISOString()
+    }
+
+    try {
+      const existingProjects = JSON.parse(localStorage.getItem("impact_iq_projects") || "[]")
+      const updatedProjects = [newProject, ...existingProjects]
+      localStorage.setItem("impact_iq_projects", JSON.stringify(updatedProjects))
+    } catch (err) {
+      console.error("Error saving project:", err)
+    }
+
+    setTimeout(() => {
+      setIsModalOpen(false)
+      setIsCreatingProject(false)
+      window.location.href = "/dashboard/projects"
+    }, 400)
   }
 
   const handleConnectGithub = () => {
@@ -280,31 +337,110 @@ export default function RepositoriesPage() {
               type="text" 
               placeholder="Search repositories..." 
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                setCurrentPage(1)
+              }}
               className="w-64 pl-9 pr-4 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-sm"
             />
           </div>
-          {/* Filter button */}
-          <button className="px-3.5 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-2 shadow-sm transition-all duration-150">
-            <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
-            <span>Filter</span>
-            <Plus className="w-3 h-3 rotate-45 text-slate-400 ml-0.5" />
-          </button>
+          {/* Filter button + Popover */}
+          <div className="relative">
+            <button 
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className={cn(
+                "px-3.5 py-2 border text-xs font-semibold rounded-lg flex items-center gap-2 shadow-sm transition-all duration-150 cursor-pointer",
+                (selectedVisibility !== "all" || selectedLanguage !== "all")
+                  ? "border-indigo-600 bg-indigo-50/60 text-indigo-700 font-bold"
+                  : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+              )}
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
+              <span>Filter</span>
+              {(selectedVisibility !== "all" || selectedLanguage !== "all") && (
+                <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+              )}
+            </button>
+
+            {/* Filter Popover Dropdown */}
+            {isFilterOpen && (
+              <div className="absolute right-0 mt-2 w-72 bg-white border border-slate-200 shadow-xl rounded-xl p-4 z-30 space-y-4 text-left animate-in fade-in zoom-in-95 duration-150">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                  <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wider">Filter Repositories</span>
+                  {(selectedVisibility !== "all" || selectedLanguage !== "all") && (
+                    <button
+                      onClick={() => {
+                        setSelectedVisibility("all")
+                        setSelectedLanguage("all")
+                        setCurrentPage(1)
+                      }}
+                      className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+
+                {/* Visibility Filter */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">Visibility</label>
+                  <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-lg">
+                    {(["all", "public", "private"] as const).map((v) => (
+                      <button
+                        key={v}
+                        onClick={() => {
+                          setSelectedVisibility(v)
+                          setCurrentPage(1)
+                        }}
+                        className={cn(
+                          "py-1 text-[11px] font-bold rounded-md capitalize transition-all cursor-pointer",
+                          selectedVisibility === v
+                            ? "bg-white text-indigo-600 shadow-sm"
+                            : "text-slate-500 hover:text-slate-800"
+                        )}
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Language Filter */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">Language</label>
+                  <select
+                    value={selectedLanguage}
+                    onChange={(e) => {
+                      setSelectedLanguage(e.target.value)
+                      setCurrentPage(1)
+                    }}
+                    className="w-full px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer font-medium"
+                  >
+                    <option value="all">All Languages</option>
+                    {availableLanguages.map((lang) => (
+                      <option key={lang} value={lang}>{lang}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Repository Cards List */}
       <div className="flex flex-col gap-4">
-        {filteredRepos.map((repo, idx) => (
+        {paginatedRepos.map((repo, idx) => (
           <div 
             key={idx}
-            className="bg-white border border-slate-100 rounded-xl p-5 md:p-6 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.02)] flex items-center justify-between hover:shadow-md transition-shadow duration-200"
+            className="bg-white border border-slate-100 rounded-xl p-5 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.02)] flex flex-col gap-2.5 hover:shadow-md transition-shadow duration-200"
           >
-            <div className="flex items-start gap-4 text-left">
-              <div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700 flex-shrink-0">
-                <Github className="w-5 h-5" />
-              </div>
-              <div className="space-y-1.5">
+            {/* Top Header Row: Icon + Name + Badges on left | Create Project button on top right */}
+            <div className="flex items-center justify-between w-full gap-4">
+              <div className="flex items-center gap-3 text-left">
+                <div className="w-9 h-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700 flex-shrink-0">
+                  <Github className="w-4 h-4" />
+                </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="text-sm font-bold text-slate-900 leading-snug hover:text-indigo-600 transition-colors cursor-pointer">
                     {repo.name}
@@ -330,31 +466,82 @@ export default function RepositoriesPage() {
                     {repo.language}
                   </span>
                 </div>
+              </div>
 
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  {repo.description}
-                </p>
-
-                <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-2 font-medium">
-                  <GitBranch className="w-3.5 h-3.5" />
-                  <span>{repo.branch}</span>
-                </div>
+              {/* Action Button on top right */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button 
+                  onClick={() => handleOpenCreateModal(repo.name)}
+                  className="px-3.5 py-1.5 border border-indigo-600 text-indigo-600 hover:bg-indigo-50/50 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all duration-150 active:scale-95 shadow-sm"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Create Project
+                </button>
+                <ChevronRight className="w-4 h-4 text-slate-300 ml-1 cursor-pointer hover:text-slate-400" />
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => handleOpenCreateModal(repo.name)}
-                className="px-4 py-2 border border-indigo-600 text-indigo-600 hover:bg-indigo-50/50 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all duration-150 active:scale-95 shadow-sm"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Create Project
-              </button>
-              <ChevronRight className="w-4 h-4 text-slate-300 ml-1 cursor-pointer hover:text-slate-400" />
+            {/* Description - Full width below */}
+            <p className="text-xs text-slate-500 leading-relaxed text-left pl-12 pr-4">
+              {repo.description}
+            </p>
+
+            {/* Branch Metadata */}
+            <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium text-left pl-12">
+              <GitBranch className="w-3.5 h-3.5" />
+              <span>{repo.branch}</span>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-4 border-t border-slate-200/60 mt-4">
+          <p className="text-xs text-slate-500 font-medium">
+            Showing <span className="font-semibold text-slate-700">{filteredRepos.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}</span> to{" "}
+            <span className="font-semibold text-slate-700">{Math.min(currentPage * itemsPerPage, filteredRepos.length)}</span> of{" "}
+            <span className="font-semibold text-slate-700">{filteredRepos.length}</span> repositories
+          </p>
+
+          <div className="flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              className="h-8 px-3 text-xs font-semibold rounded-lg border-slate-200 disabled:opacity-40"
+            >
+              Previous
+            </Button>
+
+            <div className="flex items-center gap-1 px-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={cn(
+                    "w-7 h-7 text-xs font-bold rounded-md transition-all duration-150",
+                    currentPage === page
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "text-slate-600 hover:bg-slate-100"
+                  )}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+
+            <Button
+              variant="outline"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              className="h-8 px-3 text-xs font-semibold rounded-lg border-slate-200 disabled:opacity-40"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* CREATE NEW PROJECT MODAL */}
       {isModalOpen && (
@@ -625,13 +812,21 @@ export default function RepositoriesPage() {
               </Button>
               <Button 
                 variant="brand" 
-                onClick={() => {
-                  setIsModalOpen(false)
-                }}
-                className="h-10 text-xs font-bold bg-brand text-white hover:bg-indigo-700 flex items-center gap-1.5 px-5 rounded-lg"
+                disabled={isCreatingProject}
+                onClick={handleCreateProject}
+                className="h-10 text-xs font-bold bg-[#4f46e5] text-white hover:bg-[#4338ca] flex items-center gap-2 px-5 rounded-lg disabled:opacity-75"
               >
-                <FolderPlus className="w-4 h-4" />
-                Create Project
+                {isCreatingProject ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Creating Project...</span>
+                  </>
+                ) : (
+                  <>
+                    <FolderPlus className="w-4 h-4" />
+                    <span>Create Project</span>
+                  </>
+                )}
               </Button>
             </div>
 
