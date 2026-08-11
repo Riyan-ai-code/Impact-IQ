@@ -8,8 +8,9 @@ router = APIRouter(prefix="/api/analysis", tags=["Analysis"])
 class AnalysisRequestPayload(BaseModel):
     repository: str
     branch: str
+    mode: Optional[str] = "auto"  # "auto" or "manual"
+    user_prompt: Optional[str] = None
     ai_model: Optional[str] = "gemini-1.5-pro"
-    custom_rules: Optional[str] = ""
     security_analysis: Optional[bool] = True
     dependency_analysis: Optional[bool] = True
     api_analysis: Optional[bool] = True
@@ -18,40 +19,54 @@ analyses_db: Dict[str, Dict[str, Any]] = {}
 
 @router.post("/")
 def start_analysis(payload: AnalysisRequestPayload):
-    """Trigger a new AI risk analysis for a repository branch."""
+    """Trigger a new AI risk analysis (Automatic scan or Manual custom prompt)."""
     analysis_id = f"anl-{len(analyses_db) + 1}"
     
-    # Calculate mock risk score based on model & scanners
-    risk_score = 78 if payload.api_analysis else 42
-    risk_level = "High" if risk_score > 70 else "Medium" if risk_score > 40 else "Low"
-
-    report = {
-        "id": analysis_id,
-        "repository": payload.repository,
-        "branch": payload.branch,
-        "ai_model": payload.ai_model,
-        "custom_rules": payload.custom_rules,
-        "risk_score": risk_score,
-        "risk_level": risk_level,
-        "status": "completed",
-        "summary": [
-            f"PR introduces new webhook handler in backend/api/webhooks.py analyzed via {payload.ai_model}.",
-            "Altered REST API response payload schema for /api/v1/charge, removing legacy transaction_id field.",
-            "Dockerfile uses node:18 base image running as root user without non-root drop."
-        ],
-        "security_issues": [
-            "Missing HMAC SHA256 signature verification on Stripe webhook payload.",
-            "Hardcoded test API secret key detected in test fixture test_stripe.py."
-        ],
-        "api_contract_issues": [
-            "Removed deprecated transaction_id property from /api/v1/charge schema (Breaks mobile client v2.1)."
-        ],
-        "checklist": [
-            "Add Stripe HMAC signature validation check before parsing webhook payload.",
-            "Keep legacy transaction_id alias field for backward compatibility.",
-            "Add USER node directive to Dockerfile."
-        ]
-    }
+    if payload.mode == "manual":
+        report = {
+            "id": analysis_id,
+            "mode": "manual",
+            "repository": payload.repository,
+            "branch": payload.branch,
+            "prompt": payload.user_prompt or "Analyze this PR for code safety.",
+            "status": "completed",
+            "ai_response": f"AI Assistant analysis for: '{payload.user_prompt}':\n\n1. No SQL injection vulnerabilities detected in ORM calls.\n2. API response payload for /api/v1/charge changed (removed legacy transaction_id property).\n3. Stripe webhook handler lacks HMAC signature verification.",
+            "key_takeaways": [
+                "Re-add legacy transaction_id alias for mobile client v2.1 compatibility.",
+                "Implement stripe.Webhook.construct_event() signature verification."
+            ],
+            "flagged_snippets": [
+                "backend/api/webhooks.py: L42 - missing signature verification",
+                "backend/api/charge.py: L18 - removed transaction_id"
+            ]
+        }
+    else:
+        report = {
+            "id": analysis_id,
+            "mode": "auto",
+            "repository": payload.repository,
+            "branch": payload.branch,
+            "risk_score": 78,
+            "risk_level": "High",
+            "status": "completed",
+            "summary": [
+                "PR introduces new webhook handler in backend/api/webhooks.py.",
+                "Altered REST API response payload schema for /api/v1/charge, removing legacy transaction_id field.",
+                "Dockerfile uses node:18 base image running as root user."
+            ],
+            "security_issues": [
+                "Missing HMAC SHA256 signature verification on Stripe webhook payload.",
+                "Hardcoded test API secret key in test fixture."
+            ],
+            "api_contract_issues": [
+                "Removed deprecated transaction_id property from /api/v1/charge schema."
+            ],
+            "checklist": [
+                "Add Stripe HMAC signature validation check.",
+                "Keep legacy transaction_id alias field.",
+                "Add USER node directive to Dockerfile."
+            ]
+        }
     
     analyses_db[analysis_id] = report
     return {"status": "success", "analysis": report}
@@ -63,4 +78,5 @@ def get_analysis(analysis_id: str):
     if not report:
         raise HTTPException(status_code=404, detail="Analysis report not found.")
     return report
+
 
