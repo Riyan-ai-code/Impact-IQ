@@ -15,7 +15,8 @@ import {
   RefreshCw,
   Check,
   X,
-  Plus
+  Plus,
+  Building2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -40,6 +41,14 @@ export default function RepositoriesPage() {
   const [selectedVisibility, setSelectedVisibility] = useState<"all" | "public" | "private">("all")
   const [selectedLanguage, setSelectedLanguage] = useState<string>("all")
   const [isFilterOpen, setIsFilterOpen] = useState(false)
+  
+  // Team Assignment states
+  const [userTeams, setUserTeams] = useState<{ id: string; name: string }[]>([
+    { id: "default-1", name: "Platform Engineering" },
+    { id: "default-2", name: "DevOps Core" },
+    { id: "default-3", name: "Security Ops" }
+  ])
+  const [selectedTeam, setSelectedTeam] = useState("Platform Engineering")
   
   // OAuth and fetching states
   const [token, setToken] = useState<string | null>(null)
@@ -99,12 +108,25 @@ export default function RepositoriesPage() {
     { number: 5, name: "Review", active: false, completed: false },
   ]
 
-  // Retrieve token from localStorage
+  // Retrieve token & teams from localStorage
   useEffect(() => {
     const savedToken = localStorage.getItem("github_token")
     setToken(savedToken)
     if (!savedToken) {
       setLoading(false)
+    }
+
+    const savedTeams = localStorage.getItem("impact_iq_teams")
+    if (savedTeams) {
+      try {
+        const parsed = JSON.parse(savedTeams)
+        if (parsed.length > 0) {
+          setUserTeams(parsed.map((t: any) => ({ id: t.id, name: t.name })))
+          setSelectedTeam(parsed[0].name)
+        }
+      } catch (err) {
+        console.error("Error reading teams:", err)
+      }
     }
   }, [])
 
@@ -207,6 +229,7 @@ export default function RepositoriesPage() {
       description: description || `AI-powered engineering analysis platform for ${finalProjectName}.`,
       repository: selectedRepo,
       branch: selectedBranch || "main",
+      team: selectedTeam,
       securityAnalysis,
       dependencyAnalysis,
       apiAnalysis,
@@ -623,6 +646,31 @@ export default function RepositoriesPage() {
                     className="w-full px-3 py-2 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none"
                   />
                   <p className="text-[10px] text-gray-400">Add a short description about your project.</p>
+                </div>
+
+                {/* Team Assignment Field */}
+                <div className="space-y-1.5">
+                  <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wide flex items-center gap-1">
+                    Assign to Team <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <Building2 className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                    <select
+                      value={selectedTeam}
+                      onChange={(e) => setSelectedTeam(e.target.value)}
+                      className="w-full pl-9 pr-8 py-2 text-xs bg-white border border-gray-200 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer font-medium"
+                    >
+                      {userTeams.map((t) => (
+                        <option key={t.id} value={t.name}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-500">
+                      <Plus className="w-3.5 h-3.5 rotate-45" />
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-gray-400">Select which engineering team owns this project.</p>
                 </div>
 
                 {/* Grid for Dropdowns */}
