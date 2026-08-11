@@ -127,10 +127,12 @@ export default function TeamPage() {
       const res = await fetch("http://localhost:8000/api/teams")
       if (res.ok) {
         const data = await res.json()
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setTeams(data)
-          if (!activeTeamId || !data.find((t: any) => t.id === activeTeamId)) {
+          if (data.length > 0) {
             setActiveTeamId(data[0].id)
+          } else {
+            setActiveTeamId("")
           }
           localStorage.setItem("impact_iq_teams", JSON.stringify(data))
           return
@@ -145,9 +147,13 @@ export default function TeamPage() {
     if (saved) {
       try {
         const parsed: Team[] = JSON.parse(saved)
-        if (parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           setTeams(parsed)
-          setActiveTeamId(parsed[0].id)
+          if (parsed.length > 0) {
+            setActiveTeamId(parsed[0].id)
+          } else {
+            setActiveTeamId("")
+          }
           return
         }
       } catch (err) {
@@ -155,8 +161,9 @@ export default function TeamPage() {
       }
     }
 
-    setTeams(DEFAULT_INITIAL_TEAMS)
-    setActiveTeamId(DEFAULT_INITIAL_TEAMS[0].id)
+    // Default to empty teams array
+    setTeams([])
+    setActiveTeamId("")
   }
 
   useEffect(() => {
@@ -307,11 +314,17 @@ export default function TeamPage() {
     saveTeamsToStorage(updated)
   }
 
-  const handleDeleteTeam = (teamId: string) => {
+  const handleDeleteTeam = async (teamId: string) => {
+    try {
+      await fetch(`http://localhost:8000/api/teams/${teamId}`, { method: "DELETE" })
+    } catch (err) {
+      console.warn("Backend team delete notice:", err)
+    }
+
     const updated = teams.filter(t => t.id !== teamId)
     saveTeamsToStorage(updated)
     if (activeTeamId === teamId) {
-      setActiveTeamId(updated.length > 0 ? updated[0].id : null)
+      setActiveTeamId(updated.length > 0 ? updated[0].id : "")
     }
   }
 
