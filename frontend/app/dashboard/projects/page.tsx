@@ -32,6 +32,8 @@ interface Project {
   createdAt: string
 }
 
+import { fetchProjectsFromNhost } from "@/services/nhostService"
+
 export default function ProjectsPage() {
   const router = useRouter()
   const [projects, setProjects] = useState<Project[]>([])
@@ -39,15 +41,27 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const savedProjects = localStorage.getItem("impact_iq_projects")
-    if (savedProjects) {
-      try {
-        setProjects(JSON.parse(savedProjects))
-      } catch (err) {
-        console.error("Error parsing saved projects:", err)
+    async function loadProjects() {
+      const nhostProjects = await fetchProjectsFromNhost()
+      if (nhostProjects && nhostProjects.length > 0) {
+        setProjects(nhostProjects)
+        localStorage.setItem("impact_iq_projects", JSON.stringify(nhostProjects))
+        setLoading(false)
+        return
       }
+
+      const savedProjects = localStorage.getItem("impact_iq_projects")
+      if (savedProjects) {
+        try {
+          setProjects(JSON.parse(savedProjects))
+        } catch (err) {
+          console.error("Error parsing saved projects:", err)
+        }
+      }
+      setLoading(false)
     }
-    setLoading(false)
+
+    loadProjects()
   }, [])
 
   const handleDeleteProject = (id: string) => {

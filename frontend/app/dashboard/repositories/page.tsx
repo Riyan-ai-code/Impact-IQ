@@ -20,6 +20,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { createProjectInNhost } from "@/services/nhostService"
 
 interface Repository {
   name: string
@@ -219,7 +220,7 @@ export default function RepositoriesPage() {
     }
   }
 
-  const handleCreateProject = () => {
+  const handleCreateProject = async () => {
     setIsCreatingProject(true)
     const finalProjectName = projectName.trim() || selectedRepo.split(" / ")[1] || "New Project"
 
@@ -234,6 +235,12 @@ export default function RepositoriesPage() {
       dependencyAnalysis,
       apiAnalysis,
       createdAt: new Date().toISOString()
+    }
+
+    try {
+      await createProjectInNhost(newProject)
+    } catch (err) {
+      console.warn("Nhost mutation notice:", err)
     }
 
     try {
