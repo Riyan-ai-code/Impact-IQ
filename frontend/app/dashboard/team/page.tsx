@@ -15,7 +15,8 @@ import {
   Shield, 
   Search,
   ChevronDown,
-  ArrowDown
+  ArrowDown,
+  ExternalLink
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -107,6 +108,7 @@ export default function TeamPage() {
   // Modals state
   const [isCreateTeamModalOpen, setIsCreateTeamModalOpen] = useState(false)
   const [isInviteMemberModalOpen, setIsInviteMemberModalOpen] = useState(false)
+  const [isMembersModalOpen, setIsMembersModalOpen] = useState(false)
 
   // Create Team Form
   const [teamName, setTeamName] = useState("")
@@ -134,7 +136,6 @@ export default function TeamPage() {
         console.error("Error loading teams:", err)
       }
     }
-    // Fallback default initial teams
     setTeams(DEFAULT_INITIAL_TEAMS)
     setActiveTeamId(DEFAULT_INITIAL_TEAMS[0].id)
     localStorage.setItem("impact_iq_teams", JSON.stringify(DEFAULT_INITIAL_TEAMS))
@@ -237,7 +238,8 @@ export default function TeamPage() {
     m.role.toLowerCase().includes(searchQuery.toLowerCase())
   ) : []
 
-  const scrollToMembersSection = () => {
+  const handleMemberClick = () => {
+    setIsMembersModalOpen(true)
     const el = document.getElementById("team-members-section")
     if (el) {
       el.scrollIntoView({ behavior: "smooth" })
@@ -310,18 +312,18 @@ export default function TeamPage() {
                 <Building2 className="w-5 h-5" />
               </div>
               <div className="text-left">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Active Team</span>
-                <div className="relative">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">ACTIVE TEAM</span>
+                <div className="relative inline-flex items-center">
                   <select
                     value={activeTeamId || ""}
                     onChange={(e) => setActiveTeamId(e.target.value)}
-                    className="text-sm font-bold text-slate-900 bg-transparent border-none p-0 focus:outline-none cursor-pointer pr-6 appearance-none"
+                    className="text-sm font-bold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer pr-8 appearance-none shadow-2xs"
                   >
                     {teams.map((t) => (
                       <option key={t.id} value={t.id}>{t.name}</option>
                     ))}
                   </select>
-                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <ChevronDown className="w-4 h-4 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
             </div>
@@ -330,8 +332,8 @@ export default function TeamPage() {
               {/* Clickable Team Member Avatars Stack inside header */}
               {activeTeam && (
                 <button
-                  onClick={scrollToMembersSection}
-                  className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-indigo-50/60 hover:border-indigo-200 transition-all cursor-pointer group shadow-2xs"
+                  onClick={handleMemberClick}
+                  className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100/70 transition-all cursor-pointer group shadow-xs"
                   title="Click to view team members"
                 >
                   <div className="flex -space-x-2 overflow-hidden">
@@ -352,7 +354,7 @@ export default function TeamPage() {
                       </div>
                     )}
                   </div>
-                  <span className="text-xs font-bold text-indigo-600 group-hover:underline flex items-center gap-1 pr-0.5">
+                  <span className="text-xs font-bold text-indigo-700 group-hover:underline flex items-center gap-1">
                     {activeTeam.members.length} Members
                   </span>
                 </button>
@@ -392,9 +394,9 @@ export default function TeamPage() {
 
                   {/* Clickable Team Member Avatars Stack */}
                   <button
-                    onClick={scrollToMembersSection}
-                    className="flex items-center gap-3 p-2.5 rounded-xl border border-indigo-100 bg-indigo-50/40 hover:bg-indigo-50 hover:border-indigo-200 transition-all cursor-pointer shadow-sm group"
-                    title="Click to view team members"
+                    onClick={handleMemberClick}
+                    className="flex items-center gap-3 p-3 rounded-xl border border-indigo-200 bg-indigo-50/60 hover:bg-indigo-100/70 transition-all cursor-pointer shadow-xs group"
+                    title="Click to view team members modal"
                   >
                     <div className="flex -space-x-2 overflow-hidden">
                       {activeTeam.members.slice(0, 4).map((m, idx) => (
@@ -415,8 +417,8 @@ export default function TeamPage() {
                       )}
                     </div>
                     <div className="text-left pr-1">
-                      <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block">Team Members</span>
-                      <span className="text-xs font-bold text-indigo-600 group-hover:underline flex items-center gap-1">
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block">TEAM MEMBERS</span>
+                      <span className="text-xs font-bold text-indigo-700 group-hover:underline flex items-center gap-1">
                         {activeTeam.members.length} Members
                         <ArrowDown className="w-3.5 h-3.5" />
                       </span>
@@ -513,6 +515,87 @@ export default function TeamPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* TEAM MEMBERS POPUP MODAL DRAWER */}
+      {isMembersModalOpen && activeTeam && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white border border-slate-200 shadow-2xl rounded-2xl w-full max-w-xl overflow-hidden flex flex-col relative animate-in fade-in zoom-in-95 duration-200 text-left">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">{activeTeam.name} — Members</h3>
+                  <p className="text-[11px] text-slate-500">Active roster ({activeTeam.members.length} members)</p>
+                </div>
+              </div>
+              <button onClick={() => setIsMembersModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-900 cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4 max-h-[450px] overflow-y-auto">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Team Member Roster</span>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsMembersModalOpen(false)
+                    setIsInviteMemberModalOpen(true)
+                  }}
+                  className="h-8 px-3 text-xs font-bold border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded-lg flex items-center gap-1.5 cursor-pointer"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  Invite Member
+                </Button>
+              </div>
+
+              <div className="divide-y divide-slate-100">
+                {activeTeam.members.map((member) => (
+                  <div key={member.id} className="py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-xs flex-shrink-0">
+                        {member.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                          {member.name}
+                          {member.role === "Owner" && <Crown className="w-3.5 h-3.5 text-amber-500" />}
+                        </p>
+                        <p className="text-[11px] text-slate-400">{member.email}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className={cn(
+                        "text-[10px] font-bold px-2.5 py-0.5 rounded-full border",
+                        member.role === "Owner" && "bg-amber-50 text-amber-700 border-amber-200",
+                        member.role === "Admin" && "bg-purple-50 text-purple-700 border-purple-200",
+                        member.role === "Maintainer" && "bg-blue-50 text-blue-700 border-blue-200",
+                        member.role === "Developer" && "bg-indigo-50 text-indigo-700 border-indigo-200",
+                        member.role === "Viewer" && "bg-slate-100 text-slate-600 border-slate-200"
+                      )}>
+                        {member.role}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-end bg-slate-50/50">
+              <Button
+                variant="outline"
+                onClick={() => setIsMembersModalOpen(false)}
+                className="h-9 px-5 text-xs font-bold border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-lg cursor-pointer"
+              >
+                Close Roster
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
