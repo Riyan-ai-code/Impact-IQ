@@ -8,11 +8,17 @@ backend/venv/
 frontend/.next/
 frontend/out/
 
-# IDE files
+# Environment files (NEVER COMMIT TO GIT)
+.env
+.env.*
+*.env
+frontend/.env
+frontend/.env.*
+backend/.env
+backend/.env.*
+
+# IDE & OS System files
 .idea/
 .vscode/
-
-# System files
 .DS_Store
 Thumbs.db
-.env
