@@ -66,8 +66,9 @@ export default function NewAnalysisPage() {
   // Created Projects state
   const [createdProjects, setCreatedProjects] = useState<Project[]>([])
   const [selectedProjectId, setSelectedProjectId] = useState<string>("")
-  const [selectedRepo, setSelectedRepo] = useState<string>("Riyanshah / payment-service")
-  const [selectedBranch, setSelectedBranch] = useState<string>("main")
+  const [selectedRepo, setSelectedRepo] = useState<string>("")
+  const [selectedBranch, setSelectedBranch] = useState<string>("")
+  const [isLoadingProjects, setIsLoadingProjects] = useState<boolean>(true)
 
   useEffect(() => {
     const savedProjects = localStorage.getItem("impact_iq_projects")
@@ -79,6 +80,7 @@ export default function NewAnalysisPage() {
           setSelectedProjectId(parsed[0].id)
           setSelectedRepo(parsed[0].repository || parsed[0].name)
           setSelectedBranch(parsed[0].branch || "main")
+          setIsLoadingProjects(false)
           return
         }
       } catch (e) {
@@ -91,6 +93,7 @@ export default function NewAnalysisPage() {
     setSelectedProjectId("")
     setSelectedRepo("")
     setSelectedBranch("")
+    setIsLoadingProjects(false)
   }, [])
 
   const handleSelectProject = (projectId: string) => {
@@ -299,10 +302,13 @@ export default function NewAnalysisPage() {
             </label>
             <select
               value={selectedProjectId}
+              disabled={isLoadingProjects}
               onChange={(e) => handleSelectProject(e.target.value)}
-              className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold text-slate-900 cursor-pointer"
+              className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold text-slate-900 cursor-pointer disabled:opacity-75"
             >
-              {createdProjects.length === 0 ? (
+              {isLoadingProjects ? (
+                <option value="">Loading created projects...</option>
+              ) : createdProjects.length === 0 ? (
                 <option value="">No projects created yet &mdash; Create a project first</option>
               ) : (
                 createdProjects.map(p => (
@@ -329,7 +335,7 @@ export default function NewAnalysisPage() {
           </div>
 
           {/* Empty Projects Alert Banner */}
-          {createdProjects.length === 0 && (
+          {!isLoadingProjects && createdProjects.length === 0 && (
             <div className="md:col-span-2 bg-amber-50/70 border border-amber-200/80 rounded-xl p-3.5 flex items-center justify-between mt-2">
               <div className="flex items-center gap-2 text-xs text-amber-900 font-semibold">
                 <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
