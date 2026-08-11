@@ -44,12 +44,8 @@ export default function RepositoriesPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   
   // Team Assignment states
-  const [userTeams, setUserTeams] = useState<{ id: string; name: string }[]>([
-    { id: "default-1", name: "Platform Engineering" },
-    { id: "default-2", name: "DevOps Core" },
-    { id: "default-3", name: "Security Ops" }
-  ])
-  const [selectedTeam, setSelectedTeam] = useState("Platform Engineering")
+  const [userTeams, setUserTeams] = useState<TeamOption[]>([])
+  const [selectedTeam, setSelectedTeam] = useState("")
   
   // OAuth and fetching states
   const [token, setToken] = useState<string | null>(null)
@@ -109,7 +105,7 @@ export default function RepositoriesPage() {
     { number: 5, name: "Review", active: false, completed: false },
   ]
 
-  // Retrieve token & teams from localStorage
+  // Retrieve token & teams from backend / localStorage
   useEffect(() => {
     const savedToken = localStorage.getItem("github_token")
     setToken(savedToken)
@@ -117,18 +113,44 @@ export default function RepositoriesPage() {
       setLoading(false)
     }
 
-    const savedTeams = localStorage.getItem("impact_iq_teams")
-    if (savedTeams) {
+    async function loadTeams() {
       try {
-        const parsed = JSON.parse(savedTeams)
-        if (parsed.length > 0) {
-          setUserTeams(parsed.map((t: any) => ({ id: t.id, name: t.name })))
-          setSelectedTeam(parsed[0].name)
+        const res = await fetch("http://localhost:8000/api/teams")
+        if (res.ok) {
+          const apiTeams = await res.json()
+          if (Array.isArray(apiTeams)) {
+            setUserTeams(apiTeams.map((t: any) => ({ id: t.id, name: t.name })))
+            if (apiTeams.length > 0) {
+              setSelectedTeam(apiTeams[0].name)
+            } else {
+              setSelectedTeam("")
+            }
+            return
+          }
         }
       } catch (err) {
-        console.error("Error reading teams:", err)
+        console.warn("Backend teams notice:", err)
+      }
+
+      const savedTeams = localStorage.getItem("impact_iq_teams")
+      if (savedTeams) {
+        try {
+          const parsed = JSON.parse(savedTeams)
+          if (Array.isArray(parsed)) {
+            setUserTeams(parsed.map((t: any) => ({ id: t.id, name: t.name })))
+            if (parsed.length > 0) {
+              setSelectedTeam(parsed[0].name)
+            } else {
+              setSelectedTeam("")
+            }
+          }
+        } catch (err) {
+          console.error("Error reading teams:", err)
+        }
       }
     }
+
+    loadTeams()
   }, [])
 
   // Fetch repositories from backend
@@ -660,23 +682,41 @@ export default function RepositoriesPage() {
                   <label className="text-[11px] font-bold text-gray-700 uppercase tracking-wide flex items-center gap-1">
                     Assign to Team <span className="text-rose-500">*</span>
                   </label>
-                  <div className="relative">
-                    <Building2 className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-                    <select
-                      value={selectedTeam}
-                      onChange={(e) => setSelectedTeam(e.target.value)}
-                      className="w-full pl-9 pr-8 py-2 text-xs bg-white border border-gray-200 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer font-medium"
-                    >
-                      {userTeams.map((t) => (
-                        <option key={t.id} value={t.name}>
-                          {t.name}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-500">
-                      <Plus className="w-3.5 h-3.5 rotate-45" />
+                  {userTeams.length === 0 ? (
+                    <div className="bg-amber-50/80 border border-amber-200/80 rounded-xl p-3.5 flex items-center justify-between text-left">
+                      <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
+                        <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                        <span>No teams created yet. Create a team first to work on a project.</span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => window.location.href = "/dashboard/team"}
+                        className="h-8 px-3 text-xs font-bold border-amber-300 text-amber-900 bg-white hover:bg-amber-100/60 rounded-lg flex items-center gap-1.5 cursor-pointer flex-shrink-0"
+                      >
+                        <Building2 className="w-3.5 h-3.5 text-amber-700" />
+                        Create Team
+                      </Button>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="relative">
+                      <Building2 className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                      <select
+                        value={selectedTeam}
+                        onChange={(e) => setSelectedTeam(e.target.value)}
+                        className="w-full pl-9 pr-8 py-2 text-xs bg-white border border-gray-200 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer font-medium"
+                      >
+                        {userTeams.map((t) => (
+                          <option key={t.id} value={t.name}>
+                            {t.name}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-gray-500">
+                        <Plus className="w-3.5 h-3.5 rotate-45" />
+                      </div>
+                    </div>
+                  )}
                   <p className="text-[10px] text-gray-400">Select which engineering team owns this project.</p>
                 </div>
 
@@ -861,28 +901,40 @@ export default function RepositoriesPage() {
               <Button 
                 variant="outline" 
                 onClick={() => setIsModalOpen(false)}
-                className="h-10 text-xs font-bold border-gray-200 text-gray-700 bg-white hover:bg-gray-50 px-5 rounded-lg"
+                className="h-10 text-xs font-bold border-gray-200 text-gray-700 bg-white hover:bg-gray-50 px-5 rounded-lg cursor-pointer"
               >
                 Cancel
               </Button>
-              <Button 
-                variant="brand" 
-                disabled={isCreatingProject}
-                onClick={handleCreateProject}
-                className="h-10 text-xs font-bold bg-[#4f46e5] text-white hover:bg-[#4338ca] flex items-center gap-2 px-5 rounded-lg disabled:opacity-75"
-              >
-                {isCreatingProject ? (
-                  <>
-                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Creating Project...</span>
-                  </>
-                ) : (
-                  <>
-                    <FolderPlus className="w-4 h-4" />
-                    <span>Create Project</span>
-                  </>
-                )}
-              </Button>
+
+              {userTeams.length === 0 ? (
+                <Button 
+                  variant="brand" 
+                  onClick={() => window.location.href = "/dashboard/team"}
+                  className="h-10 text-xs font-bold bg-amber-600 text-white hover:bg-amber-700 flex items-center gap-2 px-5 rounded-lg cursor-pointer shadow-sm"
+                >
+                  <Building2 className="w-4 h-4" />
+                  <span>Create a Team to Work on Project</span>
+                </Button>
+              ) : (
+                <Button 
+                  variant="brand" 
+                  disabled={isCreatingProject}
+                  onClick={handleCreateProject}
+                  className="h-10 text-xs font-bold bg-[#4f46e5] text-white hover:bg-[#4338ca] flex items-center gap-2 px-5 rounded-lg disabled:opacity-75 cursor-pointer"
+                >
+                  {isCreatingProject ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Creating Project...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FolderPlus className="w-4 h-4" />
+                      <span>Create Project</span>
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
 
           </div>
