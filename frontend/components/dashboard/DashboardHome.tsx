@@ -94,9 +94,6 @@ export default function DashboardHome() {
         </div>
 
         <div className="space-y-3">
-          <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-            No Projects Yet
-          </h2>
           <p className="text-sm text-gray-500 max-w-lg mx-auto leading-relaxed">
             {isConnected 
               ? "Your GitHub account is connected! Click below to view and import your repositories to start your first project." 
