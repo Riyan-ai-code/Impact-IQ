@@ -86,16 +86,11 @@ export default function NewAnalysisPage() {
       }
     }
 
-    // Default fallbacks if no projects created yet
-    const defaults: Project[] = [
-      { id: "p-1", name: "Payment Platform", description: "", repository: "Riyanshah / payment-service", branch: "PR #42 - Add Stripe Webhook Handler" },
-      { id: "p-2", name: "Auth Service", description: "", repository: "Riyanshah / auth-service", branch: "main" },
-      { id: "p-3", name: "Order Service", description: "", repository: "Riyanshah / order-service", branch: "develop" }
-    ]
-    setCreatedProjects(defaults)
-    setSelectedProjectId(defaults[0].id)
-    setSelectedRepo(defaults[0].repository)
-    setSelectedBranch(defaults[0].branch)
+    // Empty state when no projects have been created yet
+    setCreatedProjects([])
+    setSelectedProjectId("")
+    setSelectedRepo("")
+    setSelectedBranch("")
   }, [])
 
   const handleSelectProject = (projectId: string) => {
@@ -307,11 +302,15 @@ export default function NewAnalysisPage() {
               onChange={(e) => handleSelectProject(e.target.value)}
               className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold text-slate-900 cursor-pointer"
             >
-              {createdProjects.map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.name} &mdash; ({p.repository || p.name})
-                </option>
-              ))}
+              {createdProjects.length === 0 ? (
+                <option value="">No projects created yet &mdash; Create a project first</option>
+              ) : (
+                createdProjects.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} &mdash; ({p.repository || p.name})
+                  </option>
+                ))
+              )}
             </select>
           </div>
 
@@ -328,6 +327,23 @@ export default function NewAnalysisPage() {
               className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium"
             />
           </div>
+
+          {/* Empty Projects Alert Banner */}
+          {createdProjects.length === 0 && (
+            <div className="md:col-span-2 bg-amber-50/70 border border-amber-200/80 rounded-xl p-3.5 flex items-center justify-between mt-2">
+              <div className="flex items-center gap-2 text-xs text-amber-900 font-semibold">
+                <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                <span>No created projects found. Create your first project from repositories to run risk analysis.</span>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => window.location.href = "/dashboard/repositories"}
+                className="h-8 px-3 text-xs font-bold border-amber-300 text-amber-900 bg-white hover:bg-amber-100/60 rounded-lg cursor-pointer"
+              >
+                Create Project &rarr;
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
