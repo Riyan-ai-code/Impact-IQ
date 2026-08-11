@@ -14,8 +14,8 @@ import {
   Building2, 
   Shield, 
   Search,
-  MoreVertical,
-  FolderGit2
+  ChevronDown,
+  ArrowDown
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -39,18 +39,70 @@ interface Team {
   createdAt: string
 }
 
-const INITIAL_MOCK_MEMBER: TeamMember = {
-  id: "user-1",
-  name: "Riyan Shah",
-  email: "riyan@impactiq.dev",
-  role: "Owner",
-  status: "active",
-  joinedAt: "2026-06-01"
-}
+const DEFAULT_INITIAL_TEAMS: Team[] = [
+  {
+    id: "team-platform",
+    name: "Platform Engineering",
+    description: "Core platform microservices, infrastructure CI/CD pipelines, and deployment risk governance.",
+    lead: "Riyan Shah",
+    createdAt: "2026-06-01",
+    members: [
+      {
+        id: "m-1",
+        name: "Riyan Shah",
+        email: "riyan@impactiq.dev",
+        role: "Owner",
+        status: "active",
+        joinedAt: "2026-06-01"
+      },
+      {
+        id: "m-2",
+        name: "Arjun Dev",
+        email: "arjun@impactiq.dev",
+        role: "Admin",
+        status: "active",
+        joinedAt: "2026-06-10"
+      },
+      {
+        id: "m-3",
+        name: "Sarah Jenkins",
+        email: "sarah@impactiq.dev",
+        role: "Developer",
+        status: "active",
+        joinedAt: "2026-07-02"
+      }
+    ]
+  },
+  {
+    id: "team-devops",
+    name: "DevOps Core",
+    description: "Kubernetes GitOps pipelines, container security, and cloud infrastructure.",
+    lead: "Arjun Dev",
+    createdAt: "2026-06-15",
+    members: [
+      {
+        id: "m-2",
+        name: "Arjun Dev",
+        email: "arjun@impactiq.dev",
+        role: "Owner",
+        status: "active",
+        joinedAt: "2026-06-15"
+      },
+      {
+        id: "m-1",
+        name: "Riyan Shah",
+        email: "riyan@impactiq.dev",
+        role: "Admin",
+        status: "active",
+        joinedAt: "2026-06-15"
+      }
+    ]
+  }
+]
 
 export default function TeamPage() {
-  const [teams, setTeams] = useState<Team[]>([])
-  const [activeTeamId, setActiveTeamId] = useState<string | null>(null)
+  const [teams, setTeams] = useState<Team[]>(DEFAULT_INITIAL_TEAMS)
+  const [activeTeamId, setActiveTeamId] = useState<string | null>("team-platform")
   
   // Modals state
   const [isCreateTeamModalOpen, setIsCreateTeamModalOpen] = useState(false)
@@ -59,7 +111,6 @@ export default function TeamPage() {
   // Create Team Form
   const [teamName, setTeamName] = useState("")
   const [teamDescription, setTeamDescription] = useState("")
-  const [defaultRole, setDefaultRole] = useState<"Developer" | "Admin" | "Viewer">("Developer")
 
   // Invite Member Form
   const [inviteEmail, setInviteEmail] = useState("")
@@ -74,14 +125,19 @@ export default function TeamPage() {
     if (saved) {
       try {
         const parsed: Team[] = JSON.parse(saved)
-        setTeams(parsed)
         if (parsed.length > 0) {
+          setTeams(parsed)
           setActiveTeamId(parsed[0].id)
+          return
         }
       } catch (err) {
         console.error("Error loading teams:", err)
       }
     }
+    // Fallback default initial teams
+    setTeams(DEFAULT_INITIAL_TEAMS)
+    setActiveTeamId(DEFAULT_INITIAL_TEAMS[0].id)
+    localStorage.setItem("impact_iq_teams", JSON.stringify(DEFAULT_INITIAL_TEAMS))
   }, [])
 
   const saveTeamsToStorage = (updatedTeams: Team[]) => {
@@ -97,7 +153,16 @@ export default function TeamPage() {
       name: teamName.trim(),
       description: teamDescription.trim() || `Engineering team for ${teamName.trim()}`,
       lead: "Riyan Shah",
-      members: [INITIAL_MOCK_MEMBER],
+      members: [
+        {
+          id: "m-" + Date.now(),
+          name: "Riyan Shah",
+          email: "riyan@impactiq.dev",
+          role: "Owner",
+          status: "active",
+          joinedAt: new Date().toISOString().split("T")[0]
+        }
+      ],
       createdAt: new Date().toISOString()
     }
 
@@ -172,6 +237,13 @@ export default function TeamPage() {
     m.role.toLowerCase().includes(searchQuery.toLowerCase())
   ) : []
 
+  const scrollToMembersSection = () => {
+    const el = document.getElementById("team-members-section")
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth" })
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -184,7 +256,7 @@ export default function TeamPage() {
         <Button
           variant="brand"
           onClick={() => setIsCreateTeamModalOpen(true)}
-          className="h-10 text-xs font-bold bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-lg flex items-center gap-2 shadow-sm transition-all duration-150"
+          className="h-10 text-xs font-bold bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-lg flex items-center gap-2 shadow-sm transition-all duration-150 cursor-pointer"
         >
           <Building2 className="w-4 h-4" />
           Create New Team
@@ -199,7 +271,7 @@ export default function TeamPage() {
             </div>
             <p className="text-xs font-semibold text-emerald-900">{successMsg}</p>
           </div>
-          <button onClick={() => setSuccessMsg(null)} className="text-emerald-500 hover:text-emerald-700">
+          <button onClick={() => setSuccessMsg(null)} className="text-emerald-500 hover:text-emerald-700 cursor-pointer">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -222,7 +294,7 @@ export default function TeamPage() {
           <Button
             variant="brand"
             onClick={() => setIsCreateTeamModalOpen(true)}
-            className="px-6 h-11 text-xs font-bold bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-lg flex items-center gap-2 transition-all duration-150 shadow-md"
+            className="px-6 h-11 text-xs font-bold bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-lg flex items-center gap-2 transition-all duration-150 shadow-md cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Create Your First Team
@@ -238,33 +310,66 @@ export default function TeamPage() {
                 <Building2 className="w-5 h-5" />
               </div>
               <div className="text-left">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Active Team</span>
-                <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Active Team</span>
+                <div className="relative">
                   <select
                     value={activeTeamId || ""}
                     onChange={(e) => setActiveTeamId(e.target.value)}
-                    className="text-sm font-bold text-slate-900 bg-transparent border-none p-0 focus:outline-none cursor-pointer pr-4"
+                    className="text-sm font-bold text-slate-900 bg-transparent border-none p-0 focus:outline-none cursor-pointer pr-6 appearance-none"
                   >
                     {teams.map((t) => (
                       <option key={t.id} value={t.id}>{t.name}</option>
                     ))}
                   </select>
+                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              {/* Clickable Team Member Avatars Stack inside header */}
+              {activeTeam && (
+                <button
+                  onClick={scrollToMembersSection}
+                  className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-indigo-50/60 hover:border-indigo-200 transition-all cursor-pointer group shadow-2xs"
+                  title="Click to view team members"
+                >
+                  <div className="flex -space-x-2 overflow-hidden">
+                    {activeTeam.members.slice(0, 4).map((m, idx) => (
+                      <div
+                        key={m.id}
+                        className={cn(
+                          "inline-flex h-6 w-6 rounded-full ring-2 ring-white text-white font-bold items-center justify-center text-[9px] shadow-xs",
+                          idx === 0 ? "bg-indigo-600" : idx === 1 ? "bg-purple-600" : idx === 2 ? "bg-blue-600" : "bg-emerald-600"
+                        )}
+                      >
+                        {m.name.charAt(0).toUpperCase()}
+                      </div>
+                    ))}
+                    {activeTeam.members.length > 4 && (
+                      <div className="inline-flex h-6 w-6 rounded-full ring-2 ring-white bg-slate-200 text-slate-700 font-bold items-center justify-center text-[9px]">
+                        +{activeTeam.members.length - 4}
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-xs font-bold text-indigo-600 group-hover:underline flex items-center gap-1 pr-0.5">
+                    {activeTeam.members.length} Members
+                  </span>
+                </button>
+              )}
+
               <Button
                 variant="outline"
                 onClick={() => setIsInviteMemberModalOpen(true)}
-                className="h-9 px-4 text-xs font-bold border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded-lg flex items-center gap-1.5"
+                className="h-9 px-4 text-xs font-bold border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded-lg flex items-center gap-1.5 cursor-pointer"
               >
                 <UserPlus className="w-4 h-4" />
                 Invite Member
               </Button>
+
               <button
                 onClick={() => activeTeamId && handleDeleteTeam(activeTeamId)}
-                className="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                className="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                 title="Delete Active Team"
               >
                 <Trash2 className="w-4 h-4" />
@@ -276,20 +381,56 @@ export default function TeamPage() {
           {activeTeam && (
             <div className="space-y-5">
               <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm space-y-4 text-left">
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h2 className="text-base font-bold text-slate-900">{activeTeam.name}</h2>
-                    <p className="text-xs text-slate-500 mt-0.5">{activeTeam.description}</p>
+                    <div className="flex items-center gap-2">
+                      <Building2 className="w-5 h-5 text-indigo-600" />
+                      <h2 className="text-base font-bold text-slate-900">{activeTeam.name}</h2>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-1">{activeTeam.description}</p>
                   </div>
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600">
-                    {activeTeam.members.length} Members
-                  </span>
+
+                  {/* Clickable Team Member Avatars Stack */}
+                  <button
+                    onClick={scrollToMembersSection}
+                    className="flex items-center gap-3 p-2.5 rounded-xl border border-indigo-100 bg-indigo-50/40 hover:bg-indigo-50 hover:border-indigo-200 transition-all cursor-pointer shadow-sm group"
+                    title="Click to view team members"
+                  >
+                    <div className="flex -space-x-2 overflow-hidden">
+                      {activeTeam.members.slice(0, 4).map((m, idx) => (
+                        <div
+                          key={m.id}
+                          className={cn(
+                            "inline-flex h-8 w-8 rounded-full ring-2 ring-white text-white font-bold items-center justify-center text-xs shadow-sm",
+                            idx === 0 ? "bg-indigo-600" : idx === 1 ? "bg-purple-600" : idx === 2 ? "bg-blue-600" : "bg-emerald-600"
+                          )}
+                        >
+                          {m.name.charAt(0).toUpperCase()}
+                        </div>
+                      ))}
+                      {activeTeam.members.length > 4 && (
+                        <div className="inline-flex h-8 w-8 rounded-full ring-2 ring-white bg-slate-200 text-slate-700 font-bold items-center justify-center text-xs">
+                          +{activeTeam.members.length - 4}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-left pr-1">
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block">Team Members</span>
+                      <span className="text-xs font-bold text-indigo-600 group-hover:underline flex items-center gap-1">
+                        {activeTeam.members.length} Members
+                        <ArrowDown className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
+                  </button>
                 </div>
               </div>
 
               {/* Members Section Header */}
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold text-slate-800">Team Members ({filteredMembers.length})</h3>
+              <div id="team-members-section" className="flex items-center justify-between pt-2">
+                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <Users className="w-4 h-4 text-indigo-600" />
+                  Team Members ({filteredMembers.length})
+                </h3>
                 <div className="relative">
                   <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
@@ -358,7 +499,7 @@ export default function TeamPage() {
                           {member.role !== "Owner" && (
                             <button
                               onClick={() => activeTeam && handleRemoveMember(activeTeam.id, member.id)}
-                              className="text-slate-400 hover:text-rose-600 transition-colors p-1"
+                              className="text-slate-400 hover:text-rose-600 transition-colors p-1 cursor-pointer"
                               title="Remove Member"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -386,7 +527,7 @@ export default function TeamPage() {
                 </div>
                 <h3 className="text-sm font-bold text-slate-900">Create Engineering Team</h3>
               </div>
-              <button onClick={() => setIsCreateTeamModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-900">
+              <button onClick={() => setIsCreateTeamModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-900 cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -418,10 +559,10 @@ export default function TeamPage() {
             </div>
 
             <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <Button variant="outline" onClick={() => setIsCreateTeamModalOpen(false)} className="h-9 px-4 text-xs font-semibold">
+              <Button variant="outline" onClick={() => setIsCreateTeamModalOpen(false)} className="h-9 px-4 text-xs font-semibold cursor-pointer">
                 Cancel
               </Button>
-              <Button variant="brand" onClick={handleCreateTeam} className="h-9 px-5 text-xs font-bold bg-[#4f46e5] text-white hover:bg-[#4338ca]">
+              <Button variant="brand" onClick={handleCreateTeam} className="h-9 px-5 text-xs font-bold bg-[#4f46e5] text-white hover:bg-[#4338ca] cursor-pointer">
                 Create Team
               </Button>
             </div>
@@ -440,7 +581,7 @@ export default function TeamPage() {
                 </div>
                 <h3 className="text-sm font-bold text-slate-900">Invite Team Member</h3>
               </div>
-              <button onClick={() => setIsInviteMemberModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-900">
+              <button onClick={() => setIsInviteMemberModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-900 cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -475,7 +616,7 @@ export default function TeamPage() {
                 <select
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value as any)}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white cursor-pointer"
                 >
                   <option value="Admin">Admin (Full project & analysis management)</option>
                   <option value="Maintainer">Maintainer (Manage projects & triggers)</option>
@@ -486,10 +627,10 @@ export default function TeamPage() {
             </div>
 
             <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <Button variant="outline" onClick={() => setIsInviteMemberModalOpen(false)} className="h-9 px-4 text-xs font-semibold">
+              <Button variant="outline" onClick={() => setIsInviteMemberModalOpen(false)} className="h-9 px-4 text-xs font-semibold cursor-pointer">
                 Cancel
               </Button>
-              <Button variant="brand" onClick={handleInviteMember} className="h-9 px-5 text-xs font-bold bg-[#4f46e5] text-white hover:bg-[#4338ca]">
+              <Button variant="brand" onClick={handleInviteMember} className="h-9 px-5 text-xs font-bold bg-[#4f46e5] text-white hover:bg-[#4338ca] cursor-pointer">
                 Send Invitation
               </Button>
             </div>
