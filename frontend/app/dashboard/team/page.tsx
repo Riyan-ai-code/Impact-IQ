@@ -15,8 +15,7 @@ import {
   Shield, 
   Search,
   ChevronDown,
-  ArrowDown,
-  ExternalLink
+  ArrowDown
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -123,7 +122,25 @@ export default function TeamPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
 
-  useEffect(() => {
+  const fetchTeamsFromBackend = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/api/teams")
+      if (res.ok) {
+        const data = await res.json()
+        if (Array.isArray(data) && data.length > 0) {
+          setTeams(data)
+          if (!activeTeamId || !data.find((t: any) => t.id === activeTeamId)) {
+            setActiveTeamId(data[0].id)
+          }
+          localStorage.setItem("impact_iq_teams", JSON.stringify(data))
+          return
+        }
+      }
+    } catch (err) {
+      console.warn("Backend teams API offline, using local storage cache:", err)
+    }
+
+    // Fallback to local storage
     const saved = localStorage.getItem("impact_iq_teams")
     if (saved) {
       try {
@@ -134,12 +151,16 @@ export default function TeamPage() {
           return
         }
       } catch (err) {
-        console.error("Error loading teams:", err)
+        console.error("Error loading saved teams:", err)
       }
     }
+
     setTeams(DEFAULT_INITIAL_TEAMS)
     setActiveTeamId(DEFAULT_INITIAL_TEAMS[0].id)
-    localStorage.setItem("impact_iq_teams", JSON.stringify(DEFAULT_INITIAL_TEAMS))
+  }
+
+  useEffect(() => {
+    fetchTeamsFromBackend()
   }, [])
 
   const saveTeamsToStorage = (updatedTeams: Team[]) => {
@@ -147,7 +168,7 @@ export default function TeamPage() {
     localStorage.setItem("impact_iq_teams", JSON.stringify(updatedTeams))
   }
 
-  const handleCreateTeam = () => {
+  const handleCreateTeam = async () => {
     if (!teamName.trim()) return
 
     const newTeam: Team = {
@@ -166,6 +187,19 @@ export default function TeamPage() {
         }
       ],
       createdAt: new Date().toISOString()
+    }
+
+    try {
+      await fetch("http://localhost:8000/api/teams", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: teamName.trim(),
+          description: teamDescription.trim()
+        })
+      })
+    } catch (err) {
+      console.warn("Could not post team to backend server:", err)
     }
 
     const updated = [newTeam, ...teams]
@@ -194,6 +228,20 @@ export default function TeamPage() {
       role: inviteRole,
       status: "pending",
       joinedAt: new Date().toISOString().split("T")[0]
+    }
+
+    try {
+      await fetch(`http://localhost:8000/api/teams/${activeTeamId}/members`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: inviteEmail.trim(),
+          name: inviteName.trim() || inviteEmail.split("@")[0],
+          role: inviteRole
+        })
+      })
+    } catch (err) {
+      console.warn("Could not sync member with backend server:", err)
     }
 
     const updated = teams.map(t => {
@@ -238,7 +286,15 @@ export default function TeamPage() {
     }
   }
 
-  const handleRemoveMember = (teamId: string, memberId: string) => {
+  const handleRemoveMember = async (teamId: string, memberId: string) => {
+    try {
+      await fetch(`http://localhost:8000/api/teams/${teamId}/members/${memberId}`, {
+        method: "DELETE"
+      })
+    } catch (err) {
+      console.warn("Backend remove error:", err)
+    }
+
     const updated = teams.map(t => {
       if (t.id === teamId) {
         return {
@@ -341,12 +397,12 @@ export default function TeamPage() {
                 <Building2 className="w-5 h-5" />
               </div>
               <div className="text-left">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">ACTIVE TEAM</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">ACTIVE TEAM</span>
                 <div className="relative inline-flex items-center">
                   <select
                     value={activeTeamId || ""}
                     onChange={(e) => setActiveTeamId(e.target.value)}
-                    className="text-sm font-bold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer pr-8 appearance-none shadow-2xs"
+                    className="text-xs md:text-sm font-bold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer pr-8 appearance-none shadow-2xs min-w-[200px]"
                   >
                     {teams.map((t) => (
                       <option key={t.id} value={t.id}>{t.name}</option>

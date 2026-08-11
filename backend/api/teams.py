@@ -15,8 +15,67 @@ class MemberInvitePayload(BaseModel):
     name: Optional[str] = None
     role: Optional[str] = "Developer"
 
-# In-memory storage for teams
-teams_db: Dict[str, Dict[str, Any]] = {}
+# In-memory storage for teams (synced across all connected browsers)
+teams_db: Dict[str, Dict[str, Any]] = {
+    "team-platform": {
+        "id": "team-platform",
+        "name": "Platform Engineering",
+        "description": "Core platform microservices, infrastructure CI/CD pipelines, and deployment risk governance.",
+        "lead": "Riyan Shah",
+        "createdAt": "2026-06-01",
+        "members": [
+            {
+                "id": "m-1",
+                "name": "Riyan Shah",
+                "email": "riyan@impactiq.dev",
+                "role": "Owner",
+                "status": "active",
+                "joinedAt": "2026-06-01"
+            },
+            {
+                "id": "m-2",
+                "name": "Arjun Dev",
+                "email": "arjun@impactiq.dev",
+                "role": "Admin",
+                "status": "active",
+                "joinedAt": "2026-06-10"
+            },
+            {
+                "id": "m-3",
+                "name": "Sarah Jenkins",
+                "email": "sarah@impactiq.dev",
+                "role": "Developer",
+                "status": "active",
+                "joinedAt": "2026-07-02"
+            }
+        ]
+    },
+    "team-devops": {
+        "id": "team-devops",
+        "name": "DevOps Core",
+        "description": "Kubernetes GitOps pipelines, container security, and cloud infrastructure.",
+        "lead": "Arjun Dev",
+        "createdAt": "2026-06-15",
+        "members": [
+            {
+                "id": "m-2",
+                "name": "Arjun Dev",
+                "email": "arjun@impactiq.dev",
+                "role": "Owner",
+                "status": "active",
+                "joinedAt": "2026-06-15"
+            },
+            {
+                "id": "m-1",
+                "name": "Riyan Shah",
+                "email": "riyan@impactiq.dev",
+                "role": "Admin",
+                "status": "active",
+                "joinedAt": "2026-06-15"
+            }
+        ]
+    }
+}
 
 @router.get("/")
 def list_teams():
