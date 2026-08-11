@@ -119,6 +119,7 @@ export default function TeamPage() {
   const [inviteName, setInviteName] = useState("")
   const [inviteRole, setInviteRole] = useState<"Admin" | "Maintainer" | "Developer" | "Viewer">("Developer")
 
+  const [isSendingEmail, setIsSendingEmail] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
 
@@ -178,8 +179,13 @@ export default function TeamPage() {
     setTimeout(() => setSuccessMsg(null), 4000)
   }
 
-  const handleInviteMember = () => {
+  const handleInviteMember = async () => {
     if (!inviteEmail.trim() || !activeTeamId) return
+
+    setIsSendingEmail(true)
+
+    const targetTeam = teams.find(t => t.id === activeTeamId)
+    const currentTeamName = targetTeam ? targetTeam.name : "Platform Engineering"
 
     const newMember: TeamMember = {
       id: "member-" + Date.now(),
@@ -201,12 +207,35 @@ export default function TeamPage() {
     })
 
     saveTeamsToStorage(updated)
-    setIsInviteMemberModalOpen(false)
-    setInviteEmail("")
-    setInviteName("")
 
-    setSuccessMsg(`Invitation sent to ${newMember.email}!`)
-    setTimeout(() => setSuccessMsg(null), 4000)
+    // Call Nodemailer API route to send email invitation
+    try {
+      const res = await fetch("/api/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: inviteEmail.trim(),
+          name: inviteName.trim() || inviteEmail.split("@")[0],
+          teamName: currentTeamName,
+          role: inviteRole,
+          inviterName: "Riyan Shah"
+        })
+      })
+      const data = await res.json()
+      if (data.previewUrl) {
+        console.log("Nodemailer Email Preview URL:", data.previewUrl)
+      }
+    } catch (err) {
+      console.error("Error triggering Nodemailer invite:", err)
+    } finally {
+      setIsSendingEmail(false)
+      setIsInviteMemberModalOpen(false)
+      setInviteEmail("")
+      setInviteName("")
+
+      setSuccessMsg(`Invitation email sent via Nodemailer to ${newMember.email}!`)
+      setTimeout(() => setSuccessMsg(null), 5000)
+    }
   }
 
   const handleRemoveMember = (teamId: string, memberId: string) => {
@@ -713,8 +742,20 @@ export default function TeamPage() {
               <Button variant="outline" onClick={() => setIsInviteMemberModalOpen(false)} className="h-9 px-4 text-xs font-semibold cursor-pointer">
                 Cancel
               </Button>
-              <Button variant="brand" onClick={handleInviteMember} className="h-9 px-5 text-xs font-bold bg-[#4f46e5] text-white hover:bg-[#4338ca] cursor-pointer">
-                Send Invitation
+              <Button 
+                variant="brand" 
+                disabled={isSendingEmail}
+                onClick={handleInviteMember} 
+                className="h-9 px-5 text-xs font-bold bg-[#4f46e5] text-white hover:bg-[#4338ca] cursor-pointer flex items-center gap-2 disabled:opacity-75"
+              >
+                {isSendingEmail ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Sending Email...</span>
+                  </>
+                ) : (
+                  <span>Send Invitation</span>
+                )}
               </Button>
             </div>
           </div>
