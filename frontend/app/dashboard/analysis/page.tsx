@@ -49,13 +49,63 @@ interface ManualPromptResponse {
   createdAt: string
 }
 
+interface Project {
+  id: string
+  name: string
+  description: string
+  repository: string
+  branch: string
+  team?: string
+  createdAt?: string
+}
+
 export default function NewAnalysisPage() {
   // Mode selection: "auto" | "manual"
   const [analysisMode, setAnalysisMode] = useState<"auto" | "manual">("auto")
 
-  // Target Repository & Branch
-  const [selectedRepo, setSelectedRepo] = useState("Riyanshah / payment-service")
-  const [selectedBranch, setSelectedBranch] = useState("PR #42 - Add Stripe Webhook Handler")
+  // Created Projects state
+  const [createdProjects, setCreatedProjects] = useState<Project[]>([])
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("")
+  const [selectedRepo, setSelectedRepo] = useState<string>("Riyanshah / payment-service")
+  const [selectedBranch, setSelectedBranch] = useState<string>("main")
+
+  useEffect(() => {
+    const savedProjects = localStorage.getItem("impact_iq_projects")
+    if (savedProjects) {
+      try {
+        const parsed: Project[] = JSON.parse(savedProjects)
+        if (parsed.length > 0) {
+          setCreatedProjects(parsed)
+          setSelectedProjectId(parsed[0].id)
+          setSelectedRepo(parsed[0].repository || parsed[0].name)
+          setSelectedBranch(parsed[0].branch || "main")
+          return
+        }
+      } catch (e) {
+        console.error("Error reading created projects:", e)
+      }
+    }
+
+    // Default fallbacks if no projects created yet
+    const defaults: Project[] = [
+      { id: "p-1", name: "Payment Platform", description: "", repository: "Riyanshah / payment-service", branch: "PR #42 - Add Stripe Webhook Handler" },
+      { id: "p-2", name: "Auth Service", description: "", repository: "Riyanshah / auth-service", branch: "main" },
+      { id: "p-3", name: "Order Service", description: "", repository: "Riyanshah / order-service", branch: "develop" }
+    ]
+    setCreatedProjects(defaults)
+    setSelectedProjectId(defaults[0].id)
+    setSelectedRepo(defaults[0].repository)
+    setSelectedBranch(defaults[0].branch)
+  }, [])
+
+  const handleSelectProject = (projectId: string) => {
+    setSelectedProjectId(projectId)
+    const target = createdProjects.find(p => p.id === projectId)
+    if (target) {
+      setSelectedRepo(target.repository || target.name)
+      setSelectedBranch(target.branch || "main")
+    }
+  }
 
   // Manual Mode Custom Prompt State
   const [userPrompt, setUserPrompt] = useState(
@@ -236,41 +286,47 @@ export default function NewAnalysisPage() {
 
       </div>
 
-      {/* Target Repository & Branch Bar */}
+      {/* Target Project, Repository & Branch Bar */}
       <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm space-y-4 text-left">
-        <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-          <Github className="w-4 h-4 text-slate-700" />
-          Target Repository &amp; Branch
-        </h3>
+        <div className="flex items-center justify-between">
+          <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+            <Github className="w-4 h-4 text-slate-700" />
+            Target Project &amp; Repository
+          </h3>
+          <span className="text-[10px] text-slate-400 font-semibold">Loaded from Created Projects</span>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Created Projects Select */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">Repository</label>
+            <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">
+              Select Created Project <span className="text-rose-500">*</span>
+            </label>
             <select
-              value={selectedRepo}
-              onChange={(e) => setSelectedRepo(e.target.value)}
-              className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-semibold cursor-pointer"
+              value={selectedProjectId}
+              onChange={(e) => handleSelectProject(e.target.value)}
+              className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold text-slate-900 cursor-pointer"
             >
-              <option value="Riyanshah / payment-service">Riyanshah / payment-service</option>
-              <option value="Riyanshah / auth-service">Riyanshah / auth-service</option>
-              <option value="Riyanshah / order-service">Riyanshah / order-service</option>
+              {createdProjects.map(p => (
+                <option key={p.id} value={p.id}>
+                  {p.name} &mdash; ({p.repository || p.name})
+                </option>
+              ))}
             </select>
           </div>
 
+          {/* Target Branch or PR Select */}
           <div className="space-y-1.5">
             <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1">
-              <GitBranch className="w-3.5 h-3.5 text-slate-400" /> Branch or PR
+              <GitBranch className="w-3.5 h-3.5 text-slate-400" /> Target Branch or PR
             </label>
-            <select
+            <input
+              type="text"
               value={selectedBranch}
               onChange={(e) => setSelectedBranch(e.target.value)}
-              className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-semibold cursor-pointer"
-            >
-              <option value="PR #42 - Add Stripe Webhook Handler">PR #42 - Add Stripe Webhook Handler</option>
-              <option value="PR #39 - Upgrade Node.js & Dockerfile">PR #39 - Upgrade Node.js &amp; Dockerfile</option>
-              <option value="main">main (Base Branch)</option>
-              <option value="develop">develop</option>
-            </select>
+              placeholder="e.g. main or PR #42"
+              className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium"
+            />
           </div>
         </div>
       </div>
