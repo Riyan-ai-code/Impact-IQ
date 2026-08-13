@@ -111,9 +111,87 @@ export default function RepositoriesPage() {
   useEffect(() => {
     const savedToken = localStorage.getItem("github_token")
     setToken(savedToken)
-    if (!savedToken) {
+
+    const FEATURED_REAL_WORLD_REPOS: Repository[] = [
+      {
+        name: "react",
+        owner: "facebook",
+        isPrivate: false,
+        language: "JavaScript / TypeScript",
+        description: "The library for web and native user interfaces maintained by Meta & open source community.",
+        branch: "main"
+      },
+      {
+        name: "vscode",
+        owner: "microsoft",
+        isPrivate: false,
+        language: "TypeScript",
+        description: "Visual Studio Code editor open source repository maintained by Microsoft.",
+        branch: "main"
+      },
+      {
+        name: "guava",
+        owner: "google",
+        isPrivate: false,
+        language: "Java",
+        description: "Google core libraries for Java: collections, caching, primitives, concurrency, and I/O.",
+        branch: "master"
+      },
+      {
+        name: "TypeScript",
+        owner: "microsoft",
+        isPrivate: false,
+        language: "TypeScript",
+        description: "TypeScript compiler and language service extending JavaScript for large applications.",
+        branch: "main"
+      },
+      {
+        name: "jax",
+        owner: "google",
+        isPrivate: false,
+        language: "Python",
+        description: "Google high-performance machine learning library: autodiff, vectorization, JIT compilation.",
+        branch: "main"
+      },
+      {
+        name: "react-native",
+        owner: "facebook",
+        isPrivate: false,
+        language: "C++ / JavaScript",
+        description: "Cross-platform mobile application framework maintained by Meta & community.",
+        branch: "main"
+      }
+    ]
+
+    async function loadRepos() {
+      if (savedToken) {
+        try {
+          const res = await fetch("http://localhost:8000/api/auth/github/repos", {
+            headers: { Authorization: `Bearer ${savedToken}` }
+          })
+          if (res.ok) {
+            const data = await res.json()
+            setRepositories(data.map((r: any) => ({
+              name: r.name,
+              owner: r.owner?.login || "connected",
+              isPrivate: r.private,
+              language: r.language || "TypeScript",
+              description: r.description || "GitHub repository",
+              branch: r.default_branch || "main"
+            })))
+          } else {
+            setRepositories(FEATURED_REAL_WORLD_REPOS)
+          }
+        } catch (e) {
+          setRepositories(FEATURED_REAL_WORLD_REPOS)
+        }
+      } else {
+        setRepositories(FEATURED_REAL_WORLD_REPOS)
+      }
       setLoading(false)
     }
+
+    loadRepos()
 
     async function loadTeams() {
       try {
@@ -299,32 +377,31 @@ export default function RepositoriesPage() {
     )
   }
 
-  if (!token) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 border border-dashed border-slate-200 rounded-2xl bg-white space-y-6">
-        <div className="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700">
-          <Github className="w-8 h-8" />
-        </div>
-        <div className="text-center space-y-2">
-          <h3 className="text-lg font-bold text-slate-900">Connect your GitHub Account</h3>
-          <p className="text-xs text-slate-500 max-w-sm">
-            Connect your GitHub account to import repositories and start engineering analysis on your codebases.
-          </p>
-        </div>
-        <Button
-          variant="brand"
-          onClick={handleConnectGithub}
-          className="px-6 h-11 text-xs font-bold bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-lg flex items-center gap-2 transition-all duration-150 shadow-sm"
-        >
-          <Github className="w-4 h-4 fill-white" />
-          Connect GitHub
-        </Button>
-      </div>
-    )
-  }
-
   return (
     <div className="space-y-6">
+      {!token && (
+        <div className="bg-indigo-950/5 border border-indigo-200/80 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-left shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold flex-shrink-0 shadow-md">
+              <Github className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-slate-900">Featured Real-World Repositories (Google, Meta/React, Microsoft)</h4>
+              <p className="text-[11px] text-slate-500">
+                Explore open-source repositories or click below to connect your own GitHub account.
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="brand"
+            onClick={handleConnectGithub}
+            className="h-9 px-4 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl flex items-center gap-2 shadow-sm transition-all flex-shrink-0 cursor-pointer"
+          >
+            <Github className="w-4 h-4 fill-white" />
+            <span>Connect My GitHub</span>
+          </Button>
+        </div>
+      )}
       {error && (
         <div className="bg-rose-50 border border-rose-200 rounded-xl p-4 flex items-center justify-between text-left">
           <div className="flex items-center gap-3">
