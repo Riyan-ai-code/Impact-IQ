@@ -15,7 +15,6 @@ import {
   Settings, 
   Users, 
   Bell, 
-  HelpCircle,
   BookOpen,
   ChevronDown,
   LogOut
@@ -42,6 +41,11 @@ export default function Sidebar() {
     avatar: "",
     role: ""
   })
+
+  // Team management state
+  const [teams, setTeams] = useState<any[]>([])
+  const [activeTeamId, setActiveTeamId] = useState<string | null>(null)
+  const [userRole, setUserRole] = useState<string>("Owner")
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -129,6 +133,57 @@ export default function Sidebar() {
     fetchUserProfile()
   }, [])
 
+  const fetchTeams = async () => {
+    try {
+      const res = await fetch("http://localhost:8000/api/teams")
+      if (res.ok) {
+        const data = await res.json()
+        if (Array.isArray(data)) {
+          setTeams(data)
+          if (data.length > 0 && !activeTeamId) {
+            setActiveTeamId(data[0].id)
+          }
+          return
+        }
+      }
+    } catch (e) {}
+
+    const saved = localStorage.getItem("impact_iq_teams")
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed)) {
+          setTeams(parsed)
+          if (parsed.length > 0 && !activeTeamId) {
+            setActiveTeamId(parsed[0].id)
+          }
+          return
+        }
+      } catch (e) {}
+    }
+
+    setTeams([])
+    setActiveTeamId(null)
+  }
+
+  useEffect(() => {
+    fetchTeams()
+  }, [])
+
+  const activeTeam = teams.find(t => t.id === activeTeamId) || (teams.length > 0 ? teams[0] : null)
+
+  const handleSelectTeam = (teamId: string) => {
+    setActiveTeamId(teamId)
+    const selected = teams.find(t => t.id === teamId)
+    if (selected) {
+      const currentMember = selected.members?.find((m: any) => m.email === userProfile.email || m.name === userProfile.name)
+      if (currentMember) {
+        setUserRole(currentMember.role)
+      }
+    }
+    setIsProfileMenuOpen(false)
+  }
+
   const sections = [
     {
       title: "Analysis",
@@ -213,7 +268,7 @@ export default function Sidebar() {
         ))}
       </div>
 
-      {/* Bottom Profile Block */}
+      {/* Bottom Profile & Team Block */}
       <div className="p-4 border-t border-white/5 bg-[#050912] flex-shrink-0 relative">
         {!userProfile.isConnected ? (
           <button
@@ -228,8 +283,8 @@ export default function Sidebar() {
               onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
               className="flex items-center justify-between p-3 rounded-xl bg-slate-900/50 border border-white/10 hover:bg-slate-900/80 transition-colors cursor-pointer group"
             >
-              <div className="flex items-center gap-2.5">
-                <div className="relative">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="relative flex-shrink-0">
                   <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs border border-white/10 overflow-hidden">
                     <img 
                       src={userProfile.avatar} 
@@ -243,28 +298,89 @@ export default function Sidebar() {
                   </div>
                   <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-[#050912]" />
                 </div>
-                <div className="text-left leading-tight">
-                  <h4 className="text-xs font-bold text-white truncate max-w-[100px]">{userProfile.name}</h4>
-                  <span className="text-[10px] text-gray-400">{userProfile.role}</span>
+
+                <div className="text-left leading-tight min-w-0 flex-1">
+                  <h4 className="text-xs font-bold text-white truncate max-w-[120px]">{userProfile.name}</h4>
+                  {activeTeam ? (
+                    <span className="text-[10px] text-indigo-400 font-semibold block truncate max-w-[120px]">
+                      {activeTeam.name} • {userRole}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-amber-400 font-bold block truncate">
+                      No Team Connected
+                    </span>
+                  )}
                 </div>
               </div>
-              <ChevronDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-white transition-colors" />
+              <ChevronDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-white transition-colors flex-shrink-0 ml-1" />
             </div>
 
-            {/* Sidebar Profile Popover */}
+            {/* Sidebar Profile & Team Switcher Popover */}
             {isProfileMenuOpen && (
-              <div className="absolute bottom-full left-4 mb-2 w-56 bg-[#0a0f1d] border border-white/10 rounded-xl shadow-2xl py-2 text-left z-50 animate-in fade-in duration-150">
-                <div className="px-4 py-2 border-b border-white/5">
+              <div className="absolute bottom-full left-4 mb-2 w-60 bg-[#0a0f1d] border border-white/10 rounded-xl shadow-2xl py-3 text-left z-50 animate-in fade-in duration-150 space-y-2">
+                <div className="px-4 pb-2 border-b border-white/5 space-y-0.5">
                   <p className="text-xs font-bold text-white">{userProfile.name}</p>
-                  <p className="text-[10px] text-gray-400 truncate">{userProfile.email}</p>
+                  <p className="text-[10px] text-gray-400 truncate">{userProfile.email || "dev@impactiq.dev"}</p>
                 </div>
-                <button
-                  onClick={() => nhostSignOut()}
-                  className="w-full px-4 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 flex items-center gap-2 cursor-pointer mt-1"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Sign Out
-                </button>
+
+                {/* Team Switcher Section */}
+                <div className="px-4 py-1 space-y-1.5">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
+                    ACTIVE TEAMS
+                  </span>
+
+                  {teams.length === 0 ? (
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-2.5 space-y-2 text-center">
+                      <p className="text-[10px] text-amber-300 font-bold">No Team Connected</p>
+                      <button
+                        onClick={() => { setIsProfileMenuOpen(false); router.push("/dashboard/team"); }}
+                        className="w-full py-1 text-[10px] font-bold bg-amber-500 hover:bg-amber-600 text-slate-900 rounded-md cursor-pointer transition-colors"
+                      >
+                        + Create a Team
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-1 max-h-32 overflow-y-auto no-scrollbar">
+                      {teams.map((t: any) => {
+                        const isSelected = t.id === activeTeamId
+                        return (
+                          <button
+                            key={t.id}
+                            onClick={() => handleSelectTeam(t.id)}
+                            className={cn(
+                              "w-full px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center justify-between transition-colors cursor-pointer",
+                              isSelected 
+                                ? "bg-indigo-600 text-white" 
+                                : "text-gray-300 hover:bg-white/5 hover:text-white"
+                            )}
+                          >
+                            <span className="truncate">{t.name}</span>
+                            {isSelected && <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded text-white font-mono">Active</span>}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-2 border-t border-white/5 px-2">
+                  <button
+                    onClick={() => { setIsProfileMenuOpen(false); router.push("/dashboard/team"); }}
+                    className="w-full px-3 py-1.5 text-xs font-semibold text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2 cursor-pointer"
+                  >
+                    <Users className="w-3.5 h-3.5 text-gray-400" />
+                    Manage Teams
+                  </button>
+
+                  <button
+                    onClick={() => nhostSignOut()}
+                    className="w-full px-3 py-1.5 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 rounded-lg flex items-center gap-2 cursor-pointer mt-0.5"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    Sign Out
+                  </button>
+                </div>
+
               </div>
             )}
           </div>
