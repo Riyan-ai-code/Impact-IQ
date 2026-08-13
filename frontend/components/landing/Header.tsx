@@ -37,18 +37,22 @@ export default function Header() {
           {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
 
-        <Link href="/dashboard">
-          <Button variant="ghost" className="text-gray-300 hover:text-white hover:bg-white/5">
-            Log in
-          </Button>
-        </Link>
+        <Button 
+          variant="ghost" 
+          onClick={() => window.location.href = "http://localhost:8000/api/auth/github/login"}
+          className="text-gray-300 hover:text-white hover:bg-white/5 cursor-pointer"
+        >
+          Log in
+        </Button>
 
-        <Link href="/dashboard">
-          <Button variant="brand" className="rounded-lg text-white font-medium flex items-center gap-1.5">
-            Get Started
-            <ArrowRight className="w-4 h-4" />
-          </Button>
-        </Link>
+        <Button 
+          variant="brand" 
+          onClick={() => window.location.href = "http://localhost:8000/api/auth/github/login"}
+          className="rounded-lg text-white font-medium flex items-center gap-1.5 cursor-pointer"
+        >
+          Get Started
+          <ArrowRight className="w-4 h-4" />
+        </Button>
       </div>
     </header>
   )

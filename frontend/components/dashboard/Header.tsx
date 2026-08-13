@@ -202,21 +202,12 @@ export default function Header({ onMenuClick }: HeaderProps) {
           </span>
         </button>
 
-        {/* Profile Section: Connected vs Not Connected */}
-        {!userProfile.isConnected ? (
-          <button
-            onClick={() => window.location.href = "http://localhost:8000/api/auth/github/login"}
-            className="h-9 px-4 text-xs font-bold bg-[#090d16] hover:bg-indigo-600 text-white rounded-xl flex items-center gap-2 shadow-sm transition-all duration-150 cursor-pointer"
+        {/* Profile Section */}
+        <div className="relative">
+          <div 
+            onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+            className="flex items-center gap-2.5 pl-3 border-l border-gray-200 hover:opacity-90 transition-opacity cursor-pointer"
           >
-            <Github className="w-4 h-4" />
-            <span>Connect GitHub</span>
-          </button>
-        ) : (
-          <div className="relative">
-            <div 
-              onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-              className="flex items-center gap-2.5 pl-3 border-l border-gray-200 hover:opacity-90 transition-opacity cursor-pointer"
-            >
               <div className="w-8 h-8 rounded-full overflow-hidden border border-indigo-200 bg-indigo-50 flex items-center justify-center text-indigo-700 font-bold text-xs">
                 <img 
                   src={userProfile.avatar} 
@@ -263,7 +254,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
               </div>
             )}
           </div>
-        )}
 
       </div>
     </header>

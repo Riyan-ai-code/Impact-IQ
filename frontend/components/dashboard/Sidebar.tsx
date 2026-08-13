@@ -349,19 +349,11 @@ export default function Sidebar() {
 
       {/* Bottom Profile & Team Block */}
       <div className="p-4 border-t border-white/5 bg-[#050912] flex-shrink-0 relative">
-        {!userProfile.isConnected ? (
-          <button
-            onClick={() => window.location.href = "http://localhost:8000/api/auth/github/login"}
-            className="w-full py-2.5 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+        <div>
+          <div 
+            onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+            className="flex items-center justify-between p-3 rounded-xl bg-slate-900/50 border border-white/10 hover:bg-slate-900/80 transition-colors cursor-pointer group"
           >
-            <span>Connect Account</span>
-          </button>
-        ) : (
-          <div>
-            <div 
-              onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-              className="flex items-center justify-between p-3 rounded-xl bg-slate-900/50 border border-white/10 hover:bg-slate-900/80 transition-colors cursor-pointer group"
-            >
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="relative flex-shrink-0">
                   <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs border border-white/10 overflow-hidden">
@@ -464,7 +456,6 @@ export default function Sidebar() {
               </div>
             )}
           </div>
-        )}
       </div>
     </aside>
   )
