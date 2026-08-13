@@ -1,7 +1,7 @@
 "use client"
 
 import { usePathname, useRouter } from "next/navigation"
-import { Menu, Sun, Moon, Bell, ChevronDown, LogOut, User, ShieldCheck } from "lucide-react"
+import { Menu, Sun, Moon, Bell, ChevronDown, LogOut, User, ShieldCheck, Github } from "lucide-react"
 import { useState, useEffect } from "react"
 import { nhostGetUser, nhostSignOut } from "@/services/nhostAuthService"
 
