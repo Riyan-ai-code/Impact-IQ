@@ -76,112 +76,179 @@ export default function DashboardHome() {
 
   return (
     <div className="flex flex-col items-center justify-between min-h-[calc(100vh-6rem)] py-6 select-none relative">
-      <div className="w-full max-w-5xl bg-white border border-gray-100 rounded-2xl p-8 md:p-12 shadow-[0_4px_24px_-4px_rgba(0,0,0,0.03)] flex flex-col items-center text-center space-y-8">
-        <div className="relative w-64 h-48 flex items-center justify-center">
-          <div className="absolute top-2 left-[55%] text-indigo-300 animate-pulse">
-            <svg className="w-3.5 h-3.5" viewBox="0 0 12 12" fill="currentColor">
-              <path d="M6 0L7.5 4.5L12 6L7.5 7.5L6 12L4.5 7.5L0 6L4.5 4.5Z" />
-            </svg>
-          </div>
-          <div className="absolute top-24 left-10 text-indigo-300 animate-pulse">
-            <svg className="w-3.5 h-3.5" viewBox="0 0 12 12" fill="currentColor">
-              <path d="M6 0L7.5 4.5L12 6L7.5 7.5L6 12L4.5 7.5L0 6L4.5 4.5Z" />
-            </svg>
-          </div>
-          <div className="absolute top-12 right-12 text-indigo-200">
-            <svg className="w-2.5 h-2.5" viewBox="0 0 12 12" fill="currentColor">
-              <path d="M6 0L7.5 4.5L12 6L7.5 7.5L6 12L4.5 7.5L0 6L4.5 4.5Z" />
-            </svg>
+      <div className="w-full max-w-5xl space-y-6 text-left">
+        {/* Header banner for Guest / Dashboard */}
+        <div className="bg-gradient-to-r from-indigo-950 via-slate-900 to-slate-950 border border-white/10 rounded-2xl p-6 md:p-8 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+          <div className="space-y-2 z-10 max-w-xl">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-300 text-[10px] font-bold uppercase tracking-wider">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Interactive Guest Workspace</span>
+            </div>
+            <h2 className="text-xl md:text-2xl font-bold tracking-tight">Example Demo Repositories</h2>
+            <p className="text-xs text-gray-300 leading-relaxed">
+              Explore live deployment risk analysis, PR impact scores, and service dependency maps on pre-loaded example microservices.
+            </p>
           </div>
 
-          <svg className="absolute left-6 top-8 w-16 h-10 text-slate-200" viewBox="0 0 64 40" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 32a10 10 0 0 1-2-19.8A12 12 0 0 1 38 10a10 10 0 0 1 17.8 8.8A8 8 0 0 1 52 32H18z" />
-          </svg>
+          <Button
+            variant="brand"
+            onClick={() => window.location.href = "/dashboard/analysis"}
+            className="h-11 px-5 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl flex items-center gap-2 shadow-lg transition-all flex-shrink-0 cursor-pointer z-10"
+          >
+            <Rocket className="w-4 h-4" />
+            <span>Run New Analysis</span>
+          </Button>
+        </div>
 
-          <svg className="absolute right-4 bottom-14 w-20 h-12 text-slate-200" viewBox="0 0 64 40" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M18 32a10 10 0 0 1-2-19.8A12 12 0 0 1 38 10a10 10 0 0 1 17.8 8.8A8 8 0 0 1 52 32H18z" />
-          </svg>
+        {/* Demo Repositories Grid */}
+        <div className="space-y-3">
+          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+            <GitBranch className="w-4 h-4 text-indigo-600" />
+            Sample Repositories Available for Risk Inspection
+          </h3>
 
-          <div className="relative w-28 h-28 rounded-full bg-gradient-to-tr from-indigo-100 to-indigo-200 flex items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
-            <svg className="w-16 h-16 text-indigo-500" viewBox="0 0 32 32" fill="currentColor">
-              <path d="M16 5C9.9 5 5 9.9 5 16C5 20.9 8.2 24.9 12.6 26.4C13.2 26.5 13.4 26.1 13.4 25.8C13.4 25.5 13.4 24.6 13.4 23.6C10.3 24.3 9.7 22.1 9.7 22.1C9.2 20.8 8.4 20.4 8.4 20.4C7.4 19.7 8.5 19.7 8.5 19.7C9.6 19.8 10.2 20.8 10.2 20.8C11.2 22.5 12.8 22 13.4 21.7C13.5 21 13.8 20.5 14.1 20.2C11.6 19.9 9 18.9 9 14.6C9 13.4 9.4 12.4 10.1 11.6C10 11.3 9.6 10.2 10.2 8.8C10.2 8.8 11.1 8.5 13.2 10C14.1 9.7 15 9.6 16 9.6C17 9.6 17.9 9.7 18.8 10C20.8 8.5 21.7 8.8 21.7 8.8C22.3 10.2 21.9 11.3 21.8 11.6C22.5 12.4 22.9 13.4 22.9 14.6C22.9 18.9 20.3 19.9 17.8 20.2C18.2 20.5 18.6 21.2 18.6 22.3C18.6 23.9 18.6 25.2 18.6 25.6C18.6 26 18.8 26.4 19.4 26.3C23.8 24.8 27 20.8 27 16C27 9.9 22.1 5 16 5Z" />
-            </svg>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {/* Repo 1 */}
+            <div className="bg-white border border-slate-200/80 hover:border-indigo-200 rounded-xl p-5 shadow-xs transition-all space-y-4 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+                    TypeScript
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                    Low Risk (94%)
+                  </span>
+                </div>
+                <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                  <Github className="w-4 h-4 text-slate-700" />
+                  payment-service
+                </h4>
+                <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                  Microservices based Stripe & PayPal checkout platform with webhook events.
+                </p>
+              </div>
 
-            <div className="absolute bottom-1 right-1 w-9 h-9 rounded-full bg-[#4f46e5] border-[3px] border-white flex items-center justify-center text-white shadow-md">
-              <Link2 className="w-4 h-4 rotate-45" />
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-[10px] font-medium text-slate-400">Branch: main</span>
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.href = "/dashboard/reports"}
+                  className="h-8 px-3 text-[11px] font-bold border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded-lg cursor-pointer"
+                >
+                  View Report
+                </Button>
+              </div>
+            </div>
+
+            {/* Repo 2 */}
+            <div className="bg-white border border-slate-200/80 hover:border-indigo-200 rounded-xl p-5 shadow-xs transition-all space-y-4 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">
+                    Python FastAPI
+                  </span>
+                  <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+                    Medium Risk (88%)
+                  </span>
+                </div>
+                <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                  <Github className="w-4 h-4 text-slate-700" />
+                  auth-gateway
+                </h4>
+                <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                  OAuth2 JWT token validation and role-based access control service.
+                </p>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-[10px] font-medium text-slate-400">Branch: develop</span>
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.href = "/dashboard/reports"}
+                  className="h-8 px-3 text-[11px] font-bold border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded-lg cursor-pointer"
+                >
+                  View Report
+                </Button>
+              </div>
+            </div>
+
+            {/* Repo 3 */}
+            <div className="bg-white border border-slate-200/80 hover:border-indigo-200 rounded-xl p-5 shadow-xs transition-all space-y-4 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                    Go / Microservice
+                  </span>
+                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                    Low Risk (96%)
+                  </span>
+                </div>
+                <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                  <Github className="w-4 h-4 text-slate-700" />
+                  order-processing
+                </h4>
+                <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                  High-throughput event-driven order processing engine with Kafka queue.
+                </p>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-[10px] font-medium text-slate-400">Branch: main</span>
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.href = "/dashboard/reports"}
+                  className="h-8 px-3 text-[11px] font-bold border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded-lg cursor-pointer"
+                >
+                  View Report
+                </Button>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="space-y-3">
-          <p className="text-sm text-gray-500 max-w-lg mx-auto leading-relaxed">
-            Your GitHub workspace is ready. Click below to view and import your repositories to start your first project.
-          </p>
-        </div>
-
-        <div className="flex flex-col items-center gap-3 w-full max-w-sm">
-          <Button
-            variant="brand"
-            onClick={() => window.location.href = "/dashboard/repositories"}
-            className="w-full h-11 text-xs font-bold flex items-center justify-center gap-2 shadow-sm rounded-lg bg-[#4f46e5] hover:bg-[#4338ca] text-white transition-all duration-200"
-          >
-            <FolderPlus className="w-4 h-4 text-white" />
-            Import Repositories
-          </Button>
-
-          <div className="flex items-center gap-1.5 text-emerald-600 text-[11px] font-semibold mt-1">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>GitHub account connected successfully.</span>
-          </div>
-        </div>
-
-        <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-6 pt-8 border-t border-gray-100/80">
-          <div
-            onClick={handleConnectGithub}
-            className="bg-slate-50/50 hover:bg-slate-50 rounded-xl p-5 border border-slate-100 flex items-start gap-4 transition-all duration-200 cursor-pointer text-left"
-          >
-            <div className="w-11 h-11 rounded-lg bg-indigo-50 border border-indigo-100/50 flex items-center justify-center text-indigo-600 flex-shrink-0">
+        {/* Feature Cards Grid */}
+        <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-5 pt-4">
+          <div className="bg-white rounded-xl p-5 border border-slate-200/80 flex items-start gap-4 shadow-2xs">
+            <div className="w-10 h-10 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 flex-shrink-0">
               <FolderPlus className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-gray-900">Import Repositories</h4>
-              <p className="text-[10px] text-gray-500 mt-1 leading-normal">
-                Fetch all your repositories from GitHub in one click.
+              <h4 className="text-xs font-bold text-slate-900">Example Projects</h4>
+              <p className="text-[11px] text-slate-500 mt-0.5 leading-normal">
+                Inspect sample microservice codebases with pre-calculated PR risk scores.
               </p>
             </div>
           </div>
 
-          <div className="bg-slate-50/50 rounded-xl p-5 border border-slate-100 flex items-start gap-4 text-left">
-            <div className="w-11 h-11 rounded-lg bg-emerald-50 border border-emerald-100/50 flex items-center justify-center text-emerald-600 flex-shrink-0">
+          <div className="bg-white rounded-xl p-5 border border-slate-200/80 flex items-start gap-4 shadow-2xs">
+            <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 flex-shrink-0">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-gray-900">Smart Analysis</h4>
-              <p className="text-[10px] text-gray-500 mt-1 leading-normal">
-                Automatically analyze pull requests, dependencies, and code quality.
+              <h4 className="text-xs font-bold text-slate-900">Smart Analysis</h4>
+              <p className="text-[11px] text-slate-500 mt-0.5 leading-normal">
+                Automatically analyze pull requests, dependencies, and API contract risks.
               </p>
             </div>
           </div>
 
-          <div className="bg-slate-50/50 rounded-xl p-5 border border-slate-100 flex items-start gap-4 text-left">
-            <div className="w-11 h-11 rounded-lg bg-blue-50 border border-blue-100/50 flex items-center justify-center text-blue-600 flex-shrink-0">
+          <div className="bg-white rounded-xl p-5 border border-slate-200/80 flex items-start gap-4 shadow-2xs">
+            <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
               <BarChart2 className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-gray-900">Actionable Insights</h4>
-              <p className="text-[10px] text-gray-500 mt-1 leading-normal">
-                Get detailed insights and fix risks before they impact your code.
+              <h4 className="text-xs font-bold text-slate-900">Actionable Insights</h4>
+              <p className="text-[11px] text-slate-500 mt-0.5 leading-normal">
+                Get detailed insights and fix deployment risks before shipping to production.
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      
-
-      <div className="flex items-center gap-2 text-gray-400 text-[10px] font-semibold mt-8">
-        <Lightbulb className="w-4 h-4 text-indigo-400 animate-pulse" />
-        <span>ImpactIQ helps you ship secure, reliable and high-quality code.</span>
+      <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold mt-6">
+        <Lightbulb className="w-4 h-4 text-indigo-500 animate-pulse" />
+        <span>ImpactIQ helps engineering teams ship secure, reliable code with zero breaking changes.</span>
       </div>
 
       {isModalOpen && (
