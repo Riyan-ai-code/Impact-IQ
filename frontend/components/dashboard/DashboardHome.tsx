@@ -22,7 +22,12 @@ import { cn } from "@/lib/utils"
 
 export default function DashboardHome() {
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isConnected, setIsConnected] = useState(false)
+  const [isConnected, setIsConnected] = useState(() => {
+    if (typeof window !== "undefined") {
+      return !!(localStorage.getItem("github_token") || localStorage.getItem("github_connected") || localStorage.getItem("github_connected_user"))
+    }
+    return false
+  })
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -61,7 +66,10 @@ export default function DashboardHome() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
         <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs font-semibold text-slate-500">Loading dashboard workspace...</p>
+        <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+          <Github className="w-4 h-4 text-indigo-600" />
+          <span>Fetching GitHub account details...</span>
+        </div>
       </div>
     )
   }

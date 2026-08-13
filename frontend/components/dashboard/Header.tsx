@@ -18,12 +18,39 @@ export default function Header() {
     email: string
     avatar: string
     role: string
-  }>({
-    isConnected: false,
-    name: "Guest",
-    email: "",
-    avatar: "",
-    role: ""
+  }>(() => {
+    if (typeof window !== "undefined") {
+      const ghSaved = localStorage.getItem("github_connected_user")
+      const ghToken = localStorage.getItem("github_token") || localStorage.getItem("github_connected")
+      if (ghSaved) {
+        try {
+          const gh = JSON.parse(ghSaved)
+          return {
+            isConnected: true,
+            name: gh.name || gh.login || "Connected Developer",
+            email: gh.email || `${gh.login || "dev"}@github.com`,
+            avatar: gh.avatar_url || `https://github.com/${gh.login || "github"}.png`,
+            role: "Owner & Lead"
+          }
+        } catch (e) {}
+      }
+      if (ghToken) {
+        return {
+          isConnected: true,
+          name: "Connected Developer",
+          email: "dev@impactiq.dev",
+          avatar: "https://github.com/github.png",
+          role: "Owner & Lead"
+        }
+      }
+    }
+    return {
+      isConnected: false,
+      name: "Guest",
+      email: "",
+      avatar: "",
+      role: ""
+    }
   })
 
   useEffect(() => {
