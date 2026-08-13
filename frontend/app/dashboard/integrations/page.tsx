@@ -46,7 +46,7 @@ const DEFAULT_INTEGRATIONS: IntegrationConfig[] = [
     category: "vcs",
     description: "Connect repositories, authorize OAuth access, and receive PR webhook triggers.",
     icon: "github",
-    connected: true,
+    connected: false,
     autoCommentPr: true,
   },
   {
@@ -128,6 +128,7 @@ const DEFAULT_INTEGRATIONS: IntegrationConfig[] = [
 
 export default function IntegrationsPage() {
   const [integrations, setIntegrations] = useState<IntegrationConfig[]>(DEFAULT_INTEGRATIONS)
+  const [hasToken, setHasToken] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [activeModal, setActiveModal] = useState<IntegrationConfig | null>(null)
   const [formWebhookUrl, setFormWebhookUrl] = useState("")
@@ -141,6 +142,7 @@ export default function IntegrationsPage() {
   useEffect(() => {
     // Sync GitHub token status
     const ghToken = localStorage.getItem("github_token")
+    setHasToken(!!ghToken)
     const savedConfigs = localStorage.getItem("impact_iq_integrations")
 
     if (savedConfigs) {
@@ -303,73 +305,99 @@ export default function IntegrationsPage() {
         ))}
       </div>
 
-      {/* Integrations Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredIntegrations.map((item) => (
-          <div
-            key={item.id}
-            className="bg-white border border-slate-100 rounded-xl p-5 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.02)] flex flex-col justify-between space-y-4 hover:shadow-md transition-all duration-200 text-left"
-          >
-            <div className="space-y-3">
-              <div className="flex items-start justify-between">
-                <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center flex-shrink-0">
-                  {renderIcon(item.id)}
-                </div>
-                {getCategoryBadge(item.category)}
+      {/* Integrations Grid with Blur for Guest Mode */}
+      <div className="relative">
+        {!hasToken && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 text-center">
+            <div className="bg-slate-900/90 border border-white/20 backdrop-blur-xl p-8 rounded-3xl shadow-2xl max-w-md space-y-4 animate-in fade-in zoom-in-95 duration-200">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center text-white mx-auto shadow-lg">
+                <ShieldCheck className="w-7 h-7" />
               </div>
-
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-bold text-slate-900 leading-snug">{item.name}</h3>
-                  {item.connected && (
-                    <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
-                      <Check className="w-3 h-3" /> Connected
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-slate-500 leading-relaxed mt-1.5 min-h-[36px]">
-                  {item.description}
+              <div className="space-y-1.5">
+                <h3 className="text-base font-bold text-white">Integrations Locked in Guest Mode</h3>
+                <p className="text-xs text-gray-300 leading-relaxed">
+                  Connect your GitHub account to enable real-time PR webhooks, Slack alerts, Jira sync, and CI/CD gatekeeping.
                 </p>
               </div>
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-              {item.connected ? (
-                <div className="flex items-center gap-2 w-full justify-between">
-                  <Button
-                    variant="outline"
-                    onClick={() => handleOpenConfigureModal(item)}
-                    className="h-8 px-3 text-xs font-semibold border-slate-200 text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 rounded-lg"
-                  >
-                    <Settings2 className="w-3.5 h-3.5 text-slate-500" />
-                    Configure
-                  </Button>
-                  <button
-                    onClick={() => handleToggleDisconnect(item.id)}
-                    className="text-[11px] font-bold text-rose-500 hover:text-rose-700"
-                  >
-                    Disconnect
-                  </button>
-                </div>
-              ) : (
-                <Button
-                  variant="brand"
-                  onClick={() => {
-                    if (item.id === "github") {
-                      window.location.href = "http://localhost:8000/api/auth/github/login"
-                    } else {
-                      handleOpenConfigureModal(item)
-                    }
-                  }}
-                  className="w-full h-8 text-xs font-bold bg-[#4f46e5] text-white hover:bg-[#4338ca] flex items-center justify-center gap-1.5 rounded-lg shadow-sm"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Connect {item.name}
-                </Button>
-              )}
+              <Button
+                variant="brand"
+                onClick={() => window.location.href = "http://localhost:8000/api/auth/github/login"}
+                className="w-full h-11 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
+              >
+                <Github className="w-4 h-4 fill-white" />
+                <span>Connect GitHub to Unlock</span>
+              </Button>
             </div>
           </div>
-        ))}
+        )}
+
+        <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 transition-all duration-300", !hasToken && "filter blur-md select-none pointer-events-none opacity-50")}>
+          {filteredIntegrations.map((item) => (
+            <div
+              key={item.id}
+              className="bg-white border border-slate-100 rounded-xl p-5 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.02)] flex flex-col justify-between space-y-4 hover:shadow-md transition-all duration-200 text-left"
+            >
+              <div className="space-y-3">
+                <div className="flex items-start justify-between">
+                  <div className="w-10 h-10 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center flex-shrink-0">
+                    {renderIcon(item.id)}
+                  </div>
+                  {getCategoryBadge(item.category)}
+                </div>
+
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-slate-900 leading-snug">{item.name}</h3>
+                    {item.connected && (
+                      <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                        <Check className="w-3 h-3" /> Connected
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-500 leading-relaxed mt-1.5 min-h-[36px]">
+                    {item.description}
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                {item.connected ? (
+                  <div className="flex items-center gap-2 w-full justify-between">
+                    <Button
+                      variant="outline"
+                      onClick={() => handleOpenConfigureModal(item)}
+                      className="h-8 px-3 text-xs font-semibold border-slate-200 text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 rounded-lg"
+                    >
+                      <Settings2 className="w-3.5 h-3.5 text-slate-500" />
+                      Configure
+                    </Button>
+                    <button
+                      onClick={() => handleToggleDisconnect(item.id)}
+                      className="text-[11px] font-bold text-rose-500 hover:text-rose-700"
+                    >
+                      Disconnect
+                    </button>
+                  </div>
+                ) : (
+                  <Button
+                    variant="brand"
+                    onClick={() => {
+                      if (item.id === "github") {
+                        window.location.href = "http://localhost:8000/api/auth/github/login"
+                      } else {
+                        handleOpenConfigureModal(item)
+                      }
+                    }}
+                    className="w-full h-8 text-xs font-bold bg-[#4f46e5] text-white hover:bg-[#4338ca] flex items-center justify-center gap-1.5 rounded-lg shadow-sm"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Connect {item.name}
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* CONFIGURATION MODAL */}

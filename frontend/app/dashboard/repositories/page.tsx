@@ -423,35 +423,37 @@ export default function RepositoriesPage() {
         </div>
       )}
 
-      {/* GitHub Connected Banner */}
-      <div className="bg-[#ecfdf5]/80 border border-emerald-200/60 rounded-xl p-4 flex items-center justify-between shadow-sm text-left">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
-            <Check className="w-5 h-5" />
+      {/* GitHub Connected Banner (Only for connected accounts) */}
+      {token && (
+        <div className="bg-[#ecfdf5]/80 border border-emerald-200/60 rounded-xl p-4 flex items-center justify-between shadow-sm text-left">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
+              <Check className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 leading-snug">GitHub Connected Successfully</h3>
+              <p className="text-xs text-slate-500 mt-0.5">We found {repositories.length} repositories in your account.</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm font-bold text-slate-900 leading-snug">GitHub Connected Successfully</h3>
-            <p className="text-xs text-slate-500 mt-0.5">We found {repositories.length} repositories in your account.</p>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              onClick={handleConnectGithub}
+              className="h-9 px-3.5 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-2 shadow-sm transition-all"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
+              Reconnect
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handleDisconnect}
+              className="h-9 px-3.5 border-rose-200/60 bg-white hover:bg-rose-50 text-rose-600 text-xs font-semibold rounded-lg transition-all"
+            >
+              Disconnect
+            </Button>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            onClick={handleConnectGithub}
-            className="h-9 px-4 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-2 shadow-sm transition-all duration-150"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            Reconnect
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={handleDisconnect}
-            className="h-9 px-4 border-rose-200 hover:bg-rose-50/50 text-rose-600 text-xs font-semibold rounded-lg flex items-center gap-2 shadow-sm transition-all duration-150"
-          >
-            Disconnect
-          </Button>
-        </div>
-      </div>
+      )}
 
       {/* Filter and Search Bar Row */}
       <div className="flex items-center justify-between mt-6">
