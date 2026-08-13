@@ -459,14 +459,6 @@ export default function Sidebar() {
                     <Users className="w-3.5 h-3.5 text-gray-400" />
                     Manage Teams
                   </button>
-
-                  <button
-                    onClick={() => nhostSignOut()}
-                    className="w-full px-3 py-1.5 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 rounded-lg flex items-center gap-2 cursor-pointer mt-0.5"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                    Sign Out
-                  </button>
                 </div>
 
               </div>
