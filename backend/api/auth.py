@@ -62,15 +62,47 @@ async def github_callback(code: str = "", error: Optional[str] = None):
         return RedirectResponse(f"{frontend_url}/auth/callback?error={error_desc}")
 
     access_token = token_data.get("access_token")  # extract token from response
+    refresh_token = token_data.get("refresh_token") or ""
+    expires_in = token_data.get("expires_in") or 900  # 15 minutes default
+
     if not access_token:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Access token not found in GitHub response."
         )
 
-    # Redirect user back to frontend, passing the token in the URL
-    # Frontend will store this token and use it for future API calls
-    return RedirectResponse(f"{frontend_url}/auth/callback?token={access_token}")
+    # Redirect user back to frontend with access_token, refresh_token & expires_in
+    return RedirectResponse(f"{frontend_url}/auth/callback?token={access_token}&refresh_token={refresh_token}&expires_in={expires_in}")
+
+
+@router.post("/github/refresh")
+async def refresh_github_token(payload: dict):
+    import httpx
+    
+    refresh_token = payload.get("refresh_token")
+    if not refresh_token:
+        raise HTTPException(status_code=400, detail="Missing refresh_token parameter.")
+        
+    client_id = os.getenv("GITHUB_CLIENT_ID")
+    client_secret = os.getenv("GITHUB_CLIENT_SECRET")
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "https://github.com/login/oauth/access_token",
+            json={
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "grant_type": "refresh_token",
+                "refresh_token": refresh_token
+            },
+            headers={"Accept": "application/json"}
+        )
+    
+    token_data = response.json()
+    if "error" in token_data:
+        raise HTTPException(status_code=400, detail=token_data.get("error_description", token_data["error"]))
+        
+    return token_data
 
 
 @router.get("/github/repos")

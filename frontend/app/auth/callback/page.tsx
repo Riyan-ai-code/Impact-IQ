@@ -2,6 +2,7 @@
 
 import { useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { githubTokenService } from "@/services/githubTokenService"
 
 function CallbackHandler() {
   const router = useRouter()
@@ -10,12 +11,13 @@ function CallbackHandler() {
   useEffect(() => {
     const handleAuth = async () => {
       const token = searchParams.get("token")
+      const refreshToken = searchParams.get("refresh_token") || ""
+      const expiresIn = parseInt(searchParams.get("expires_in") || "900", 10)
       const error = searchParams.get("error")
 
       if (token) {
-        // Save GitHub access token
-        localStorage.setItem("github_token", token)
-        localStorage.setItem("github_connected", "true")
+        // Save access token, refresh token, and timestamp
+        githubTokenService.saveTokens(token, refreshToken, expiresIn)
 
         try {
           // Fetch real GitHub profile info

@@ -4,8 +4,13 @@ import { usePathname, useRouter } from "next/navigation"
 import { Menu, Sun, Moon, Bell, ChevronDown, LogOut, User, ShieldCheck, Github } from "lucide-react"
 import { useState, useEffect } from "react"
 import { nhostGetUser, nhostSignOut } from "@/services/nhostAuthService"
+import { githubTokenService } from "@/services/githubTokenService"
 
-export default function Header() {
+interface HeaderProps {
+  onMenuClick?: () => void
+}
+
+export default function Header({ onMenuClick }: HeaderProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [isDark, setIsDark] = useState(false)
@@ -54,6 +59,12 @@ export default function Header() {
   })
 
   useEffect(() => {
+    // 1. Auto-refresh GitHub token after 14 minutes
+    githubTokenService.refreshTokenIfNeeded()
+    const refreshInterval = setInterval(() => {
+      githubTokenService.refreshTokenIfNeeded()
+    }, 60000) // check every minute
+
     const fetchUserProfile = async () => {
       // 1. Check Nhost Auth user
       const nhUser = nhostGetUser()
