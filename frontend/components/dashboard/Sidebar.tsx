@@ -15,6 +15,7 @@ import {
   Users, 
   Bell, 
   HelpCircle,
+  BookOpen,
   ChevronDown
 } from "lucide-react"
 import { cn } from "@/lib/utils"
