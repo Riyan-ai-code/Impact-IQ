@@ -19,7 +19,8 @@ import {
   Box,
   RefreshCw,
   SlidersHorizontal,
-  Workflow
+  Workflow,
+  ArrowLeft
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -319,14 +320,25 @@ export default function IntegrationsPage() {
                   Connect your GitHub account to enable real-time PR webhooks, Slack alerts, Jira sync, and CI/CD gatekeeping.
                 </p>
               </div>
-              <Button
-                variant="brand"
-                onClick={() => window.location.href = "http://localhost:8000/api/auth/github/login"}
-                className="w-full h-11 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
-              >
-                <Github className="w-4 h-4 fill-white" />
-                <span>Connect GitHub to Unlock</span>
-              </Button>
+              <div className="flex flex-col gap-2.5 w-full pt-2">
+                <Button
+                  variant="brand"
+                  onClick={() => window.location.href = "http://localhost:8000/api/auth/github/login"}
+                  className="w-full h-11 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
+                >
+                  <Github className="w-4 h-4 fill-white" />
+                  <span>Connect GitHub to Unlock</span>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={() => window.location.href = "/"}
+                  className="w-full h-10 text-xs font-bold border-white/20 text-gray-300 hover:text-white hover:bg-white/10 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer"
+                >
+                  <ArrowLeft className="w-4 h-4 text-indigo-400" />
+                  <span>Back to Landing Page</span>
+                </Button>
+              </div>
             </div>
           </div>
         )}
