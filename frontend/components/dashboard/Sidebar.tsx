@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
 import { 
   ShieldCheck, 
   LayoutDashboard, 
@@ -16,12 +17,91 @@ import {
   Bell, 
   HelpCircle,
   BookOpen,
-  ChevronDown
+  ChevronDown,
+  LogOut
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { nhostGetUser, nhostSignOut } from "@/services/nhostAuthService"
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false)
+
+  // Dynamic user profile state
+  const [userProfile, setUserProfile] = useState<{
+    isConnected: boolean
+    name: string
+    email: string
+    avatar: string
+    role: string
+  }>({
+    isConnected: false,
+    name: "Guest",
+    email: "",
+    avatar: "",
+    role: ""
+  })
+
+  useEffect(() => {
+    // 1. Try Nhost Auth user
+    const nhUser = nhostGetUser()
+    if (nhUser && (nhUser.displayName || nhUser.email)) {
+      setUserProfile({
+        isConnected: true,
+        name: nhUser.displayName || nhUser.email.split("@")[0],
+        email: nhUser.email,
+        avatar: nhUser.avatarUrl || `https://github.com/${nhUser.email.split("@")[0]}.png`,
+        role: "Admin User"
+      })
+      return
+    }
+
+    // 2. Try GitHub connected user storage
+    const ghSaved = localStorage.getItem("github_connected_user")
+    if (ghSaved) {
+      try {
+        const gh = JSON.parse(ghSaved)
+        if (gh.name || gh.login) {
+          setUserProfile({
+            isConnected: true,
+            name: gh.name || gh.login,
+            email: gh.email || `${gh.login}@github.com`,
+            avatar: gh.avatar_url || `https://github.com/${gh.login}.png`,
+            role: "Admin User"
+          })
+          return
+        }
+      } catch (e) {}
+    }
+
+    // 3. Try ImpactIQ user storage
+    const savedUser = localStorage.getItem("impact_iq_user")
+    if (savedUser) {
+      try {
+        const parsed = JSON.parse(savedUser)
+        if (parsed.displayName || parsed.name || parsed.email) {
+          setUserProfile({
+            isConnected: true,
+            name: parsed.displayName || parsed.name || parsed.email.split("@")[0],
+            email: parsed.email || "",
+            avatar: `https://github.com/${(parsed.email || "dev").split("@")[0]}.png`,
+            role: "Admin User"
+          })
+          return
+        }
+      } catch (e) {}
+    }
+
+    // Default to Not Connected
+    setUserProfile({
+      isConnected: false,
+      name: "Guest",
+      email: "",
+      avatar: "",
+      role: ""
+    })
+  }, [])
 
   const sections = [
     {
@@ -108,30 +188,61 @@ export default function Sidebar() {
       </div>
 
       {/* Bottom Profile Block */}
-      <div className="p-4 border-t border-white/5 bg-[#050912] flex-shrink-0">
-        <div className="flex items-center justify-between p-3 rounded-xl bg-slate-900/50 border border-white/10 hover:bg-slate-900/80 transition-colors cursor-pointer group">
-          <div className="flex items-center gap-2.5">
-            <div className="relative">
-              <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs border border-white/10 overflow-hidden">
-                <img 
-                  src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100&h=100" 
-                  alt="Arjun Dev"
-                  className="w-full h-full object-cover" 
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none'
-                  }}
-                />
-                <span className="absolute inset-0 flex items-center justify-center bg-indigo-600 font-bold">AD</span>
+      <div className="p-4 border-t border-white/5 bg-[#050912] flex-shrink-0 relative">
+        {!userProfile.isConnected ? (
+          <button
+            onClick={() => router.push("/auth/login")}
+            className="w-full py-2.5 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+          >
+            <span>Connect Account</span>
+          </button>
+        ) : (
+          <div>
+            <div 
+              onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+              className="flex items-center justify-between p-3 rounded-xl bg-slate-900/50 border border-white/10 hover:bg-slate-900/80 transition-colors cursor-pointer group"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="relative">
+                  <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs border border-white/10 overflow-hidden">
+                    <img 
+                      src={userProfile.avatar} 
+                      alt={userProfile.name}
+                      className="w-full h-full object-cover" 
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none'
+                      }}
+                    />
+                    <span className="text-xs font-bold">{userProfile.name.charAt(0)}</span>
+                  </div>
+                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-[#050912]" />
+                </div>
+                <div className="text-left leading-tight">
+                  <h4 className="text-xs font-bold text-white truncate max-w-[100px]">{userProfile.name}</h4>
+                  <span className="text-[10px] text-gray-400">{userProfile.role}</span>
+                </div>
               </div>
-              <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-[#050912]" />
+              <ChevronDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-white transition-colors" />
             </div>
-            <div className="text-left leading-tight">
-              <h4 className="text-xs font-bold text-white">Arjun Dev</h4>
-              <span className="text-[10px] text-gray-500">Admin</span>
-            </div>
+
+            {/* Sidebar Profile Popover */}
+            {isProfileMenuOpen && (
+              <div className="absolute bottom-full left-4 mb-2 w-56 bg-[#0a0f1d] border border-white/10 rounded-xl shadow-2xl py-2 text-left z-50 animate-in fade-in duration-150">
+                <div className="px-4 py-2 border-b border-white/5">
+                  <p className="text-xs font-bold text-white">{userProfile.name}</p>
+                  <p className="text-[10px] text-gray-400 truncate">{userProfile.email}</p>
+                </div>
+                <button
+                  onClick={() => nhostSignOut()}
+                  className="w-full px-4 py-2 text-xs font-semibold text-rose-400 hover:bg-rose-500/10 flex items-center gap-2 cursor-pointer mt-1"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign Out
+                </button>
+              </div>
+            )}
           </div>
-          <ChevronDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-white transition-colors" />
-        </div>
+        )}
       </div>
     </aside>
   )
