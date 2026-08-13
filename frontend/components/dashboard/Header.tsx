@@ -205,7 +205,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
         {/* Profile Section: Connected vs Not Connected */}
         {!userProfile.isConnected ? (
           <button
-            onClick={() => router.push("/auth/login")}
+            onClick={() => window.location.href = "http://localhost:8000/api/auth/github/login"}
             className="h-9 px-4 text-xs font-bold bg-[#090d16] hover:bg-indigo-600 text-white rounded-xl flex items-center gap-2 shadow-sm transition-all duration-150 cursor-pointer"
           >
             <Github className="w-4 h-4" />

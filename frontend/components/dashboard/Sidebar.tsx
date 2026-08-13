@@ -351,7 +351,7 @@ export default function Sidebar() {
       <div className="p-4 border-t border-white/5 bg-[#050912] flex-shrink-0 relative">
         {!userProfile.isConnected ? (
           <button
-            onClick={() => router.push("/auth/login")}
+            onClick={() => window.location.href = "http://localhost:8000/api/auth/github/login"}
             className="w-full py-2.5 px-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
           >
             <span>Connect Account</span>

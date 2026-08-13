@@ -93,7 +93,7 @@ export async function nhostSignOut() {
   window.dispatchEvent(new Event("impact_iq_teams_updated"))
   window.dispatchEvent(new Event("storage"))
 
-  window.location.href = "/auth/login"
+  window.location.href = "/"
 }
 
 /**

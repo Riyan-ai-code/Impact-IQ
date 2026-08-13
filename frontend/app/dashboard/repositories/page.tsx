@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { createProjectInNhost } from "@/services/nhostService"
+import { nhostSignOut } from "@/services/nhostAuthService"
 
 interface Repository {
   name: string
@@ -286,9 +287,7 @@ export default function RepositoriesPage() {
   }
 
   const handleDisconnect = () => {
-    localStorage.removeItem("github_token")
-    setToken(null)
-    setRepositories([])
+    nhostSignOut()
   }
 
   if (loading) {
