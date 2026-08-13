@@ -17,7 +17,8 @@ import {
   X,
   Plus,
   Building2,
-  AlertTriangle
+  AlertTriangle,
+  ArrowLeft
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -394,11 +395,11 @@ export default function RepositoriesPage() {
           </div>
           <Button
             variant="brand"
-            onClick={handleConnectGithub}
+            onClick={() => window.location.href = "/"}
             className="h-9 px-4 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl flex items-center gap-2 shadow-sm transition-all flex-shrink-0 cursor-pointer"
           >
-            <Github className="w-4 h-4 fill-white" />
-            <span>Connect My GitHub</span>
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Landing Page</span>
           </Button>
         </div>
       )}
