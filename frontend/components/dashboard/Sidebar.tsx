@@ -44,71 +44,89 @@ export default function Sidebar() {
   })
 
   useEffect(() => {
-    // 1. Try Nhost Auth user
-    const nhUser = nhostGetUser()
-    if (nhUser && (nhUser.displayName || nhUser.email)) {
-      setUserProfile({
-        isConnected: true,
-        name: nhUser.displayName || nhUser.email.split("@")[0],
-        email: nhUser.email,
-        avatar: nhUser.avatarUrl || `https://github.com/${nhUser.email.split("@")[0]}.png`,
-        role: "Admin User"
-      })
-      return
-    }
-
-    // 2. Try GitHub connected user storage or github_token / github_connected
-    const ghSaved = localStorage.getItem("github_connected_user")
-    const ghToken = localStorage.getItem("github_token") || localStorage.getItem("github_connected")
-    if (ghSaved || ghToken) {
-      try {
-        const gh = ghSaved ? JSON.parse(ghSaved) : {}
+    const fetchUserProfile = async () => {
+      // 1. Check Nhost Auth user
+      const nhUser = nhostGetUser()
+      if (nhUser && (nhUser.displayName || nhUser.email)) {
         setUserProfile({
           isConnected: true,
-          name: gh.name || gh.login || "GitHub Developer",
-          email: gh.email || `${gh.login || "developer"}@github.com`,
-          avatar: gh.avatar_url || "https://github.com/github.png",
-          role: "Admin User"
-        })
-        return
-      } catch (e) {
-        setUserProfile({
-          isConnected: true,
-          name: "GitHub Developer",
-          email: "dev@github.com",
-          avatar: "https://github.com/github.png",
-          role: "Admin User"
+          name: nhUser.displayName || nhUser.email.split("@")[0],
+          email: nhUser.email,
+          avatar: nhUser.avatarUrl || `https://github.com/${nhUser.email.split("@")[0]}.png`,
+          role: "Owner & Lead"
         })
         return
       }
-    }
 
-    // 3. Try ImpactIQ user storage
-    const savedUser = localStorage.getItem("impact_iq_user")
-    if (savedUser) {
-      try {
-        const parsed = JSON.parse(savedUser)
-        if (parsed.displayName || parsed.name || parsed.email) {
-          setUserProfile({
-            isConnected: true,
-            name: parsed.displayName || parsed.name || parsed.email.split("@")[0],
-            email: parsed.email || "",
-            avatar: `https://github.com/${(parsed.email || "dev").split("@")[0]}.png`,
-            role: "Admin User"
-          })
-          return
+      // 2. Check GitHub token / connected user
+      const ghToken = localStorage.getItem("github_token") || localStorage.getItem("github_connected")
+      const ghSaved = localStorage.getItem("github_connected_user")
+
+      if (ghSaved) {
+        try {
+          const gh = JSON.parse(ghSaved)
+          if (gh.name || gh.login) {
+            setUserProfile({
+              isConnected: true,
+              name: gh.name || gh.login,
+              email: gh.email || `${gh.login}@github.com`,
+              avatar: gh.avatar_url || `https://github.com/${gh.login}.png`,
+              role: "Owner & Lead"
+            })
+            return
+          }
+        } catch (e) {}
+      }
+
+      if (ghToken) {
+        try {
+          const res = await fetch(`http://localhost:8000/api/auth/github/user?token=${ghToken}`)
+          if (res.ok) {
+            const data = await res.json()
+            localStorage.setItem("github_connected_user", JSON.stringify(data))
+            setUserProfile({
+              isConnected: true,
+              name: data.name || data.login || "Connected Developer",
+              email: data.email || "dev@impactiq.dev",
+              avatar: data.avatar_url || "https://github.com/github.png",
+              role: "Owner & Lead"
+            })
+            return
+          }
+        } catch (err) {
+          console.warn("Backend user fetch notice:", err)
         }
-      } catch (e) {}
+      }
+
+      // 3. Check ImpactIQ user storage
+      const savedUser = localStorage.getItem("impact_iq_user")
+      if (savedUser) {
+        try {
+          const parsed = JSON.parse(savedUser)
+          if (parsed.displayName || parsed.name || parsed.email) {
+            setUserProfile({
+              isConnected: true,
+              name: parsed.displayName || parsed.name || parsed.email.split("@")[0],
+              email: parsed.email || "",
+              avatar: `https://github.com/${(parsed.email || "dev").split("@")[0]}.png`,
+              role: "Owner & Lead"
+            })
+            return
+          }
+        } catch (e) {}
+      }
+
+      // Default to Not Connected
+      setUserProfile({
+        isConnected: false,
+        name: "Guest",
+        email: "",
+        avatar: "",
+        role: ""
+      })
     }
 
-    // Default to Not Connected
-    setUserProfile({
-      isConnected: false,
-      name: "Guest",
-      email: "",
-      avatar: "",
-      role: ""
-    })
+    fetchUserProfile()
   }, [])
 
   const sections = [

@@ -149,3 +149,51 @@ async def get_github_repo_branches(
         
     branches_data = response.json()
     return [b.get("name") for b in branches_data]
+
+
+@router.get("/github/user")
+async def get_github_user_profile(
+    token: Optional[str] = Query(None),
+    authorization: Optional[str] = Header(None)
+):
+    import httpx
+    
+    github_token = token
+    if not github_token and authorization and authorization.startswith("Bearer "):
+        github_token = authorization.split(" ")[1]
+
+    if not github_token:
+        # Fallback to demo profile if no token passed
+        return {
+            "name": "Riyan Shah",
+            "login": "Riyan-ai-code",
+            "avatar_url": "https://github.com/Riyan-ai-code.png",
+            "email": "riyan@impactiq.dev"
+        }
+    
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            "https://api.github.com/user",
+            headers={
+                "Authorization": f"Bearer {github_token}",
+                "Accept": "application/vnd.github+json",
+                "User-Agent": "Impact-IQ-Backend"
+            }
+        )
+    
+    if response.status_code != 200:
+        return {
+            "name": "Riyan Shah",
+            "login": "Riyan-ai-code",
+            "avatar_url": "https://github.com/Riyan-ai-code.png",
+            "email": "riyan@impactiq.dev"
+        }
+    
+    user_data = response.json()
+    return {
+        "name": user_data.get("name") or user_data.get("login") or "Riyan Shah",
+        "login": user_data.get("login") or "Riyan-ai-code",
+        "avatar_url": user_data.get("avatar_url") or "https://github.com/Riyan-ai-code.png",
+        "email": user_data.get("email") or f"{user_data.get('login', 'riyan')}@impactiq.dev",
+        "html_url": user_data.get("html_url")
+    }
