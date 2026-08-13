@@ -140,8 +140,15 @@ export default function Sidebar() {
         const data = await res.json()
         if (Array.isArray(data)) {
           setTeams(data)
-          if (data.length > 0 && !activeTeamId) {
-            setActiveTeamId(data[0].id)
+          const savedActiveId = localStorage.getItem("impact_iq_active_team_id")
+          if (data.length > 0) {
+            if (savedActiveId && data.some((t: any) => t.id === savedActiveId)) {
+              setActiveTeamId(savedActiveId)
+            } else if (!activeTeamId) {
+              setActiveTeamId(data[0].id)
+            }
+          } else {
+            setActiveTeamId(null)
           }
           return
         }
@@ -154,8 +161,15 @@ export default function Sidebar() {
         const parsed = JSON.parse(saved)
         if (Array.isArray(parsed)) {
           setTeams(parsed)
-          if (parsed.length > 0 && !activeTeamId) {
-            setActiveTeamId(parsed[0].id)
+          const savedActiveId = localStorage.getItem("impact_iq_active_team_id")
+          if (parsed.length > 0) {
+            if (savedActiveId && parsed.some((t: any) => t.id === savedActiveId)) {
+              setActiveTeamId(savedActiveId)
+            } else if (!activeTeamId) {
+              setActiveTeamId(parsed[0].id)
+            }
+          } else {
+            setActiveTeamId(null)
           }
           return
         }
@@ -168,19 +182,57 @@ export default function Sidebar() {
 
   useEffect(() => {
     fetchTeams()
+
+    const handleTeamsSync = () => {
+      fetchTeams()
+    }
+
+    window.addEventListener("impact_iq_teams_updated", handleTeamsSync)
+    window.addEventListener("storage", handleTeamsSync)
+    const interval = setInterval(fetchTeams, 3000)
+
+    return () => {
+      window.removeEventListener("impact_iq_teams_updated", handleTeamsSync)
+      window.removeEventListener("storage", handleTeamsSync)
+      clearInterval(interval)
+    }
   }, [])
 
   const activeTeam = teams.find(t => t.id === activeTeamId) || (teams.length > 0 ? teams[0] : null)
 
-  const handleSelectTeam = (teamId: string) => {
-    setActiveTeamId(teamId)
-    const selected = teams.find(t => t.id === teamId)
-    if (selected) {
-      const currentMember = selected.members?.find((m: any) => m.email === userProfile.email || m.name === userProfile.name)
-      if (currentMember) {
-        setUserRole(currentMember.role)
+  const handleJoinTeam = (team: any) => {
+    setActiveTeamId(team.id)
+    localStorage.setItem("impact_iq_active_team_id", team.id)
+
+    // Check if user is in team roster
+    const isMember = team.members?.some((m: any) => m.email === userProfile.email || m.name === userProfile.name)
+    if (!isMember && userProfile.name) {
+      const newMember = {
+        id: "m-" + Date.now(),
+        name: userProfile.name,
+        email: userProfile.email || `${userProfile.name.toLowerCase().replace(/\s+/g, '')}@impactiq.dev`,
+        role: "Developer",
+        status: "active"
       }
+      const updatedTeams = teams.map(t => {
+        if (t.id === team.id) {
+          return {
+            ...t,
+            members: [...(t.members || []), newMember]
+          }
+        }
+        return t
+      })
+      setTeams(updatedTeams)
+      localStorage.setItem("impact_iq_teams", JSON.stringify(updatedTeams))
     }
+
+    // Set role
+    const currentRole = team.members?.find((m: any) => m.name === userProfile.name || m.email === userProfile.email)?.role || "Owner"
+    setUserRole(currentRole)
+
+    // Dispatch global event so all pages update automatically
+    window.dispatchEvent(new Event("impact_iq_teams_updated"))
     setIsProfileMenuOpen(false)
   }
 
@@ -317,16 +369,16 @@ export default function Sidebar() {
 
             {/* Sidebar Profile & Team Switcher Popover */}
             {isProfileMenuOpen && (
-              <div className="absolute bottom-full left-4 mb-2 w-60 bg-[#0a0f1d] border border-white/10 rounded-xl shadow-2xl py-3 text-left z-50 animate-in fade-in duration-150 space-y-2">
+              <div className="absolute bottom-full left-4 mb-2 w-64 bg-[#0a0f1d] border border-white/10 rounded-xl shadow-2xl py-3 text-left z-50 animate-in fade-in duration-150 space-y-2">
                 <div className="px-4 pb-2 border-b border-white/5 space-y-0.5">
                   <p className="text-xs font-bold text-white">{userProfile.name}</p>
                   <p className="text-[10px] text-gray-400 truncate">{userProfile.email || "dev@impactiq.dev"}</p>
                 </div>
 
                 {/* Team Switcher Section */}
-                <div className="px-4 py-1 space-y-1.5">
+                <div className="px-4 py-1 space-y-2">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
-                    ACTIVE TEAMS
+                    ENGINEERING TEAMS
                   </span>
 
                   {teams.length === 0 ? (
@@ -340,23 +392,32 @@ export default function Sidebar() {
                       </button>
                     </div>
                   ) : (
-                    <div className="space-y-1 max-h-32 overflow-y-auto no-scrollbar">
+                    <div className="space-y-1.5 max-h-36 overflow-y-auto no-scrollbar">
                       {teams.map((t: any) => {
                         const isSelected = t.id === activeTeamId
                         return (
-                          <button
+                          <div
                             key={t.id}
-                            onClick={() => handleSelectTeam(t.id)}
                             className={cn(
-                              "w-full px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center justify-between transition-colors cursor-pointer",
+                              "w-full px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center justify-between border transition-all",
                               isSelected 
-                                ? "bg-indigo-600 text-white" 
-                                : "text-gray-300 hover:bg-white/5 hover:text-white"
+                                ? "bg-indigo-600/90 border-indigo-500 text-white shadow-xs" 
+                                : "bg-white/5 border-white/5 text-gray-300 hover:bg-white/10 hover:text-white"
                             )}
                           >
-                            <span className="truncate">{t.name}</span>
-                            {isSelected && <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded text-white font-mono">Active</span>}
-                          </button>
+                            <span className="truncate max-w-[110px]">{t.name}</span>
+                            {isSelected ? (
+                              <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded text-white font-mono flex-shrink-0">Active</span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleJoinTeam(t)}
+                                className="text-[9px] bg-indigo-500 hover:bg-indigo-400 text-white font-bold px-2 py-0.5 rounded cursor-pointer transition-colors flex-shrink-0"
+                              >
+                                Join Team
+                              </button>
+                            )}
+                          </div>
                         )
                       })}
                     </div>
