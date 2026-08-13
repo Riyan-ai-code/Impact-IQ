@@ -357,14 +357,16 @@ export default function Sidebar() {
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="relative flex-shrink-0">
                   <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs border border-white/10 overflow-hidden">
-                    <img 
-                      src={userProfile.avatar} 
-                      alt={userProfile.name}
-                      className="w-full h-full object-cover" 
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none'
-                      }}
-                    />
+                    {Boolean(userProfile.avatar) && (
+                      <img 
+                        src={userProfile.avatar} 
+                        alt={userProfile.name}
+                        className="w-full h-full object-cover" 
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none'
+                        }}
+                      />
+                    )}
                     <span className="text-xs font-bold">{userProfile.name.charAt(0)}</span>
                   </div>
                   <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-[#050912]" />

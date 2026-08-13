@@ -209,14 +209,16 @@ export default function Header({ onMenuClick }: HeaderProps) {
             className="flex items-center gap-2.5 pl-3 border-l border-gray-200 hover:opacity-90 transition-opacity cursor-pointer"
           >
               <div className="w-8 h-8 rounded-full overflow-hidden border border-indigo-200 bg-indigo-50 flex items-center justify-center text-indigo-700 font-bold text-xs">
-                <img 
-                  src={userProfile.avatar} 
-                  alt={userProfile.name}
-                  className="w-full h-full object-cover" 
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none'
-                  }}
-                />
+                {Boolean(userProfile.avatar) && (
+                  <img 
+                    src={userProfile.avatar} 
+                    alt={userProfile.name}
+                    className="w-full h-full object-cover" 
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                    }}
+                  />
+                )}
                 <span className="text-xs font-bold text-indigo-700">{userProfile.name.charAt(0)}</span>
               </div>
               <div className="flex flex-col text-left leading-tight">
