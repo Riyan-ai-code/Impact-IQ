@@ -69,17 +69,31 @@ export function nhostSignInWithGithub() {
   window.location.href = githubAuthUrl
 }
 
+import { githubTokenService } from "@/services/githubTokenService"
+
 /**
- * Sign out current authenticated user
+ * Sign out current authenticated user and purge all GitHub & session tokens
  */
 export async function nhostSignOut() {
   try {
     await nhost.auth.signOut()
-    localStorage.removeItem("impact_iq_user")
-    window.location.href = "/auth/login"
   } catch (err) {
-    console.error("Sign out error:", err)
+    console.warn("Nhost sign out notice:", err)
   }
+
+  // Purge GitHub tokens and session state
+  githubTokenService.clearTokens()
+  localStorage.removeItem("impact_iq_user")
+  localStorage.removeItem("impact_iq_active_team_id")
+
+  try {
+    await fetch("http://localhost:8000/api/auth/logout", { method: "POST" })
+  } catch (e) {}
+
+  window.dispatchEvent(new Event("impact_iq_teams_updated"))
+  window.dispatchEvent(new Event("storage"))
+
+  window.location.href = "/auth/login"
 }
 
 /**

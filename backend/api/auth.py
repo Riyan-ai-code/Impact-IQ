@@ -229,3 +229,8 @@ async def get_github_user_profile(
         "email": user_data.get("email") or f"{user_data.get('login', 'riyan')}@impactiq.dev",
         "html_url": user_data.get("html_url")
     }
+
+
+@router.post("/logout")
+async def logout_user():
+    return {"message": "Logged out successfully", "status": "ok"}
