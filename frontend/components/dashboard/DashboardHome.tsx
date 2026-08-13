@@ -23,10 +23,12 @@ import { cn } from "@/lib/utils"
 export default function DashboardHome() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isConnected, setIsConnected] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const token = localStorage.getItem("github_token") || localStorage.getItem("github_connected") || localStorage.getItem("github_connected_user")
     setIsConnected(!!token)
+    setIsLoading(false)
   }, [])
 
   const [projectName, setProjectName] = useState("Payment Platform")
@@ -54,6 +56,15 @@ export default function DashboardHome() {
     { number: 4, name: "Analysis Settings", active: false, completed: false },
     { number: 5, name: "Review", active: false, completed: false },
   ]
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs font-semibold text-slate-500">Loading dashboard workspace...</p>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col items-center justify-between min-h-[calc(100vh-6rem)] py-6 select-none relative">

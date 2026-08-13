@@ -103,6 +103,7 @@ const DEFAULT_INITIAL_TEAMS: Team[] = [
 export default function TeamPage() {
   const [teams, setTeams] = useState<Team[]>([])
   const [activeTeamId, setActiveTeamId] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   
   // Modals state
   const [isCreateTeamModalOpen, setIsCreateTeamModalOpen] = useState(false)
@@ -140,6 +141,7 @@ export default function TeamPage() {
             setActiveTeamId("")
           }
           localStorage.setItem("impact_iq_teams", JSON.stringify(data))
+          setIsLoading(false)
           return
         }
       }
@@ -164,6 +166,7 @@ export default function TeamPage() {
           } else {
             setActiveTeamId("")
           }
+          setIsLoading(false)
           return
         }
       } catch (err) {
@@ -174,6 +177,7 @@ export default function TeamPage() {
     // Default to empty teams array
     setTeams([])
     setActiveTeamId("")
+    setIsLoading(false)
   }
 
   useEffect(() => {
@@ -372,6 +376,15 @@ export default function TeamPage() {
     if (el) {
       el.scrollIntoView({ behavior: "smooth" })
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[55vh] space-y-4">
+        <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs font-semibold text-slate-500">Loading team workspace...</p>
+      </div>
+    )
   }
 
   return (

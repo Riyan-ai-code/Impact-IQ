@@ -8,22 +8,41 @@ function CallbackHandler() {
   const searchParams = useSearchParams()
 
   useEffect(() => {
-    const token = searchParams.get("token")
-    const error = searchParams.get("error")
+    const handleAuth = async () => {
+      const token = searchParams.get("token")
+      const error = searchParams.get("error")
 
-    if (token) {
-      // Save token to localStorage
-      localStorage.setItem("github_token", token)
-      // Redirect to repositories dashboard page
-      router.push("/dashboard/repositories")
-    } else if (error) {
-      console.error("GitHub OAuth Error:", error)
-      // Redirect back to dashboard home or show error (for simplicity, go to dashboard home with error)
-      router.push(`/dashboard?error=${encodeURIComponent(error)}`)
-    } else {
-      // Fallback redirect if neither token nor error is present
-      router.push("/dashboard")
+      if (token) {
+        // Save GitHub access token
+        localStorage.setItem("github_token", token)
+        localStorage.setItem("github_connected", "true")
+
+        try {
+          // Fetch real GitHub profile info
+          const res = await fetch(`http://localhost:8000/api/auth/github/user?token=${token}`)
+          if (res.ok) {
+            const userData = await res.json()
+            localStorage.setItem("github_connected_user", JSON.stringify(userData))
+          }
+        } catch (e) {
+          console.warn("Notice: could not fetch profile info during callback", e)
+        }
+
+        // Notify app components of updated GitHub state
+        window.dispatchEvent(new Event("impact_iq_teams_updated"))
+        window.dispatchEvent(new Event("storage"))
+
+        // Redirect to connected repositories page
+        router.push("/dashboard/repositories")
+      } else if (error) {
+        console.error("GitHub OAuth Error:", error)
+        router.push(`/dashboard?error=${encodeURIComponent(error)}`)
+      } else {
+        router.push("/dashboard")
+      }
     }
+
+    handleAuth()
   }, [router, searchParams])
 
   return (
