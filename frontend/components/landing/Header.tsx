@@ -47,7 +47,15 @@ export default function Header() {
 
         <Button 
           variant="brand" 
-          onClick={() => window.location.href = "http://localhost:8000/api/auth/github/login"}
+          onClick={() => {
+            localStorage.setItem("impact_iq_user", JSON.stringify({
+              name: "Guest Developer",
+              email: "guest@impactiq.dev",
+              role: "Guest User",
+              isGuest: true
+            }))
+            window.location.href = "/dashboard"
+          }}
           className="rounded-lg text-white font-medium flex items-center gap-1.5 cursor-pointer"
         >
           Get Started

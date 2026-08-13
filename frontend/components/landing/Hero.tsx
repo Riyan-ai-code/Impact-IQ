@@ -28,14 +28,23 @@ export default function Hero() {
           </p>
 
           <div className="flex flex-row gap-4 w-full sm:w-auto">
+            <button 
+              onClick={() => {
+                localStorage.setItem("impact_iq_user", JSON.stringify({
+                  name: "Guest Developer",
+                  email: "guest@impactiq.dev",
+                  role: "Guest User",
+                  isGuest: true
+                }))
+                window.location.href = "/dashboard"
+              }}
+              className="w-full sm:w-auto bg-brand hover:bg-brand-hover text-white text-sm font-semibold py-3 px-6 rounded-lg flex items-center justify-center gap-2 shadow-lg hover:shadow-brand/20 transition-all cursor-pointer"
+            >
+              Get Started Free
+              <ArrowRight className="w-4 h-4" />
+            </button>
             <Link href="/dashboard" className="flex-1 sm:flex-initial">
-              <button className="w-full sm:w-auto bg-brand hover:bg-brand-hover text-white text-sm font-semibold py-3 px-6 rounded-lg flex items-center justify-center gap-2 shadow-lg hover:shadow-brand/20 transition-all">
-                Get Started Free
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </Link>
-            <Link href="/dashboard" className="flex-1 sm:flex-initial">
-              <button className="w-full sm:w-auto border border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 text-white text-sm font-semibold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition-all">
+              <button className="w-full sm:w-auto border border-white/10 hover:border-white/20 bg-white/5 hover:bg-white/10 text-white text-sm font-semibold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition-all cursor-pointer">
                 See How It Works
                 <Play className="w-4 h-4 fill-white" />
               </button>
