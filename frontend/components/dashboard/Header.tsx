@@ -40,22 +40,30 @@ export default function Header() {
       return
     }
 
-    // 2. Try GitHub connected user storage
+    // 2. Try GitHub connected user storage or github_token / github_connected
     const ghSaved = localStorage.getItem("github_connected_user")
-    if (ghSaved) {
+    const ghToken = localStorage.getItem("github_token") || localStorage.getItem("github_connected")
+    if (ghSaved || ghToken) {
       try {
-        const gh = JSON.parse(ghSaved)
-        if (gh.name || gh.login) {
-          setUserProfile({
-            isConnected: true,
-            name: gh.name || gh.login,
-            email: gh.email || `${gh.login}@github.com`,
-            avatar: gh.avatar_url || `https://github.com/${gh.login}.png`,
-            role: "Admin User"
-          })
-          return
-        }
-      } catch (e) {}
+        const gh = ghSaved ? JSON.parse(ghSaved) : {}
+        setUserProfile({
+          isConnected: true,
+          name: gh.name || gh.login || "GitHub Developer",
+          email: gh.email || `${gh.login || "developer"}@github.com`,
+          avatar: gh.avatar_url || "https://github.com/github.png",
+          role: "Admin User"
+        })
+        return
+      } catch (e) {
+        setUserProfile({
+          isConnected: true,
+          name: "GitHub Developer",
+          email: "dev@github.com",
+          avatar: "https://github.com/github.png",
+          role: "Admin User"
+        })
+        return
+      }
     }
 
     // 3. Try ImpactIQ user storage
