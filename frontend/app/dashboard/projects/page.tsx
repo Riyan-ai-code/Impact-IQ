@@ -33,6 +33,7 @@ interface Project {
 }
 
 import { fetchProjectsFromNhost } from "@/services/nhostService"
+import { getScopedItem, setScopedItem } from "@/lib/storageScope"
 
 export default function ProjectsPage() {
   const router = useRouter()
@@ -42,21 +43,26 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     async function loadProjects() {
-      const nhostProjects = await fetchProjectsFromNhost()
-      if (nhostProjects && nhostProjects.length > 0) {
-        setProjects(nhostProjects)
-        localStorage.setItem("impact_iq_projects", JSON.stringify(nhostProjects))
-        setLoading(false)
-        return
+      const ghToken = localStorage.getItem("github_token")
+      if (ghToken) {
+        const nhostProjects = await fetchProjectsFromNhost()
+        if (nhostProjects && nhostProjects.length > 0) {
+          setProjects(nhostProjects)
+          setScopedItem("impact_iq_projects", JSON.stringify(nhostProjects))
+          setLoading(false)
+          return
+        }
       }
 
-      const savedProjects = localStorage.getItem("impact_iq_projects")
+      const savedProjects = getScopedItem("impact_iq_projects")
       if (savedProjects) {
         try {
           setProjects(JSON.parse(savedProjects))
         } catch (err) {
           console.error("Error parsing saved projects:", err)
         }
+      } else {
+        setProjects([])
       }
       setLoading(false)
     }
@@ -67,7 +73,7 @@ export default function ProjectsPage() {
   const handleDeleteProject = (id: string) => {
     const updated = projects.filter(p => p.id !== id)
     setProjects(updated)
-    localStorage.setItem("impact_iq_projects", JSON.stringify(updated))
+    setScopedItem("impact_iq_projects", JSON.stringify(updated))
   }
 
   const filteredProjects = projects.filter(p => 

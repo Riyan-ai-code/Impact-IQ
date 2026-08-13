@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { createProjectInNhost } from "@/services/nhostService"
 import { nhostSignOut } from "@/services/nhostAuthService"
+import { getScopedItem, setScopedItem } from "@/lib/storageScope"
 
 interface Repository {
   name: string
@@ -347,9 +348,9 @@ export default function RepositoriesPage() {
     }
 
     try {
-      const existingProjects = JSON.parse(localStorage.getItem("impact_iq_projects") || "[]")
+      const existingProjects = JSON.parse(getScopedItem("impact_iq_projects") || "[]")
       const updatedProjects = [newProject, ...existingProjects]
-      localStorage.setItem("impact_iq_projects", JSON.stringify(updatedProjects))
+      setScopedItem("impact_iq_projects", JSON.stringify(updatedProjects))
     } catch (err) {
       console.error("Error saving project:", err)
     }

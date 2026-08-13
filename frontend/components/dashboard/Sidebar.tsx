@@ -22,6 +22,8 @@ import {
 import { cn } from "@/lib/utils"
 import { nhostGetUser, nhostSignOut } from "@/services/nhostAuthService"
 
+import { getScopedItem, setScopedItem } from "@/lib/storageScope"
+
 export default function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
@@ -37,7 +39,7 @@ export default function Sidebar() {
   }>(() => {
     if (typeof window !== "undefined") {
       const ghSaved = localStorage.getItem("github_connected_user")
-      const ghToken = localStorage.getItem("github_token") || localStorage.getItem("github_connected")
+      const ghToken = localStorage.getItem("github_token")
       if (ghSaved) {
         try {
           const gh = JSON.parse(ghSaved)
@@ -182,13 +184,13 @@ export default function Sidebar() {
       }
     } catch (e) {}
 
-    const saved = localStorage.getItem("impact_iq_teams")
+    const saved = getScopedItem("impact_iq_teams")
     if (saved) {
       try {
         const parsed = JSON.parse(saved)
         if (Array.isArray(parsed)) {
           setTeams(parsed)
-          const savedActiveId = localStorage.getItem("impact_iq_active_team_id")
+          const savedActiveId = getScopedItem("impact_iq_active_team_id")
           if (parsed.length > 0) {
             if (savedActiveId && parsed.some((t: any) => t.id === savedActiveId)) {
               setActiveTeamId(savedActiveId)

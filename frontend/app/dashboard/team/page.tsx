@@ -100,6 +100,8 @@ const DEFAULT_INITIAL_TEAMS: Team[] = [
   }
 ]
 
+import { getScopedItem, setScopedItem } from "@/lib/storageScope"
+
 export default function TeamPage() {
   const [teams, setTeams] = useState<Team[]>([])
   const [activeTeamId, setActiveTeamId] = useState<string | null>(null)
@@ -124,34 +126,20 @@ export default function TeamPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
 
   const fetchTeamsFromBackend = async () => {
-    try {
-      const res = await fetch("http://localhost:8000/api/teams")
-      if (res.ok) {
-        const data = await res.json()
-        if (Array.isArray(data)) {
-          setTeams(data)
-          const savedActiveId = localStorage.getItem("impact_iq_active_team_id")
-          if (data.length > 0) {
+    const ghToken = localStorage.getItem("github_token")
+
+    if (ghToken) {
+      try {
+        const res = await fetch("http://localhost:8000/api/teams")
+        if (res.ok) {
+          const data = await res.json()
+          if (Array.isArray(data) && data.length > 0) {
+            setTeams(data)
+            const savedActiveId = getScopedItem("impact_iq_active_team_id")
             if (savedActiveId && data.some((t: any) => t.id === savedActiveId)) {
               setActiveTeamId(savedActiveId)
-            } else if (!activeTeamId) {
+            } else {
               setActiveTeamId(data[0].id)
-            }
-          } else {
-            setActiveTeamId("")
-          }
-          localStorage.setItem("impact_iq_teams", JSON.stringify(data))
-          setIsLoading(false)
-          return
-        }
-      }
-    } catch (err) {
-      console.warn("Backend teams API offline, using local storage cache:", err)
-    }
-
-    // Fallback to local storage
-    const saved = localStorage.getItem("impact_iq_teams")
-    if (saved) {
       try {
         const parsed: Team[] = JSON.parse(saved)
         if (Array.isArray(parsed)) {
@@ -200,13 +188,13 @@ export default function TeamPage() {
 
   const handleSelectActiveTeam = (teamId: string) => {
     setActiveTeamId(teamId)
-    localStorage.setItem("impact_iq_active_team_id", teamId)
+    setScopedItem("impact_iq_active_team_id", teamId)
     window.dispatchEvent(new Event("impact_iq_teams_updated"))
   }
 
   const saveTeamsToStorage = (updatedTeams: Team[]) => {
     setTeams(updatedTeams)
-    localStorage.setItem("impact_iq_teams", JSON.stringify(updatedTeams))
+    setScopedItem("impact_iq_teams", JSON.stringify(updatedTeams))
   }
 
   const handleCreateTeam = async () => {
