@@ -129,8 +129,13 @@ export default function TeamPage() {
         const data = await res.json()
         if (Array.isArray(data)) {
           setTeams(data)
+          const savedActiveId = localStorage.getItem("impact_iq_active_team_id")
           if (data.length > 0) {
-            setActiveTeamId(data[0].id)
+            if (savedActiveId && data.some((t: any) => t.id === savedActiveId)) {
+              setActiveTeamId(savedActiveId)
+            } else if (!activeTeamId) {
+              setActiveTeamId(data[0].id)
+            }
           } else {
             setActiveTeamId("")
           }
@@ -149,8 +154,13 @@ export default function TeamPage() {
         const parsed: Team[] = JSON.parse(saved)
         if (Array.isArray(parsed)) {
           setTeams(parsed)
+          const savedActiveId = localStorage.getItem("impact_iq_active_team_id")
           if (parsed.length > 0) {
-            setActiveTeamId(parsed[0].id)
+            if (savedActiveId && parsed.some((t: any) => t.id === savedActiveId)) {
+              setActiveTeamId(savedActiveId)
+            } else if (!activeTeamId) {
+              setActiveTeamId(parsed[0].id)
+            }
           } else {
             setActiveTeamId("")
           }
@@ -168,7 +178,27 @@ export default function TeamPage() {
 
   useEffect(() => {
     fetchTeamsFromBackend()
+
+    const handleSync = () => {
+      fetchTeamsFromBackend()
+    }
+
+    window.addEventListener("impact_iq_teams_updated", handleSync)
+    window.addEventListener("storage", handleSync)
+    const interval = setInterval(fetchTeamsFromBackend, 3000)
+
+    return () => {
+      window.removeEventListener("impact_iq_teams_updated", handleSync)
+      window.removeEventListener("storage", handleSync)
+      clearInterval(interval)
+    }
   }, [])
+
+  const handleSelectActiveTeam = (teamId: string) => {
+    setActiveTeamId(teamId)
+    localStorage.setItem("impact_iq_active_team_id", teamId)
+    window.dispatchEvent(new Event("impact_iq_teams_updated"))
+  }
 
   const saveTeamsToStorage = (updatedTeams: Team[]) => {
     setTeams(updatedTeams)
@@ -414,7 +444,7 @@ export default function TeamPage() {
                 <div className="relative inline-flex items-center">
                   <select
                     value={activeTeamId || ""}
-                    onChange={(e) => setActiveTeamId(e.target.value)}
+                    onChange={(e) => handleSelectActiveTeam(e.target.value)}
                     className="text-xs md:text-sm font-bold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer pr-8 appearance-none shadow-2xs min-w-[200px]"
                   >
                     {teams.map((t) => (
