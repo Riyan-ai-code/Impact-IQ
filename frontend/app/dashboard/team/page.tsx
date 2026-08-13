@@ -101,8 +101,25 @@ const DEFAULT_INITIAL_TEAMS: Team[] = [
 ]
 
 export default function TeamPage() {
-  const [teams, setTeams] = useState<Team[]>(DEFAULT_INITIAL_TEAMS)
-  const [activeTeamId, setActiveTeamId] = useState<string | null>("team-platform")
+  const [teams, setTeams] = useState<Team[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("impact_iq_teams")
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved)
+          if (Array.isArray(parsed)) return parsed
+        } catch (e) {}
+      }
+    }
+    return []
+  })
+
+  const [activeTeamId, setActiveTeamId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("impact_iq_active_team_id")
+    }
+    return null
+  })
   
   // Modals state
   const [isCreateTeamModalOpen, setIsCreateTeamModalOpen] = useState(false)
