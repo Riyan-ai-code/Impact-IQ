@@ -25,7 +25,8 @@ export default function DashboardHome() {
   const [isConnected, setIsConnected] = useState(false)
 
   useEffect(() => {
-    setIsConnected(!!localStorage.getItem("github_token"))
+    const token = localStorage.getItem("github_token") || localStorage.getItem("github_connected") || localStorage.getItem("github_connected_user")
+    setIsConnected(!!token)
   }, [])
 
   const [projectName, setProjectName] = useState("Payment Platform")
