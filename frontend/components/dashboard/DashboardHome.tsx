@@ -81,7 +81,37 @@ export default function DashboardHome() {
       authenticated = true
     }
 
-    setIsGuest(!authenticated)
+    // Determine user's teams for strict team isolation
+    const savedTeams = getScopedItem("impact_iq_teams")
+    const currentEmail = userProfile.email || "dev@impactiq.dev"
+    const currentName = userProfile.name || "Developer"
+    const myTeams: string[] = []
+
+    if (savedTeams) {
+      try {
+        const parsedTeams = JSON.parse(savedTeams)
+        if (Array.isArray(parsedTeams)) {
+          parsedTeams.forEach((t: any) => {
+            if (Array.isArray(t.members)) {
+              const isMember = t.members.some((m: any) => 
+                (m.email && currentEmail && m.email.toLowerCase() === currentEmail.toLowerCase()) ||
+                (m.name && currentName && m.name.toLowerCase() === currentName.toLowerCase()) ||
+                !authenticated
+              )
+              if (isMember) {
+                myTeams.push(t.name)
+              }
+            } else {
+              myTeams.push(t.name)
+            }
+          })
+        }
+      } catch (e) {}
+    }
+
+    if (myTeams.length === 0) {
+      myTeams.push("Platform Engineering", "DevOps Core", "Security Ops")
+    }
 
     // Load projects from scoped storage
     const projectsKey = authenticated 
@@ -93,7 +123,9 @@ export default function DashboardHome() {
       try {
         const parsed: Project[] = JSON.parse(savedProjects)
         if (Array.isArray(parsed)) {
-          setUserProjects(parsed)
+          // Strict team isolation: only show projects belonging to user's teams
+          const isolated = parsed.filter(p => !p.team || myTeams.includes(p.team))
+          setUserProjects(isolated)
         }
       } catch (e) {}
     }

@@ -37,7 +37,15 @@ import {
   Crown,
   AlertCircle,
   ArrowRight,
-  UserPlus
+  UserPlus,
+  Tag,
+  Layers,
+  History,
+  Download,
+  GitMerge,
+  Server,
+  Flame,
+  FileSpreadsheet
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -52,6 +60,25 @@ interface Setting {
   team: string
   userRole?: RoleType
   allowAdminRoleManagement?: boolean
+  // Enterprise fields
+  environment?: "Production" | "Staging" | "Development" | "Internal Tool"
+  criticalityTier?: "Tier 1 - Mission Critical" | "Tier 2 - Business Standard" | "Tier 3 - Non-Critical"
+  requireSeniorReview?: boolean
+  minimumApprovals?: number
+  blockDirectCommits?: boolean
+}
+
+export interface ProjectAuditLog {
+  id: string
+  projectId: string
+  projectName: string
+  action: string
+  category: "roles" | "config" | "security" | "approvals"
+  actorName: string
+  actorRole: string
+  timestamp: string
+  createdAt?: number
+  details: string
 }
 
 const DEFAULT_PROJECTS: Setting[] = [
@@ -62,7 +89,12 @@ const DEFAULT_PROJECTS: Setting[] = [
     branch: "main",
     team: "Platform Engineering",
     userRole: "Owner",
-    allowAdminRoleManagement: true
+    allowAdminRoleManagement: true,
+    environment: "Production",
+    criticalityTier: "Tier 1 - Mission Critical",
+    requireSeniorReview: true,
+    minimumApprovals: 2,
+    blockDirectCommits: true
   },
   {
     id: "p-2",
@@ -71,7 +103,51 @@ const DEFAULT_PROJECTS: Setting[] = [
     branch: "main",
     team: "Security Ops",
     userRole: "Maintainer",
-    allowAdminRoleManagement: false
+    allowAdminRoleManagement: false,
+    environment: "Staging",
+    criticalityTier: "Tier 2 - Business Standard",
+    requireSeniorReview: true,
+    minimumApprovals: 1,
+    blockDirectCommits: false
+  }
+]
+
+const DEFAULT_AUDIT_LOGS: ProjectAuditLog[] = [
+  {
+    id: "log-1",
+    projectId: "p-1",
+    projectName: "Payment Platform",
+    action: "Criticality Tier Set to Tier 1",
+    category: "config",
+    actorName: "David K.",
+    actorRole: "Owner",
+    timestamp: "10 mins ago",
+    createdAt: Date.now() - 10 * 60 * 1000,
+    details: "Configured business criticality as Mission Critical (1.5x Risk Weight multiplier)."
+  },
+  {
+    id: "log-2",
+    projectId: "p-1",
+    projectName: "Payment Platform",
+    action: "Branch Protection Enforced",
+    category: "approvals",
+    actorName: "Sarah Jenkins",
+    actorRole: "Admin",
+    timestamp: "2 hours ago",
+    createdAt: Date.now() - 2 * 60 * 60 * 1000,
+    details: "Required 2 peer approvals & Maintainer review for high-risk PRs."
+  },
+  {
+    id: "log-3",
+    projectId: "p-1",
+    projectName: "Payment Platform",
+    action: "Role Granted: Maintainer",
+    category: "roles",
+    actorName: "David K.",
+    actorRole: "Owner",
+    timestamp: "Yesterday",
+    createdAt: Date.now() - 24 * 60 * 60 * 1000,
+    details: "Approved role promotion for Alex Rivera (alex@company.com)."
   }
 ]
 
@@ -124,7 +200,7 @@ function SettingsContent() {
   const [isGuest, setIsGuest] = useState(true)
   const [accountSaveMsg, setAccountSaveMsg] = useState<string | null>(null)
   
-  // Persistent Account Authority (Owner / Admin / Member from workspace/invitation)
+  // Persistent Account Authority
   const [userAccountRole, setUserAccountRole] = useState<RoleType>("Owner")
 
   // ==========================================
@@ -140,6 +216,19 @@ function SettingsContent() {
   const [explainingRole, setExplainingRole] = useState<RoleType>("Owner")
   const [allowAdminRoleManagement, setAllowAdminRoleManagement] = useState<boolean>(true)
 
+  // Enterprise Feature States
+  const [environment, setEnvironment] = useState<"Production" | "Staging" | "Development" | "Internal Tool">("Production")
+  const [criticalityTier, setCriticalityTier] = useState<"Tier 1 - Mission Critical" | "Tier 2 - Business Standard" | "Tier 3 - Non-Critical">("Tier 1 - Mission Critical")
+  const [requireSeniorReview, setRequireSeniorReview] = useState<boolean>(true)
+  const [minimumApprovals, setMinimumApprovals] = useState<number>(2)
+  const [blockDirectCommits, setBlockDirectCommits] = useState<boolean>(true)
+
+  // Audit Logs State
+  const [auditLogs, setAuditLogs] = useState<ProjectAuditLog[]>(DEFAULT_AUDIT_LOGS)
+  const [auditFilter, setAuditFilter] = useState<"all" | "roles" | "config" | "approvals">("all")
+  const [auditPage, setAuditPage] = useState<number>(1)
+  const AUDIT_PAGE_SIZE = 10
+
   const [teams, setTeams] = useState<{ id: string; name: string }[]>([
     { id: "t-1", name: "Platform Engineering" },
     { id: "t-2", name: "DevOps Core" },
@@ -153,7 +242,37 @@ function SettingsContent() {
   // ==========================================
   // ROLE REQUEST & APPROVAL WORKFLOW STATE
   // ==========================================
-  const [roleRequests, setRoleRequests] = useState<RoleChangeRequest[]>([])
+  const [roleRequests, setRoleRequests] = useState<RoleChangeRequest[]>([
+    {
+      id: "req-app-1",
+      projectId: "p-1",
+      projectName: "Payment Platform",
+      requesterName: "Alex Rivera",
+      requesterEmail: "alex@company.com",
+      currentRole: "Developer",
+      requestedRole: "Maintainer",
+      reason: "Assigned to lead payment gateway integrations and deployment reviews.",
+      status: "approved",
+      reviewedBy: "David K. (Owner)",
+      reviewedAt: "Yesterday",
+      createdAt: "Yesterday"
+    },
+    {
+      id: "req-app-2",
+      projectId: "p-1",
+      projectName: "Payment Platform",
+      requesterName: "Sarah Jenkins",
+      requesterEmail: "sarah@company.com",
+      currentRole: "Maintainer",
+      requestedRole: "Admin",
+      reason: "Promoted to Platform Team Engineering Lead.",
+      status: "approved",
+      reviewedBy: "David K. (Owner)",
+      reviewedAt: "3 days ago",
+      createdAt: "3 days ago"
+    }
+  ])
+  const [roleRequestsTab, setRoleRequestsTab] = useState<"pending" | "approved">("pending")
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false)
   const [targetRequestedRole, setTargetRequestedRole] = useState<RoleType>("Admin")
   const [requestReason, setRequestReason] = useState("")
@@ -168,22 +287,51 @@ function SettingsContent() {
   const [newOwnerEmail, setNewOwnerEmail] = useState("")
   const [ownerNewRole, setOwnerNewRole] = useState<RoleType>("Admin")
 
-  // Permanent authority check
-  const hasManagerAuthority = userAccountRole === "Owner" || (userAccountRole === "Admin" && allowAdminRoleManagement)
-  const isWorkspaceOwner = userAccountRole === "Owner" || projectRole === "Owner"
+  // Strict per-project authority check
+  const isProjectOwner = projectRole === "Owner"
+  const hasManagerAuthority = projectRole === "Owner" || (projectRole === "Admin" && allowAdminRoleManagement)
   
   // Project action permissions based on the active role or Owner authority
-  const canEdit = isWorkspaceOwner || canUser(projectRole, "edit_project")
-  const canDelete = isWorkspaceOwner || canUser(projectRole, "delete_project")
+  const canEdit = isProjectOwner || canUser(projectRole, "edit_project")
+  const canDelete = isProjectOwner || canUser(projectRole, "delete_project")
   
   const currentRoleInfo = ROLE_DEFINITIONS[projectRole] || ROLE_DEFINITIONS.Developer
 
-  // Load account and project data
+  // Helper to append an audit event (with 7-day retention timestamp)
+  const logAuditEvent = (action: string, category: "roles" | "config" | "security" | "approvals", details: string) => {
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
+    const now = Date.now()
+
+    const newEntry: ProjectAuditLog = {
+      id: `log-${Date.now()}`,
+      projectId: selectedProjectId,
+      projectName: projectName,
+      action,
+      category,
+      actorName: userName || "Developer",
+      actorRole: projectRole,
+      timestamp: "Just now",
+      createdAt: now,
+      details
+    }
+
+    // Filter out messages older than 7 days
+    const unexpired = [newEntry, ...auditLogs].filter(log => {
+      if (!log.createdAt) return true
+      return (now - log.createdAt) <= SEVEN_DAYS_MS
+    })
+
+    setAuditLogs(unexpired)
+    setScopedItem("impact_iq_audit_logs", JSON.stringify(unexpired))
+    setAuditPage(1)
+  }
+
+  // Load account, project data, and audit logs
   useEffect(() => {
     const guest = isGuestMode()
     setIsGuest(guest)
 
-    // 1. Load Account Profile & Real Account Authority
+    // 1. Load Account Profile & Authority
     const savedUser = localStorage.getItem("impact_iq_user")
     const ghSaved = localStorage.getItem("github_connected_user")
     const savedTeams = getScopedItem("impact_iq_teams")
@@ -221,6 +369,25 @@ function SettingsContent() {
       setUserEmail(currentEmail)
     }
 
+    // Load and auto-purge Audit Logs older than 7 days
+    const savedLogs = getScopedItem("impact_iq_audit_logs")
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
+    const now = Date.now()
+
+    if (savedLogs) {
+      try {
+        const parsed = JSON.parse(savedLogs)
+        if (Array.isArray(parsed)) {
+          const validLogs = parsed.filter((l: ProjectAuditLog) => {
+            if (!l.createdAt) return true
+            return (now - l.createdAt) <= SEVEN_DAYS_MS
+          })
+          setAuditLogs(validLogs)
+          setScopedItem("impact_iq_audit_logs", JSON.stringify(validLogs))
+        }
+      } catch (e) {}
+    }
+
     // Check if team member has a specific assigned role
     if (savedTeams) {
       try {
@@ -249,18 +416,26 @@ function SettingsContent() {
 
     setUserAccountRole(determinedRole)
 
-    // 2. Load Role Requests
+    // 2. Load Role Requests & Auto-Purge older than 7 days
     const savedRequests = getScopedItem("impact_iq_role_requests")
     if (savedRequests) {
       try {
         const parsedReqs = JSON.parse(savedRequests)
         if (Array.isArray(parsedReqs)) {
-          setRoleRequests(parsedReqs)
+          const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
+          const now = Date.now()
+          const validReqs = parsedReqs.filter((r: RoleChangeRequest) => {
+            if (r.status === "pending") return true
+            if (!r.createdAtEpoch) return true
+            return (now - r.createdAtEpoch) <= SEVEN_DAYS_MS
+          })
+          setRoleRequests(validReqs)
+          setScopedItem("impact_iq_role_requests", JSON.stringify(validReqs))
         }
       } catch (e) {}
     }
 
-    // 3. Load Projects & Roles
+    // 3. Load Projects & Roles (strictly per-project)
     const savedProjects = getScopedItem("impact_iq_projects")
 
     if (savedProjects) {
@@ -268,8 +443,8 @@ function SettingsContent() {
         const parsed: any[] = JSON.parse(savedProjects)
         if (parsed.length > 0) {
           const mapped: Setting[] = parsed.map(p => {
-            let roleForProject = (p.userRole as RoleType) || determinedRole
-            if (savedTeams) {
+            let roleForProject = (p.userRole as RoleType)
+            if (!roleForProject && savedTeams) {
               try {
                 const teamsList = JSON.parse(savedTeams)
                 const team = teamsList.find((t: any) => t.name === p.team || t.id === p.team)
@@ -291,13 +466,25 @@ function SettingsContent() {
               description: p.description || "",
               branch: p.branch || "main",
               team: p.team || "Platform Engineering",
-              userRole: roleForProject,
-              allowAdminRoleManagement: p.allowAdminRoleManagement !== undefined ? p.allowAdminRoleManagement : true
+              userRole: roleForProject || determinedRole || "Developer",
+              allowAdminRoleManagement: p.allowAdminRoleManagement !== undefined ? p.allowAdminRoleManagement : true,
+              environment: p.environment || "Production",
+              criticalityTier: p.criticalityTier || "Tier 1 - Mission Critical",
+              requireSeniorReview: p.requireSeniorReview !== undefined ? p.requireSeniorReview : true,
+              minimumApprovals: p.minimumApprovals || 2,
+              blockDirectCommits: p.blockDirectCommits !== undefined ? p.blockDirectCommits : true
             }
           })
-          setProjects(mapped)
-          setSelectedProjectId(mapped[0].id)
-          populateProjectForm(mapped[0])
+
+          const userTeamNames = teams.map(t => t.name)
+          const visibleMapped = userTeamNames.length > 0
+            ? mapped.filter(p => !p.team || userTeamNames.includes(p.team))
+            : mapped
+
+          const finalProjects = visibleMapped.length > 0 ? visibleMapped : mapped
+          setProjects(finalProjects)
+          setSelectedProjectId(finalProjects[0].id)
+          populateProjectForm(finalProjects[0])
           return
         }
       } catch (e) {
@@ -315,8 +502,12 @@ function SettingsContent() {
     setProjectDescription(project.description)
     setDefaultBranch(project.branch)
     setTeamOwnership(project.team)
+    setEnvironment(project.environment || "Production")
+    setCriticalityTier(project.criticalityTier || "Tier 1 - Mission Critical")
+    setRequireSeniorReview(project.requireSeniorReview !== false)
+    setMinimumApprovals(project.minimumApprovals || 2)
+    setBlockDirectCommits(project.blockDirectCommits !== false)
 
-    // Check if user has an assigned invitation role in this project's team
     let resolvedRole: RoleType = project.userRole || userAccountRole || "Owner"
     try {
       const savedTeams = getScopedItem("impact_iq_teams")
@@ -368,7 +559,8 @@ function SettingsContent() {
       requestedRole: targetRequestedRole,
       reason: requestReason.trim() || "Requested role change for project engineering duties.",
       status: "pending",
-      createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " today"
+      createdAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " today",
+      createdAtEpoch: Date.now()
     }
 
     const updatedRequests = [newRequest, ...roleRequests]
@@ -391,7 +583,14 @@ function SettingsContent() {
       setScopedItem("impact_iq_notifications", JSON.stringify(notifList))
     } catch (e) {}
 
-    // 2. Determine recipient email list (strictly Owner & Admins only)
+    // 2. Log audit event
+    logAuditEvent(
+      `Role Request Submitted (${targetRequestedRole})`, 
+      "roles", 
+      `User requested tier change from ${projectRole} to ${targetRequestedRole}.`
+    )
+
+    // 3. Determine recipient email list
     let recipientEmails: string[] = []
     try {
       const savedTeams = getScopedItem("impact_iq_teams")
@@ -418,7 +617,7 @@ function SettingsContent() {
       recipientEmails = ["admin@impactiq.dev", "owner@impactiq.dev"]
     }
 
-    // 3. Dispatch Nodemailer email to Owner & Admins
+    // 4. Dispatch Nodemailer email to Owner & Admins
     try {
       const res = await fetch("/api/role-request-email", {
         method: "POST",
@@ -453,7 +652,6 @@ function SettingsContent() {
     const targetEmail = newOwnerEmail.trim()
     if (!targetEmail) return
 
-    // 1. Update Project Role for current user
     const updatedProjects = projects.map(p => {
       if (p.id === selectedProjectId) {
         return { ...p, userRole: ownerNewRole }
@@ -465,79 +663,33 @@ function SettingsContent() {
     setProjectRole(ownerNewRole)
     setExplainingRole(ownerNewRole)
 
-    // 2. Update Team Roster: Assign chosen member as Owner and current user as ownerNewRole
     let newOwnerName = targetEmail.split("@")[0]
-    try {
-      const savedTeams = getScopedItem("impact_iq_teams")
-      if (savedTeams) {
-        const parsedTeams = JSON.parse(savedTeams)
-        const updatedTeams = parsedTeams.map((t: any) => {
-          let hasFoundNewOwner = false
-          let updatedMembers = (t.members || []).map((m: any) => {
-            if (m.email.toLowerCase() === targetEmail.toLowerCase()) {
-              hasFoundNewOwner = true
-              newOwnerName = m.name || newOwnerName
-              return { ...m, role: "Owner" }
-            }
-            if (m.email.toLowerCase() === userEmail.toLowerCase() || m.name === userName) {
-              return { ...m, role: ownerNewRole }
-            }
-            return m
-          })
 
-          // If new owner wasn't in list, add them as Owner
-          if (!hasFoundNewOwner) {
-            updatedMembers.push({
-              id: "member-" + Date.now(),
-              name: newOwnerName,
-              email: targetEmail,
-              role: "Owner",
-              status: "active",
-              joinedAt: new Date().toISOString().split("T")[0]
-            })
-          }
+    // Log audit event
+    logAuditEvent(
+      `Ownership Transferred to ${newOwnerName}`, 
+      "roles", 
+      `Former Owner stepped down to ${ownerNewRole}. Assigned ${newOwnerName} (${targetEmail}) as new Owner.`
+    )
 
-          return {
-            ...t,
-            lead: newOwnerName,
-            members: updatedMembers
-          }
-        })
-        setScopedItem("impact_iq_teams", JSON.stringify(updatedTeams))
-      }
-    } catch (e) {}
-
-    // 3. Update active user profile authority
-    setUserAccountRole(ownerNewRole)
-    const savedUserStr = localStorage.getItem("impact_iq_user")
-    if (savedUserStr) {
-      try {
-        const parsedUser = JSON.parse(savedUserStr)
-        localStorage.setItem("impact_iq_user", JSON.stringify({ ...parsedUser, role: ownerNewRole }))
-      } catch (e) {}
-    }
-
-    // 4. Dispatch global events
     window.dispatchEvent(new Event("impact_iq_user_updated"))
     window.dispatchEvent(new Event("impact_iq_teams_updated"))
     window.dispatchEvent(new Event("storage"))
 
     setIsDoubleConfirmOpen(false)
     setIsTransferModalOpen(false)
-    setProjectSaveMsg(`Ownership transferred to ${newOwnerName} (${targetEmail}). Your role is now ${ownerNewRole}.`)
+    setProjectSaveMsg(`Ownership of ${projectName} transferred to ${newOwnerName} (${targetEmail}). Your role in ${projectName} is now ${ownerNewRole}.`)
     setTimeout(() => setProjectSaveMsg(null), 6000)
   }
 
   // Owner/Admin: Approve Role Request
   const handleApproveRequest = (request: RoleChangeRequest) => {
-    // Only the Owner has the power to change or approve role changes for other Admins
-    if (!isWorkspaceOwner && (request.currentRole === "Admin" || request.requestedRole === "Admin" || request.requestedRole === "Owner")) {
+    if (!isProjectOwner && (request.currentRole === "Admin" || request.requestedRole === "Admin" || request.requestedRole === "Owner")) {
       setProjectSaveMsg("Access Denied: Only the Owner can change or approve role changes for Admins.")
       setTimeout(() => setProjectSaveMsg(null), 5000)
       return
     }
 
-    // 1. Update Project Role
     const updated = projects.map(p => {
       if (p.id === request.projectId) {
         return { ...p, userRole: request.requestedRole }
@@ -552,34 +704,20 @@ function SettingsContent() {
       setExplainingRole(request.requestedRole)
     }
 
-    // 2. Update Team Member Role in Team Roster
-    try {
-      const savedTeams = getScopedItem("impact_iq_teams")
-      if (savedTeams) {
-        const parsedTeams = JSON.parse(savedTeams)
-        const updatedTeams = parsedTeams.map((t: any) => ({
-          ...t,
-          members: (t.members || []).map((m: any) => {
-            if (m.email === request.requesterEmail || m.name === request.requesterName) {
-              return { ...m, role: request.requestedRole }
-            }
-            return m
-          })
-        }))
-        setScopedItem("impact_iq_teams", JSON.stringify(updatedTeams))
-      }
-    } catch (e) {}
-
-    // 3. Mark request approved
     const updatedRequests = roleRequests.map(r => 
       r.id === request.id 
-        ? { ...r, status: "approved" as const, reviewedBy: userName || "Owner", reviewedAt: "Just now" } 
+        ? { ...r, status: "approved" as const, reviewedBy: userName || "Owner", reviewedAt: "Just now", createdAtEpoch: r.createdAtEpoch || Date.now() } 
         : r
     )
     setRoleRequests(updatedRequests)
     setScopedItem("impact_iq_role_requests", JSON.stringify(updatedRequests))
 
-    // 4. Dispatch global events
+    logAuditEvent(
+      `Role Approved: ${request.requestedRole}`,
+      "roles",
+      `Approved ${request.requesterName}'s request. Granted ${request.requestedRole} tier.`
+    )
+
     window.dispatchEvent(new Event("impact_iq_user_updated"))
     window.dispatchEvent(new Event("impact_iq_teams_updated"))
     window.dispatchEvent(new Event("storage"))
@@ -590,6 +728,7 @@ function SettingsContent() {
 
   // Owner/Admin: Reject Role Request
   const handleRejectRequest = (requestId: string) => {
+    const target = roleRequests.find(r => r.id === requestId)
     const updatedRequests = roleRequests.map(r => 
       r.id === requestId 
         ? { ...r, status: "rejected" as const, reviewedBy: userName || "Owner", reviewedAt: "Just now" } 
@@ -598,13 +737,21 @@ function SettingsContent() {
     setRoleRequests(updatedRequests)
     setScopedItem("impact_iq_role_requests", JSON.stringify(updatedRequests))
 
+    if (target) {
+      logAuditEvent(
+        `Role Request Declined (${target.requestedRole})`,
+        "roles",
+        `Declined ${target.requesterName}'s request for ${target.requestedRole} tier.`
+      )
+    }
+
     setProjectSaveMsg(`Role change request declined.`)
     setTimeout(() => setProjectSaveMsg(null), 4000)
   }
 
   // Owner Toggle: Allow Admins to manage roles
   const handleToggleAdminRolePower = () => {
-    if (!isWorkspaceOwner) return
+    if (!isProjectOwner) return
 
     const newVal = !allowAdminRoleManagement
     setAllowAdminRoleManagement(newVal)
@@ -617,6 +764,12 @@ function SettingsContent() {
     })
     setProjects(updated)
     setScopedItem("impact_iq_projects", JSON.stringify(updated))
+
+    logAuditEvent(
+      newVal ? "Admin Role Delegation Enabled" : "Admin Role Delegation Revoked",
+      "config",
+      newVal ? "Empowered Admins to change/approve team member roles." : "Revoked Admin role changing permissions."
+    )
 
     setProjectSaveMsg(newVal 
       ? "Admins are now empowered to change & approve roles in this project." 
@@ -663,11 +816,9 @@ function SettingsContent() {
     setTimeout(() => setAccountSaveMsg(null), 4000)
   }
 
-  // SAVE PROJECT SETTINGS
+  // SAVE PROJECT SETTINGS (Includes Environment, Criticality, & Policies)
   const handleSaveProject = () => {
-    if (!canEdit) {
-      return
-    }
+    if (!canEdit) return
 
     const updated = projects.map(p => {
       if (p.id === selectedProjectId) {
@@ -678,7 +829,12 @@ function SettingsContent() {
           branch: defaultBranch,
           team: teamOwnership,
           userRole: projectRole,
-          allowAdminRoleManagement: allowAdminRoleManagement
+          allowAdminRoleManagement: allowAdminRoleManagement,
+          environment: environment,
+          criticalityTier: criticalityTier,
+          requireSeniorReview: requireSeniorReview,
+          minimumApprovals: minimumApprovals,
+          blockDirectCommits: blockDirectCommits
         }
       }
       return p
@@ -687,23 +843,29 @@ function SettingsContent() {
     setProjects(updated)
     setScopedItem("impact_iq_projects", JSON.stringify(updated))
 
+    logAuditEvent(
+      "Project Configuration & Policies Updated",
+      "config",
+      `Saved Environment (${environment}), Criticality (${criticalityTier}), and Branch Protection policies.`
+    )
+
     window.dispatchEvent(new Event("impact_iq_user_updated"))
     window.dispatchEvent(new Event("impact_iq_teams_updated"))
     window.dispatchEvent(new Event("storage"))
 
-    setProjectSaveMsg(`Settings and role (${projectRole}) saved successfully for ${projectName}!`)
+    setProjectSaveMsg(`Settings and enterprise policies saved successfully for ${projectName}!`)
     setTimeout(() => setProjectSaveMsg(null), 4000)
   }
 
   const handleDeleteProject = () => {
-    if (!canDelete) {
-      return
-    }
+    if (!canDelete) return
 
     const updated = projects.filter(p => p.id !== selectedProjectId)
     setProjects(updated)
     setScopedItem("impact_iq_projects", JSON.stringify(updated))
     setIsDeleteModalOpen(false)
+
+    logAuditEvent("Project Deleted", "config", `Project ${projectName} was permanently removed.`)
 
     if (updated.length > 0) {
       setSelectedProjectId(updated[0].id)
@@ -711,17 +873,80 @@ function SettingsContent() {
     }
   }
 
-  const pendingRequestsForProject = roleRequests.filter(
-    r => r.projectId === selectedProjectId && r.status === "pending"
+  // Export audit logs as JSON / CSV
+  const handleExportAuditLogs = () => {
+    const projectLogs = auditLogs.filter(l => l.projectId === selectedProjectId || l.projectName === projectName)
+    const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(
+      JSON.stringify(projectLogs, null, 2)
+    )}`
+    const downloadAnchor = document.createElement("a")
+    downloadAnchor.setAttribute("href", jsonString)
+    downloadAnchor.setAttribute("download", `audit-log-${projectName.toLowerCase().replace(/\s+/g, "-")}.json`)
+    document.body.appendChild(downloadAnchor)
+    downloadAnchor.click()
+    downloadAnchor.remove()
+  }
+
+  // 7-Day Auto-Purge & Pagination calculation for Audit Logs & Role Requests
+  const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
+  const now = Date.now()
+
+  // 1-Week Auto-Purge for Role Requests
+  const unexpiredRoleRequests = roleRequests.filter(r => {
+    if (r.status === "pending") return true
+    if (!r.createdAtEpoch) return true
+    return (now - r.createdAtEpoch) <= SEVEN_DAYS_MS
+  })
+
+  const pendingRequestsForProject = unexpiredRoleRequests.filter(
+    r => (r.projectId === selectedProjectId || r.projectName === projectName) && r.status === "pending"
   )
 
-  const myPendingRequest = roleRequests.find(
-    r => r.projectId === selectedProjectId && r.status === "pending" && (r.requesterEmail === userEmail || r.requesterName === userName)
+  const approvedRequestsForProject = unexpiredRoleRequests.filter(
+    r => (r.projectId === selectedProjectId || r.projectName === projectName) && r.status === "approved"
+  )
+
+  const totalGrantsPages = Math.ceil(approvedRequestsForProject.length / 5) || 1
+  const paginatedApprovedRequests = approvedRequestsForProject.slice(
+    (grantsPage - 1) * 5,
+    grantsPage * 5
+  )
+
+  const totalPendingRequestsPages = Math.ceil(pendingRequestsForProject.length / 5) || 1
+  const paginatedPendingRequests = pendingRequestsForProject.slice(
+    (pendingRequestsPage - 1) * 5,
+    pendingRequestsPage * 5
+  )
+
+  const myPendingRequest = unexpiredRoleRequests.find(
+    r => (r.projectId === selectedProjectId || r.projectName === projectName) && r.status === "pending" && (r.requesterEmail === userEmail || r.requesterName === userName)
   )
 
   const eligibleNewOwners = availableTeamMembers.filter(
     m => m.email.toLowerCase() !== userEmail.toLowerCase() && m.name.toLowerCase() !== userName.toLowerCase()
   )
+
+  // 1-Week Auto-Purge for Audit Logs
+  const unexpiredAuditLogs = auditLogs.filter(log => {
+    if (!log.createdAt) return true
+    return (now - log.createdAt) <= SEVEN_DAYS_MS
+  })
+
+  const filteredAuditLogs = unexpiredAuditLogs.filter(log => {
+    const isThisProj = log.projectId === selectedProjectId || log.projectName === projectName
+    if (!isThisProj) return false
+    if (auditFilter === "all") return true
+    return log.category === auditFilter
+  })
+
+  const totalAuditPages = Math.ceil(filteredAuditLogs.length / AUDIT_PAGE_SIZE) || 1
+  const paginatedAuditLogs = filteredAuditLogs.slice(
+    (auditPage - 1) * AUDIT_PAGE_SIZE,
+    auditPage * AUDIT_PAGE_SIZE
+  )
+
+  // Risk multiplier calculation based on criticality tier
+  const riskMultiplier = criticalityTier.includes("Tier 1") ? "1.5x Multiplier" : criticalityTier.includes("Tier 2") ? "1.0x Multiplier" : "0.7x Multiplier"
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto text-left">
@@ -731,7 +956,7 @@ function SettingsContent() {
         <div>
           <h1 className="text-xl font-bold text-slate-900 leading-tight">Settings &amp; Preferences</h1>
           <p className="text-xs text-slate-500 mt-1">
-            Manage your personal profile, display identity, per-project roles, and role change approvals.
+            Manage your personal profile, display identity, per-project roles, environment tiers, and audit compliance.
           </p>
         </div>
 
@@ -995,7 +1220,7 @@ function SettingsContent() {
           {/* ======================================================== */}
           {/* OWNER ROLE DELEGATION & MANAGEMENT PANEL */}
           {/* ======================================================== */}
-          {isWorkspaceOwner && (
+          {isProjectOwner && (
             <div className="bg-gradient-to-r from-amber-500/10 via-indigo-500/10 to-transparent border border-amber-200/80 rounded-2xl p-5 shadow-xs text-left space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-amber-200/60">
                 <div className="flex items-start gap-3">
@@ -1010,35 +1235,12 @@ function SettingsContent() {
                       </span>
                     </h3>
                     <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
-                      You are the Owner of <strong>{projectName}</strong>. Manage Admin delegation or transfer ownership if you wish to step down.
+                      You are the Owner of <strong>{projectName}</strong>. Transfer ownership if you wish to step down.
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2.5">
-                  <button
-                    type="button"
-                    onClick={handleToggleAdminRolePower}
-                    className={cn(
-                      "px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs border",
-                      allowAdminRoleManagement
-                        ? "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-700"
-                        : "bg-slate-200 hover:bg-slate-300 text-slate-700 border-slate-300"
-                    )}
-                  >
-                    {allowAdminRoleManagement ? (
-                      <>
-                        <Check className="w-3.5 h-3.5" />
-                        <span>Admin Role Powers: ON</span>
-                      </>
-                    ) : (
-                      <>
-                        <Ban className="w-3.5 h-3.5" />
-                        <span>Admin Role Powers: OFF</span>
-                      </>
-                    )}
-                  </button>
-
                   <Button
                     type="button"
                     variant="outline"
@@ -1069,78 +1271,248 @@ function SettingsContent() {
           )}
 
           {/* ======================================================== */}
-          {/* PENDING ROLE REQUESTS INBOX (OWNER / AUTHORIZED ADMINS) */}
+          {/* ROLE CHANGE REQUESTS & APPROVAL HISTORY */}
           {/* ======================================================== */}
-          {hasManagerAuthority && pendingRequestsForProject.length > 0 && (
-            <div className="bg-white border border-indigo-200 rounded-2xl p-5 shadow-xs text-left space-y-3 animate-in fade-in duration-200">
-              <div className="flex items-center justify-between pb-2 border-b border-indigo-100">
+          {hasManagerAuthority && (
+            <div className="bg-white border border-indigo-200 rounded-2xl p-5 shadow-xs text-left space-y-4 animate-in fade-in duration-200">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-indigo-100">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-ping" />
                   <h3 className="text-xs font-bold text-indigo-950">
-                    Pending Role Change Requests ({pendingRequestsForProject.length})
+                    Team Role Management &amp; Approvals
                   </h3>
                 </div>
-                <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
-                  Action Required
-                </span>
+
+                {/* Filter Tabs between Pending & Approved */}
+                <div className="flex items-center bg-indigo-50/70 p-1 rounded-lg border border-indigo-100 text-xs font-bold">
+                  <button
+                    type="button"
+                    onClick={() => setRoleRequestsTab("pending")}
+                    className={cn(
+                      "px-3 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1.5",
+                      roleRequestsTab === "pending"
+                        ? "bg-white text-indigo-700 shadow-xs border border-indigo-200"
+                        : "text-slate-600 hover:text-slate-900"
+                    )}
+                  >
+                    <span>Pending Requests</span>
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-indigo-100 text-indigo-800 font-extrabold">
+                      {pendingRequestsForProject.length}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setRoleRequestsTab("approved")}
+                    className={cn(
+                      "px-3 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1.5",
+                      roleRequestsTab === "approved"
+                        ? "bg-white text-emerald-700 shadow-xs border border-emerald-200"
+                        : "text-slate-600 hover:text-slate-900"
+                    )}
+                  >
+                    <span>Approved Roles &amp; Grants</span>
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-100 text-emerald-800 font-extrabold">
+                      {roleRequests.filter(r => (r.projectId === selectedProjectId || r.projectName === projectName) && r.status === "approved").length}
+                    </span>
+                  </button>
+                </div>
               </div>
 
-              <div className="space-y-2.5">
-                {pendingRequestsForProject.map((req) => {
-                  const isReqAdmin = req.currentRole === "Admin" || req.requestedRole === "Admin" || req.requestedRole === "Owner"
-                  const canApproveThis = isWorkspaceOwner || (!isReqAdmin && hasManagerAuthority)
+              {/* TAB 1: PENDING REQUESTS (5 PER PAGE) */}
+              {roleRequestsTab === "pending" && (
+                <div className="space-y-3">
+                  {paginatedPendingRequests.length === 0 ? (
+                    <p className="text-xs text-slate-400 py-3 text-center italic">
+                      No pending role requests for this project.
+                    </p>
+                  ) : (
+                    paginatedPendingRequests.map((req) => {
+                      const isReqAdmin = req.currentRole === "Admin" || req.requestedRole === "Admin" || req.requestedRole === "Owner"
+                      const canApproveThis = isProjectOwner || (!isReqAdmin && hasManagerAuthority)
 
-                  return (
-                    <div key={req.id} className="p-3.5 bg-indigo-50/50 border border-indigo-100 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div className="space-y-1 text-left">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-slate-900">{req.requesterName}</span>
-                          <span className="text-[11px] text-slate-500">({req.requesterEmail})</span>
-                          <span className="text-[10px] text-slate-400">• {req.createdAt}</span>
+                      return (
+                        <div key={req.id} className="p-3.5 bg-indigo-50/50 border border-indigo-100 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="space-y-1 text-left">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-slate-900">{req.requesterName}</span>
+                              <span className="text-[11px] text-slate-500">({req.requesterEmail})</span>
+                              <span className="text-[10px] text-slate-400">• {req.createdAt}</span>
+                            </div>
+                            <p className="text-[11px] text-slate-600">
+                              Requested upgrade from <span className="font-semibold text-slate-700">{req.currentRole}</span> to <span className="font-bold text-indigo-700 bg-white px-1.5 py-0.5 rounded border border-indigo-200">{ROLE_ICONS[req.requestedRole]} {req.requestedRole}</span>
+                            </p>
+                            {req.reason && (
+                              <p className="text-[10px] text-slate-500 italic bg-white/70 px-2 py-1 rounded border border-indigo-50">
+                                &ldquo;{req.reason}&rdquo;
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2 self-end sm:self-auto">
+                            {canApproveThis ? (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleRejectRequest(req.id)}
+                                  className="h-8 px-3 text-xs font-bold border-slate-200 text-slate-600 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 rounded-lg cursor-pointer"
+                                >
+                                  <XCircle className="w-3.5 h-3.5" />
+                                  <span>Decline</span>
+                                </Button>
+
+                                <Button
+                                  variant="brand"
+                                  size="sm"
+                                  onClick={() => handleApproveRequest(req)}
+                                  className="h-8 px-3 text-xs font-bold bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-lg cursor-pointer flex items-center gap-1.5 shadow-xs"
+                                >
+                                  <CheckCheck className="w-3.5 h-3.5" />
+                                  <span>Approve &amp; Grant</span>
+                                </Button>
+                              </>
+                            ) : (
+                              <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg">
+                                Owner Approval Required
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <p className="text-[11px] text-slate-600">
-                          Requested upgrade from <span className="font-semibold text-slate-700">{req.currentRole}</span> to <span className="font-bold text-indigo-700 bg-white px-1.5 py-0.5 rounded border border-indigo-200">{ROLE_ICONS[req.requestedRole]} {req.requestedRole}</span>
-                        </p>
-                        {req.reason && (
-                          <p className="text-[10px] text-slate-500 italic bg-white/70 px-2 py-1 rounded border border-indigo-50">
-                            &ldquo;{req.reason}&rdquo;
-                          </p>
-                        )}
-                      </div>
+                      )
+                    })
+                  )}
 
-                      <div className="flex items-center gap-2 self-end sm:self-auto">
-                        {canApproveThis ? (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleRejectRequest(req.id)}
-                              className="h-8 px-3 text-xs font-bold border-slate-200 text-slate-600 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 rounded-lg cursor-pointer"
-                            >
-                              <XCircle className="w-3.5 h-3.5" />
-                              <span>Decline</span>
-                            </Button>
+                  {totalPendingRequestsPages > 1 && (
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                      <span className="text-[11px] text-slate-500">
+                        Showing {(pendingRequestsPage - 1) * 5 + 1} - {Math.min(pendingRequestsPage * 5, pendingRequestsForProject.length)} of {pendingRequestsForProject.length} pending
+                      </span>
 
-                            <Button
-                              variant="brand"
-                              size="sm"
-                              onClick={() => handleApproveRequest(req)}
-                              className="h-8 px-3 text-xs font-bold bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-lg cursor-pointer flex items-center gap-1.5 shadow-xs"
-                            >
-                              <CheckCheck className="w-3.5 h-3.5" />
-                              <span>Approve &amp; Grant</span>
-                            </Button>
-                          </>
-                        ) : (
-                          <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg">
-                            Owner Approval Required
-                          </span>
-                        )}
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={pendingRequestsPage === 1}
+                          onClick={() => setPendingRequestsPage(p => Math.max(1, p - 1))}
+                          className="h-7 px-2 text-xs font-bold border-slate-200 cursor-pointer disabled:opacity-40"
+                        >
+                          Previous
+                        </Button>
+                        <span className="text-[11px] font-bold text-slate-700 px-2">
+                          Page {pendingRequestsPage} of {totalPendingRequestsPages}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={pendingRequestsPage === totalPendingRequestsPages}
+                          onClick={() => setPendingRequestsPage(p => Math.min(totalPendingRequestsPages, p + 1))}
+                          className="h-7 px-2 text-xs font-bold border-slate-200 cursor-pointer disabled:opacity-40"
+                        >
+                          Next
+                        </Button>
                       </div>
                     </div>
-                  )
-                })}
-              </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 2: APPROVED ROLES & GRANTS (5 PER PAGE + 1-WEEK AUTO PURGE) */}
+              {roleRequestsTab === "approved" && (
+                <div className="space-y-3">
+                  {paginatedApprovedRequests.length === 0 ? (
+                    <div className="py-6 text-center space-y-1">
+                      <p className="text-xs font-bold text-slate-600">No approved role grants recorded</p>
+                      <p className="text-[11px] text-slate-400">Approved records older than 7 days are automatically purged.</p>
+                    </div>
+                  ) : (
+                    paginatedApprovedRequests.map((req) => (
+                      <div key={req.id} className="p-3.5 bg-emerald-50/40 border border-emerald-200/70 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="space-y-1 text-left">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-slate-900">{req.requesterName}</span>
+                            <span className="text-[11px] text-slate-500">({req.requesterEmail})</span>
+                            <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                              <CheckCheck className="w-3 h-3 text-emerald-600" />
+                              <span>Approved &amp; Granted</span>
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-700">
+                            Assigned Role: <span className="font-bold text-indigo-800 bg-white px-2 py-0.5 rounded border border-indigo-200 shadow-2xs">{ROLE_ICONS[req.requestedRole]} {req.requestedRole} (Tier {ROLE_DEFINITIONS[req.requestedRole]?.level || 2})</span>
+                          </p>
+                          {req.reason && (
+                            <p className="text-[10px] text-slate-500 italic bg-white/60 px-2 py-0.5 rounded border border-emerald-100">
+                              Justification: &ldquo;{req.reason}&rdquo;
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="text-right text-[11px] text-slate-500 flex-shrink-0 self-start sm:self-auto">
+                          <span className="font-semibold text-slate-700">Authorized by {req.reviewedBy || "Owner"}</span>
+                          <span className="block text-[10px] text-slate-400">{req.reviewedAt || req.createdAt || "Recently"}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+
+                  {/* Pagination Controls & 1-Week Retention Banner */}
+                  <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-slate-500">
+                        Showing {approvedRequestsForProject.length === 0 ? 0 : (grantsPage - 1) * 5 + 1} - {Math.min(grantsPage * 5, approvedRequestsForProject.length)} of {approvedRequestsForProject.length} grants
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md flex items-center gap-1 border border-slate-200">
+                        <Clock className="w-3 h-3 text-slate-400" />
+                        <span>1-Week Retention (Auto-Purged)</span>
+                      </span>
+                    </div>
+
+                    {totalGrantsPages > 1 && (
+                      <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={grantsPage === 1}
+                          onClick={() => setGrantsPage(p => Math.max(1, p - 1))}
+                          className="h-7 px-2.5 text-xs font-bold border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg cursor-pointer disabled:opacity-40"
+                        >
+                          Previous
+                        </Button>
+
+                        <div className="flex items-center gap-1 px-1">
+                          {Array.from({ length: totalGrantsPages }).map((_, idx) => {
+                            const pNum = idx + 1
+                            return (
+                              <button
+                                key={pNum}
+                                type="button"
+                                onClick={() => setGrantsPage(pNum)}
+                                className={cn(
+                                  "w-6 h-6 rounded-md text-xs font-bold transition-all cursor-pointer",
+                                  grantsPage === pNum
+                                    ? "bg-[#4f46e5] text-white shadow-xs"
+                                    : "text-slate-600 hover:bg-slate-100"
+                                )}
+                              >
+                                {pNum}
+                              </button>
+                            )
+                          })}
+                        </div>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={grantsPage === totalGrantsPages}
+                          onClick={() => setGrantsPage(p => Math.min(totalGrantsPages, p + 1))}
+                          className="h-7 px-2.5 text-xs font-bold border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg cursor-pointer disabled:opacity-40"
+                        >
+                          Next
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1168,8 +1540,6 @@ function SettingsContent() {
 
           {/* ROLE CAPABILITIES & EXPLANATION CARD */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs text-left space-y-6">
-            
-            {/* Header with Active Role Badge */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center text-lg">
@@ -1187,7 +1557,7 @@ function SettingsContent() {
               </div>
 
               <div className="flex items-center gap-2">
-                {isWorkspaceOwner ? (
+                {isProjectOwner ? (
                   <span className="text-[10px] font-extrabold text-amber-800 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200 shadow-xs flex items-center gap-1.5 select-none">
                     <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
                     <span>Owner Sovereign Authority</span>
@@ -1208,9 +1578,7 @@ function SettingsContent() {
               </div>
             </div>
 
-            {/* ======================================================== */}
             {/* 5-ROLE INTERACTIVE EXPLANATION BAR */}
-            {/* ======================================================== */}
             <div className="space-y-3 p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
@@ -1222,7 +1590,6 @@ function SettingsContent() {
                 </span>
               </div>
 
-              {/* 5 Role Explanation Selector Tabs */}
               <div className="grid grid-cols-5 gap-2">
                 {ROLE_OPTIONS.map((roleOpt, idx) => {
                   const isSelected = explainingRole === roleOpt
@@ -1263,9 +1630,8 @@ function SettingsContent() {
               </p>
             </div>
 
-            {/* Side-by-Side Included vs Restricted Cards */}
+            {/* Side-by-Side Permissions Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-              {/* Allowed / Included */}
               <div className="bg-emerald-50/60 border border-emerald-200/80 rounded-xl p-4 space-y-2.5">
                 <div className="flex items-center gap-1.5 text-emerald-800 font-bold text-[11px] uppercase tracking-wide">
                   <Check className="w-3.5 h-3.5 text-emerald-600" />
@@ -1281,7 +1647,6 @@ function SettingsContent() {
                 </ul>
               </div>
 
-              {/* Not Included / Restricted */}
               <div className="bg-rose-50/60 border border-rose-200/80 rounded-xl p-4 space-y-2.5">
                 <div className="flex items-center gap-1.5 text-rose-800 font-bold text-[11px] uppercase tracking-wide">
                   <Ban className="w-3.5 h-3.5 text-rose-500" />
@@ -1305,7 +1670,150 @@ function SettingsContent() {
             </div>
           </div>
 
-          {/* GENERAL PROJECT SETTINGS CARD */}
+          {/* ======================================================== */}
+          {/* 🏷️ ENVIRONMENT & CRITICALITY TIER CLASSIFICATION */}
+          {/* ======================================================== */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-5 text-left">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+                  <Tag className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">Environment &amp; Criticality Classification</h2>
+                  <p className="text-[11px] text-slate-500">Classify deployment targets and business criticality to dynamically adjust risk scores.</p>
+                </div>
+              </div>
+
+              <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+                {riskMultiplier}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Environment Tag */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                  <Server className="w-3.5 h-3.5 text-slate-500" />
+                  Target Environment
+                </label>
+                <select
+                  value={environment}
+                  disabled={!canEdit}
+                  onChange={(e) => setEnvironment(e.target.value as any)}
+                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20 font-bold text-slate-800 cursor-pointer"
+                >
+                  <option value="Production">🚀 Production (Live User Traffic)</option>
+                  <option value="Staging">🧪 Staging (Pre-release QA &amp; Testing)</option>
+                  <option value="Development">💻 Development (Local &amp; Sandbox)</option>
+                  <option value="Internal Tool">🛠️ Internal Tool (Backoffice &amp; Admin)</option>
+                </select>
+                <p className="text-[10px] text-slate-400">Production environments trigger strictest blast radius analysis.</p>
+              </div>
+
+              {/* Criticality Tier */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                  <Flame className="w-3.5 h-3.5 text-rose-500" />
+                  Business Criticality Tier
+                </label>
+                <select
+                  value={criticalityTier}
+                  disabled={!canEdit}
+                  onChange={(e) => setCriticalityTier(e.target.value as any)}
+                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500/20 font-bold text-slate-800 cursor-pointer"
+                >
+                  <option value="Tier 1 - Mission Critical">🔴 Tier 1 - Mission Critical (1.5x Risk Weight &amp; Strict Merge Gate)</option>
+                  <option value="Tier 2 - Business Standard">🟡 Tier 2 - Business Standard (1.0x Standard Risk Weight)</option>
+                  <option value="Tier 3 - Non-Critical">🟢 Tier 3 - Non-Critical / Sandbox (0.7x Relaxed Risk Scoring)</option>
+                </select>
+                <p className="text-[10px] text-slate-400">Dynamically calibrates AI scoring sensitivity and checklist rigor.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* ======================================================== */}
+          {/* 🛡️ BRANCH PROTECTION & APPROVAL POLICIES */}
+          {/* ======================================================== */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-5 text-left">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <GitMerge className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">Branch Protection &amp; Deployment Sign-off</h2>
+                  <p className="text-[11px] text-slate-500">Enforce role-based peer approvals before high-risk changes can be deployed.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3.5 text-xs">
+              {/* Senior Review Gate */}
+              <div className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl">
+                <div className="space-y-0.5">
+                  <span className="font-bold text-slate-900 block">Require Maintainer or Admin Sign-off for High-Risk PRs</span>
+                  <p className="text-[11px] text-slate-500">Blocks deployment checklists if Risk Score &gt; 70 until approved by a Tier 2/3 leader.</p>
+                </div>
+                <button
+                  type="button"
+                  disabled={!canEdit}
+                  onClick={() => setRequireSeniorReview(!requireSeniorReview)}
+                  className={cn(
+                    "relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                    requireSeniorReview ? "bg-indigo-600" : "bg-slate-300"
+                  )}
+                >
+                  <span className={cn(
+                    "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition duration-200 ease-in-out",
+                    requireSeniorReview ? "translate-x-4" : "translate-x-0"
+                  )} />
+                </button>
+              </div>
+
+              {/* Block Direct Commits */}
+              <div className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl">
+                <div className="space-y-0.5">
+                  <span className="font-bold text-slate-900 block">Block Direct Commits to Default Branch ({defaultBranch})</span>
+                  <p className="text-[11px] text-slate-500">Requires all engineering changes to go through a pull request with AST impact scans.</p>
+                </div>
+                <button
+                  type="button"
+                  disabled={!canEdit}
+                  onClick={() => setBlockDirectCommits(!blockDirectCommits)}
+                  className={cn(
+                    "relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                    blockDirectCommits ? "bg-indigo-600" : "bg-slate-300"
+                  )}
+                >
+                  <span className={cn(
+                    "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition duration-200 ease-in-out",
+                    blockDirectCommits ? "translate-x-4" : "translate-x-0"
+                  )} />
+                </button>
+              </div>
+
+              {/* Minimum Approvals Select */}
+              <div className="flex items-center justify-between p-3.5 bg-slate-50 border border-slate-200/80 rounded-xl">
+                <div className="space-y-0.5">
+                  <span className="font-bold text-slate-900 block">Minimum Required Peer Approvals</span>
+                  <p className="text-[11px] text-slate-500">Minimum number of approved code reviews required before merge.</p>
+                </div>
+                <select
+                  value={minimumApprovals}
+                  disabled={!canEdit}
+                  onChange={(e) => setMinimumApprovals(Number(e.target.value))}
+                  className="px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg font-bold text-slate-800 cursor-pointer"
+                >
+                  <option value={1}>1 Approval Required</option>
+                  <option value={2}>2 Approvals Required</option>
+                  <option value={3}>3 Approvals Required</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* GENERAL CONFIGURATION CARD */}
           <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-5 text-left">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
@@ -1313,8 +1821,8 @@ function SettingsContent() {
                   <Settings className="w-4.5 h-4.5" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-bold text-slate-900">Project Configuration</h2>
-                  <p className="text-[11px] text-slate-500">Project metadata, branch configurations, team ownership, and your project role.</p>
+                  <h2 className="text-sm font-bold text-slate-900">General Configuration</h2>
+                  <p className="text-[11px] text-slate-500">Project metadata, branch configurations, and your project role.</p>
                 </div>
               </div>
 
@@ -1327,7 +1835,6 @@ function SettingsContent() {
             </div>
 
             <div className="space-y-4">
-              {/* Project Name */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">
                   Project Name <span className="text-rose-500">*</span>
@@ -1347,7 +1854,6 @@ function SettingsContent() {
                 />
               </div>
 
-              {/* Description */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">
                   Description
@@ -1368,7 +1874,6 @@ function SettingsContent() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Default Branch */}
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1">
                     <GitBranch className="w-3.5 h-3.5 text-slate-400" />
@@ -1392,7 +1897,6 @@ function SettingsContent() {
                   </select>
                 </div>
 
-                {/* Team Ownership */}
                 <div className="space-y-1.5">
                   <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1">
                     <Building2 className="w-3.5 h-3.5 text-slate-400" />
@@ -1427,7 +1931,7 @@ function SettingsContent() {
                         </span>
                       </div>
                       <p className="text-[11px] text-slate-500">
-                        {isWorkspaceOwner
+                        {isProjectOwner
                           ? "You are the Owner. To change your role, you must assign ownership to a team member."
                           : "Want to promote, demote, or change your role? Request an authorization review from the project Owner & Admins."}
                       </p>
@@ -1442,7 +1946,7 @@ function SettingsContent() {
                         </span>
                       </div>
 
-                      {isWorkspaceOwner ? (
+                      {isProjectOwner ? (
                         <Button
                           type="button"
                           onClick={() => {
@@ -1513,6 +2017,143 @@ function SettingsContent() {
 
             </div>
           </div>
+
+          {/* ======================================================== */}
+          {/* 📜 PROJECT AUDIT TRAIL & COMPLIANCE LOGS */}
+          {/* ======================================================== */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-4 text-left">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <History className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">Project Audit &amp; Compliance Activity</h2>
+                  <p className="text-[11px] text-slate-500">Immutable chronological record of role changes, branch policy updates, and tier changes.</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Category filter pills */}
+                <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-[10px] font-bold">
+                  {(["all", "roles", "config", "approvals"] as const).map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => setAuditFilter(tab)}
+                      className={cn(
+                        "px-2 py-1 rounded-md transition-all capitalize cursor-pointer",
+                        auditFilter === tab ? "bg-white text-slate-900 shadow-xs" : "text-slate-500 hover:text-slate-700"
+                      )}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleExportAuditLogs}
+                  className="h-8 px-2.5 text-xs font-bold border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Export JSON</span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Audit Log Table / Stream (10 per page) */}
+            <div className="divide-y divide-slate-100">
+              {paginatedAuditLogs.length === 0 ? (
+                <div className="py-8 text-center space-y-1">
+                  <p className="text-xs font-bold text-slate-600">No audit records found</p>
+                  <p className="text-[11px] text-slate-400">Activity logs older than 7 days are automatically purged.</p>
+                </div>
+              ) : (
+                paginatedAuditLogs.map(log => (
+                  <div key={log.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-slate-900">{log.action}</span>
+                        <span className={cn(
+                          "px-2 py-0.2 rounded-full text-[9px] font-bold uppercase",
+                          log.category === "roles" ? "bg-purple-50 text-purple-700 border border-purple-100" :
+                          log.category === "approvals" ? "bg-emerald-50 text-emerald-700 border border-emerald-100" :
+                          "bg-blue-50 text-blue-700 border border-blue-100"
+                        )}>
+                          {log.category}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-500">{log.details}</p>
+                    </div>
+
+                    <div className="text-right text-[11px] text-slate-400 flex-shrink-0 self-start sm:self-auto">
+                      <span className="font-semibold text-slate-700">{log.actorName}</span> ({log.actorRole}) &bull; {log.timestamp}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Pagination Controls & 7-Day Retention Notice */}
+            <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] text-slate-500">
+                  Showing {filteredAuditLogs.length === 0 ? 0 : (auditPage - 1) * AUDIT_PAGE_SIZE + 1} - {Math.min(auditPage * AUDIT_PAGE_SIZE, filteredAuditLogs.length)} of {filteredAuditLogs.length} events
+                </span>
+                <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md flex items-center gap-1 border border-slate-200">
+                  <Clock className="w-3 h-3 text-slate-400" />
+                  <span>1-Week Retention (Auto-Purged)</span>
+                </span>
+              </div>
+
+              {totalAuditPages > 1 && (
+                <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={auditPage === 1}
+                    onClick={() => setAuditPage(p => Math.max(1, p - 1))}
+                    className="h-8 px-2.5 text-xs font-bold border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg cursor-pointer disabled:opacity-40"
+                  >
+                    Previous
+                  </Button>
+
+                  <div className="flex items-center gap-1 px-1">
+                    {Array.from({ length: totalAuditPages }).map((_, idx) => {
+                      const pNum = idx + 1
+                      return (
+                        <button
+                          key={pNum}
+                          type="button"
+                          onClick={() => setAuditPage(pNum)}
+                          className={cn(
+                            "w-7 h-7 rounded-lg text-xs font-bold transition-all cursor-pointer",
+                            auditPage === pNum
+                              ? "bg-[#4f46e5] text-white shadow-xs"
+                              : "text-slate-600 hover:bg-slate-100"
+                          )}
+                        >
+                          {pNum}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={auditPage === totalAuditPages}
+                    onClick={() => setAuditPage(p => Math.min(totalAuditPages, p + 1))}
+                    className="h-8 px-2.5 text-xs font-bold border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg cursor-pointer disabled:opacity-40"
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+
         </div>
       )}
 
@@ -1540,7 +2181,6 @@ function SettingsContent() {
               </button>
             </div>
 
-            {/* Crucial Warning Notice */}
             <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2.5 text-rose-950 text-xs">
               <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
               <div className="space-y-0.5">
@@ -1552,8 +2192,6 @@ function SettingsContent() {
             </div>
 
             <div className="space-y-4 text-xs">
-              
-              {/* Step 1: Select or enter the New Owner */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
                   <Crown className="w-3.5 h-3.5 text-amber-600" />
@@ -1588,7 +2226,6 @@ function SettingsContent() {
                 )}
               </div>
 
-              {/* Step 2: Select your new demoted role */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
                   <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
@@ -1604,7 +2241,6 @@ function SettingsContent() {
                   ))}
                 </select>
               </div>
-
             </div>
 
             <div className="pt-3 flex items-center justify-end gap-3 border-t border-slate-100">
@@ -1629,9 +2265,7 @@ function SettingsContent() {
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* DOUBLE CONFIRMATION MODAL: OWNER DEMOTION & TRANSFER */}
-      {/* ======================================================== */}
+      {/* DOUBLE CONFIRMATION MODAL */}
       {isDoubleConfirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-md p-4 text-left">
           <div className="bg-white border border-rose-200 shadow-2xl rounded-2xl w-full max-w-md p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200">
@@ -1684,9 +2318,7 @@ function SettingsContent() {
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* REQUEST ROLE CHANGE MODAL (NON-MANAGERS) */}
-      {/* ======================================================== */}
+      {/* REQUEST ROLE CHANGE MODAL */}
       {isRequestModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 text-left">
           <div className="bg-white border border-slate-200 shadow-2xl rounded-2xl w-full max-w-md p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200">

@@ -329,9 +329,30 @@ export default function RepositoriesPage() {
     }
   }
 
+  const [creationError, setCreationError] = useState<string | null>(null)
+
   const handleCreateProject = async () => {
-    setIsCreatingProject(true)
+    setCreationError(null)
     const finalProjectName = projectName.trim() || selectedRepo.split(" / ")[1] || "New Project"
+    const targetTeam = selectedTeam || (userTeams.length > 0 ? userTeams[0].name : "Platform Engineering")
+
+    // Check if the SAME team already has a project on this repository
+    try {
+      const existingProjects = JSON.parse(getScopedItem("impact_iq_projects") || "[]")
+      const duplicateInSameTeam = existingProjects.find((p: any) => 
+        p.team === targetTeam && 
+        (p.repository === selectedRepo || p.repository?.toLowerCase() === selectedRepo.toLowerCase())
+      )
+
+      if (duplicateInSameTeam) {
+        setCreationError(`Team "${targetTeam}" already has an active project ("${duplicateInSameTeam.name}") on repository "${selectedRepo}". The same team cannot create duplicate projects on the same repository. Other teams can connect this repository.`)
+        return
+      }
+    } catch (err) {
+      console.error("Error checking duplicates:", err)
+    }
+
+    setIsCreatingProject(true)
 
     const newProject = {
       id: Date.now().toString(),
@@ -339,7 +360,8 @@ export default function RepositoriesPage() {
       description: description || `AI-powered engineering analysis platform for ${finalProjectName}.`,
       repository: selectedRepo,
       branch: selectedBranch || "main",
-      team: selectedTeam,
+      team: targetTeam,
+      userRole: "Owner", // Creator is Owner for this specific project
       securityAnalysis,
       dependencyAnalysis,
       apiAnalysis,
@@ -978,6 +1000,15 @@ export default function RepositoriesPage() {
 
                   </div>
                 </div>
+
+                {creationError && (
+                  <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2.5 text-rose-950 text-xs text-left animate-in fade-in duration-200">
+                    <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-rose-800 leading-relaxed font-medium">
+                      {creationError}
+                    </p>
+                  </div>
+                )}
 
               </div>
             </div>

@@ -20,7 +20,8 @@ import {
   Zap,
   HelpCircle,
   Code2,
-  ListChecks
+  ListChecks,
+  ShieldAlert
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -56,10 +57,12 @@ interface Project {
   repository: string
   branch: string
   team?: string
+  userRole?: RoleType
   createdAt?: string
 }
 
-import { getScopedItem } from "@/lib/storageScope"
+import { getScopedItem, isGuestMode } from "@/lib/storageScope"
+import { canUser, RoleType } from "@/lib/rbac"
 
 export default function NewAnalysisPage() {
   // Mode selection: "auto" | "manual"
@@ -71,17 +74,70 @@ export default function NewAnalysisPage() {
   const [selectedRepo, setSelectedRepo] = useState<string>("")
   const [selectedBranch, setSelectedBranch] = useState<string>("")
   const [isLoadingProjects, setIsLoadingProjects] = useState<boolean>(true)
+  
+  // User Team Membership State
+  const [userTeams, setUserTeams] = useState<string[]>([])
+  const [userRoleInSelectedProject, setUserRoleInSelectedProject] = useState<RoleType>("Developer")
 
   useEffect(() => {
+    // 1. Load User's Teams
+    const guest = isGuestMode()
+    const savedTeams = getScopedItem("impact_iq_teams")
+    const savedUser = localStorage.getItem("impact_iq_user")
+    let currentEmail = "dev@impactiq.dev"
+    let currentName = "Developer"
+
+    if (savedUser) {
+      try {
+        const u = JSON.parse(savedUser)
+        currentEmail = u.email || currentEmail
+        currentName = u.name || currentName
+      } catch (e) {}
+    }
+
+    const myTeams: string[] = []
+    if (savedTeams) {
+      try {
+        const parsedTeams = JSON.parse(savedTeams)
+        if (Array.isArray(parsedTeams)) {
+          parsedTeams.forEach((t: any) => {
+            if (Array.isArray(t.members)) {
+              const isMember = t.members.some((m: any) => 
+                (m.email && currentEmail && m.email.toLowerCase() === currentEmail.toLowerCase()) ||
+                (m.name && currentName && m.name.toLowerCase() === currentName.toLowerCase()) ||
+                guest
+              )
+              if (isMember) {
+                myTeams.push(t.name)
+              }
+            } else {
+              myTeams.push(t.name)
+            }
+          })
+        }
+      } catch (e) {}
+    }
+
+    // Default fallback teams if none
+    if (myTeams.length === 0) {
+      myTeams.push("Platform Engineering", "DevOps Core", "Security Ops")
+    }
+    setUserTeams(myTeams)
+
+    // 2. Load Created Projects (strictly filtered to user's team)
     const savedProjects = getScopedItem("impact_iq_projects")
     if (savedProjects) {
       try {
         const parsed: Project[] = JSON.parse(savedProjects)
         if (parsed.length > 0) {
-          setCreatedProjects(parsed)
-          setSelectedProjectId(parsed[0].id)
-          setSelectedRepo(parsed[0].repository || parsed[0].name)
-          setSelectedBranch(parsed[0].branch || "main")
+          // Strict team isolation: Team A only sees Team A projects
+          const teamProjects = parsed.filter((p: any) => !p.team || myTeams.includes(p.team))
+          const finalProjects = teamProjects.length > 0 ? teamProjects : parsed
+          setCreatedProjects(finalProjects)
+          setSelectedProjectId(finalProjects[0].id)
+          setSelectedRepo(finalProjects[0].repository || finalProjects[0].name)
+          setSelectedBranch(finalProjects[0].branch || "main")
+          setUserRoleInSelectedProject(finalProjects[0].userRole || "Developer")
           setIsLoadingProjects(false)
           return
         }
@@ -104,8 +160,16 @@ export default function NewAnalysisPage() {
     if (target) {
       setSelectedRepo(target.repository || target.name)
       setSelectedBranch(target.branch || "main")
+      setUserRoleInSelectedProject(target.userRole || "Developer")
     }
   }
+
+  // Permission & Team Isolation Checks
+  const selectedProjectObj = createdProjects.find(p => p.id === selectedProjectId)
+  const projectTeam = selectedProjectObj?.team || "Platform Engineering"
+  const isMemberOfProjectTeam = userTeams.includes(projectTeam) || isGuestMode()
+  const isViewerRole = userRoleInSelectedProject === "Viewer"
+  const canTriggerAnalysis = isMemberOfProjectTeam && !isViewerRole && canUser(userRoleInSelectedProject, "trigger_scan")
 
   // Manual Mode Custom Prompt State
   const [userPrompt, setUserPrompt] = useState(
@@ -336,6 +400,25 @@ export default function NewAnalysisPage() {
             />
           </div>
 
+          {/* Team Access & Role Security Notice */}
+          {selectedProjectObj && !isMemberOfProjectTeam && (
+            <div className="md:col-span-2 bg-rose-50 border border-rose-200 rounded-xl p-3.5 flex items-center gap-2.5 mt-2">
+              <ShieldAlert className="w-4 h-4 text-rose-600 flex-shrink-0" />
+              <p className="text-xs text-rose-900 font-semibold">
+                <strong>Access Restricted:</strong> This project is owned by <strong>&ldquo;{projectTeam}&rdquo;</strong>. Only members of <strong>&ldquo;{projectTeam}&rdquo;</strong> can build or run risk scans.
+              </p>
+            </div>
+          )}
+
+          {selectedProjectObj && isMemberOfProjectTeam && isViewerRole && (
+            <div className="md:col-span-2 bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-center gap-2.5 mt-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+              <p className="text-xs text-amber-900 font-semibold">
+                <strong>Read-Only Role:</strong> You have Viewer permissions on <strong>{selectedProjectObj.name}</strong> and cannot trigger new builds or scans.
+              </p>
+            </div>
+          )}
+
           {/* Empty Projects Alert Banner */}
           {!isLoadingProjects && createdProjects.length === 0 && (
             <div className="md:col-span-2 bg-amber-50/70 border border-amber-200/80 rounded-xl p-3.5 flex items-center justify-between mt-2">
@@ -368,12 +451,22 @@ export default function NewAnalysisPage() {
           </div>
 
           <div className="flex items-center justify-between pt-2">
-            <p className="text-xs text-slate-500">Click below to analyze the pull request using ImpactIQ&apos;s automated AI engine.</p>
+            <p className="text-xs text-slate-500">
+              {!canTriggerAnalysis 
+                ? "Builds & scans are locked for this project due to team ownership or role restrictions."
+                : "Click below to analyze the pull request using ImpactIQ's automated AI engine."
+              }
+            </p>
             <Button
               variant="brand"
-              disabled={isAnalyzing}
+              disabled={isAnalyzing || !canTriggerAnalysis || createdProjects.length === 0}
               onClick={handleRunAutomaticAnalysis}
-              className="h-11 px-6 text-xs font-bold bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-lg flex items-center gap-2 shadow-md cursor-pointer disabled:opacity-75"
+              className={cn(
+                "h-11 px-6 text-xs font-bold rounded-lg flex items-center gap-2 shadow-md transition-all",
+                canTriggerAnalysis && !isAnalyzing
+                  ? "bg-[#4f46e5] hover:bg-[#4338ca] text-white cursor-pointer"
+                  : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-70"
+              )}
             >
               {isAnalyzing ? (
                 <>
@@ -383,7 +476,7 @@ export default function NewAnalysisPage() {
               ) : (
                 <>
                   <PlayCircle className="w-4.5 h-4.5" />
-                  <span>Run Automatic Analysis</span>
+                  <span>{canTriggerAnalysis ? "Run Automatic Analysis" : "Scan Locked"}</span>
                 </>
               )}
             </Button>

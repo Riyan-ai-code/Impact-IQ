@@ -33,16 +33,61 @@ interface Project {
 }
 
 import { fetchProjectsFromNhost } from "@/services/nhostService"
-import { getScopedItem, setScopedItem } from "@/lib/storageScope"
+import { getScopedItem, setScopedItem, isGuestMode } from "@/lib/storageScope"
 
 export default function ProjectsPage() {
   const router = useRouter()
   const [projects, setProjects] = useState<Project[]>([])
+  const [userTeams, setUserTeams] = useState<string[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function loadProjects() {
+      // 1. Determine user's teams
+      const guest = isGuestMode()
+      const savedTeams = getScopedItem("impact_iq_teams")
+      const savedUser = localStorage.getItem("impact_iq_user")
+      let currentEmail = "dev@impactiq.dev"
+      let currentName = "Developer"
+
+      if (savedUser) {
+        try {
+          const u = JSON.parse(savedUser)
+          currentEmail = u.email || currentEmail
+          currentName = u.name || currentName
+        } catch (e) {}
+      }
+
+      const myTeams: string[] = []
+      if (savedTeams) {
+        try {
+          const parsedTeams = JSON.parse(savedTeams)
+          if (Array.isArray(parsedTeams)) {
+            parsedTeams.forEach((t: any) => {
+              if (Array.isArray(t.members)) {
+                const isMember = t.members.some((m: any) => 
+                  (m.email && currentEmail && m.email.toLowerCase() === currentEmail.toLowerCase()) ||
+                  (m.name && currentName && m.name.toLowerCase() === currentName.toLowerCase()) ||
+                  guest
+                )
+                if (isMember) {
+                  myTeams.push(t.name)
+                }
+              } else {
+                myTeams.push(t.name)
+              }
+            })
+          }
+        } catch (e) {}
+      }
+
+      if (myTeams.length === 0) {
+        myTeams.push("Platform Engineering", "DevOps Core", "Security Ops")
+      }
+      setUserTeams(myTeams)
+
+      // 2. Load Projects
       const ghToken = localStorage.getItem("github_token")
       if (ghToken) {
         const nhostProjects = await fetchProjectsFromNhost()
@@ -76,7 +121,10 @@ export default function ProjectsPage() {
     setScopedItem("impact_iq_projects", JSON.stringify(updated))
   }
 
-  const filteredProjects = projects.filter(p => 
+  // Strict team isolation: Team A only sees Team A projects; Team B only sees Team B projects
+  const teamIsolatedProjects = projects.filter(p => !p.team || userTeams.includes(p.team))
+
+  const filteredProjects = teamIsolatedProjects.filter(p => 
     p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.repository.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.description.toLowerCase().includes(searchQuery.toLowerCase())

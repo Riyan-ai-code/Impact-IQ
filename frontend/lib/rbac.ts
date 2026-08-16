@@ -21,6 +21,7 @@ export interface RoleChangeRequest {
   reason?: string
   status: "pending" | "approved" | "rejected"
   createdAt: string
+  createdAtEpoch?: number
   reviewedBy?: string
   reviewedAt?: string
 }
