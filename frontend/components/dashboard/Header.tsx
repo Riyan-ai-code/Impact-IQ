@@ -23,39 +23,12 @@ export default function Header({ onMenuClick }: HeaderProps) {
     email: string
     avatar: string
     role: string
-  }>(() => {
-    if (typeof window !== "undefined") {
-      const ghSaved = localStorage.getItem("github_connected_user")
-      const ghToken = localStorage.getItem("github_token") || localStorage.getItem("github_connected")
-      if (ghSaved) {
-        try {
-          const gh = JSON.parse(ghSaved)
-          return {
-            isConnected: true,
-            name: gh.name || gh.login || "Connected Developer",
-            email: gh.email || `${gh.login || "dev"}@github.com`,
-            avatar: gh.avatar_url || `https://github.com/${gh.login || "github"}.png`,
-            role: "Owner & Lead"
-          }
-        } catch (e) {}
-      }
-      if (ghToken) {
-        return {
-          isConnected: true,
-          name: "Connected Developer",
-          email: "dev@impactiq.dev",
-          avatar: "https://github.com/github.png",
-          role: "Owner & Lead"
-        }
-      }
-    }
-    return {
-      isConnected: false,
-      name: "Guest",
-      email: "",
-      avatar: "",
-      role: ""
-    }
+  }>({
+    isConnected: false,
+    name: "Guest",
+    email: "",
+    avatar: "",
+    role: ""
   })
 
   useEffect(() => {
@@ -66,17 +39,22 @@ export default function Header({ onMenuClick }: HeaderProps) {
     }, 60000) // check every minute
 
     const fetchUserProfile = async () => {
-      // 1. Check Nhost Auth user
-      const nhUser = nhostGetUser()
-      if (nhUser && (nhUser.displayName || nhUser.email)) {
-        setUserProfile({
-          isConnected: true,
-          name: nhUser.displayName || nhUser.email.split("@")[0],
-          email: nhUser.email,
-          avatar: nhUser.avatarUrl || `https://github.com/${nhUser.email.split("@")[0]}.png`,
-          role: "Owner & Lead"
-        })
-        return
+      // 1. Check custom saved user in ImpactIQ
+      const savedUser = localStorage.getItem("impact_iq_user")
+      if (savedUser) {
+        try {
+          const parsed = JSON.parse(savedUser)
+          if (parsed.name || parsed.displayName) {
+            setUserProfile({
+              isConnected: !parsed.isGuest,
+              name: parsed.name || parsed.displayName,
+              email: parsed.email || (parsed.isGuest ? "guest@impactiq.dev" : "dev@impactiq.dev"),
+              avatar: parsed.avatar || `https://github.com/${(parsed.githubUsername || parsed.email || "dev").split("@")[0]}.png`,
+              role: parsed.role || (parsed.isGuest ? "Guest User" : "Owner & Lead")
+            })
+            return
+          }
+        } catch (e) {}
       }
 
       // 2. Check GitHub token / connected user
@@ -119,24 +97,6 @@ export default function Header({ onMenuClick }: HeaderProps) {
         }
       }
 
-      // 3. Check ImpactIQ user storage
-      const savedUser = localStorage.getItem("impact_iq_user")
-      if (savedUser) {
-        try {
-          const parsed = JSON.parse(savedUser)
-          if (parsed.displayName || parsed.name || parsed.email) {
-            setUserProfile({
-              isConnected: true,
-              name: parsed.displayName || parsed.name || parsed.email.split("@")[0],
-              email: parsed.email || "",
-              avatar: `https://github.com/${(parsed.email || "dev").split("@")[0]}.png`,
-              role: "Owner & Lead"
-            })
-            return
-          }
-        } catch (e) {}
-      }
-
       // Default to Not Connected
       setUserProfile({
         isConnected: false,
@@ -148,6 +108,14 @@ export default function Header({ onMenuClick }: HeaderProps) {
     }
 
     fetchUserProfile()
+
+    window.addEventListener("impact_iq_user_updated", fetchUserProfile)
+    window.addEventListener("storage", fetchUserProfile)
+
+    return () => {
+      window.removeEventListener("impact_iq_user_updated", fetchUserProfile)
+      window.removeEventListener("storage", fetchUserProfile)
+    }
   }, [])
 
   // Map route path to human-readable page name
@@ -238,7 +206,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
                 <div className="py-1">
                   <button
-                    onClick={() => { setIsProfileMenuOpen(false); router.push("/dashboard/settings"); }}
+                    onClick={() => { setIsProfileMenuOpen(false); router.push("/dashboard/settings?tab=account"); }}
                     className="w-full px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer"
                   >
                     <User className="w-4 h-4 text-gray-400" />

@@ -39,68 +39,45 @@ interface Team {
   createdAt: string
 }
 
-const DEFAULT_INITIAL_TEAMS: Team[] = [
-  {
-    id: "team-platform",
-    name: "Platform Engineering",
-    description: "Core platform microservices, infrastructure CI/CD pipelines, and deployment risk governance.",
-    lead: "Riyan Shah",
-    createdAt: "2026-06-01",
-    members: [
-      {
-        id: "m-1",
-        name: "Riyan Shah",
-        email: "riyan@impactiq.dev",
-        role: "Owner",
-        status: "active",
-        joinedAt: "2026-06-01"
-      },
-      {
-        id: "m-2",
-        name: "Arjun Dev",
-        email: "arjun@impactiq.dev",
-        role: "Admin",
-        status: "active",
-        joinedAt: "2026-06-10"
-      },
-      {
-        id: "m-3",
-        name: "Sarah Jenkins",
-        email: "sarah@impactiq.dev",
-        role: "Developer",
-        status: "active",
-        joinedAt: "2026-07-02"
-      }
-    ]
-  },
-  {
-    id: "team-devops",
-    name: "DevOps Core",
-    description: "Kubernetes GitOps pipelines, container security, and cloud infrastructure.",
-    lead: "Arjun Dev",
-    createdAt: "2026-06-15",
-    members: [
-      {
-        id: "m-2",
-        name: "Arjun Dev",
-        email: "arjun@impactiq.dev",
-        role: "Owner",
-        status: "active",
-        joinedAt: "2026-06-15"
-      },
-      {
-        id: "m-1",
-        name: "Riyan Shah",
-        email: "riyan@impactiq.dev",
-        role: "Admin",
-        status: "active",
-        joinedAt: "2026-06-15"
-      }
-    ]
-  }
-]
+import { getScopedItem, setScopedItem, isGuestMode } from "@/lib/storageScope"
 
-import { getScopedItem, setScopedItem } from "@/lib/storageScope"
+const getUserIdentity = () => {
+  if (typeof window !== "undefined") {
+    // 1. Check custom configured user in impact_iq_user
+    const savedUser = localStorage.getItem("impact_iq_user")
+    if (savedUser) {
+      try {
+        const parsed = JSON.parse(savedUser)
+        if (parsed.name || parsed.displayName) {
+          return {
+            name: parsed.name || parsed.displayName,
+            email: parsed.email || "dev@impactiq.dev",
+            role: parsed.role || "Owner"
+          }
+        }
+      } catch (e) {}
+    }
+
+    if (!isGuestMode()) {
+      const ghSaved = localStorage.getItem("github_connected_user")
+      if (ghSaved) {
+        try {
+          const gh = JSON.parse(ghSaved)
+          return {
+            name: gh.name || gh.login || "Connected Developer",
+            email: gh.email || `${gh.login || "dev"}@github.com`,
+            role: "Owner"
+          }
+        } catch (e) {}
+      }
+    }
+  }
+  return {
+    name: "Guest Developer",
+    email: "guest@impactiq.dev",
+    role: "Owner"
+  }
+}
 
 export default function TeamPage() {
   const [teams, setTeams] = useState<Team[]>([])
@@ -126,45 +103,107 @@ export default function TeamPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
 
   const fetchTeamsFromBackend = async () => {
-    const ghToken = localStorage.getItem("github_token")
+    const isGuest = isGuestMode()
+    const user = getUserIdentity()
 
-    if (ghToken) {
-      try {
-        const res = await fetch("http://localhost:8000/api/teams")
-        if (res.ok) {
-          const data = await res.json()
-          if (Array.isArray(data) && data.length > 0) {
-            setTeams(data)
-            const savedActiveId = getScopedItem("impact_iq_active_team_id")
-            if (savedActiveId && data.some((t: any) => t.id === savedActiveId)) {
-              setActiveTeamId(savedActiveId)
-            } else {
-              setActiveTeamId(data[0].id)
-      try {
-        const parsed: Team[] = JSON.parse(saved)
-        if (Array.isArray(parsed)) {
-          setTeams(parsed)
-          const savedActiveId = localStorage.getItem("impact_iq_active_team_id")
-          if (parsed.length > 0) {
-            if (savedActiveId && parsed.some((t: any) => t.id === savedActiveId)) {
-              setActiveTeamId(savedActiveId)
-            } else if (!activeTeamId) {
-              setActiveTeamId(parsed[0].id)
+    if (!isGuest) {
+      const ghToken = localStorage.getItem("github_token")
+      if (ghToken) {
+        try {
+          const res = await fetch("http://localhost:8000/api/teams")
+          if (res.ok) {
+            const data = await res.json()
+            if (Array.isArray(data) && data.length > 0) {
+              setTeams(data)
+              const savedActiveId = getScopedItem("impact_iq_active_team_id")
+              if (savedActiveId && data.some((t: any) => t.id === savedActiveId)) {
+                setActiveTeamId(savedActiveId)
+              } else {
+                setActiveTeamId(data[0].id)
+              }
+              setIsLoading(false)
+              return
             }
+          }
+        } catch (err) {
+          console.warn("Backend teams notice:", err)
+        }
+      }
+    }
+
+    const savedTeams = getScopedItem("impact_iq_teams")
+    const savedActiveId = getScopedItem("impact_iq_active_team_id")
+
+    if (savedTeams) {
+      try {
+        const parsed: Team[] = JSON.parse(savedTeams)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setTeams(parsed)
+          if (savedActiveId && parsed.some((t: any) => t.id === savedActiveId)) {
+            setActiveTeamId(savedActiveId)
           } else {
-            setActiveTeamId("")
+            setActiveTeamId(parsed[0].id)
           }
           setIsLoading(false)
           return
         }
       } catch (err) {
-        console.error("Error loading saved teams:", err)
+        console.error("Error parsing saved teams:", err)
       }
     }
 
-    // Default to empty teams array
-    setTeams([])
-    setActiveTeamId("")
+    if (isGuest) {
+      const guestDefaultTeams: Team[] = [
+        {
+          id: "team-guest-1",
+          name: "Guest Workspace Team",
+          description: "Interactive demo sandbox team for exploring ImpactIQ capabilities.",
+          lead: user.name,
+          createdAt: "2026-08-16",
+          members: [
+            {
+              id: "m-guest-1",
+              name: user.name,
+              email: user.email,
+              role: "Owner",
+              status: "active",
+              joinedAt: "2026-08-16"
+            }
+          ]
+        }
+      ]
+      setTeams(guestDefaultTeams)
+      setActiveTeamId("team-guest-1")
+      setScopedItem("impact_iq_teams", JSON.stringify(guestDefaultTeams))
+      setScopedItem("impact_iq_active_team_id", "team-guest-1")
+      setIsLoading(false)
+      return
+    }
+
+    // Default authenticated team with user's configured name
+    const defaultAuthTeams: Team[] = [
+      {
+        id: "team-1",
+        name: "Platform Engineering",
+        description: "Core cloud-native services and deployment infrastructure team.",
+        lead: user.name,
+        createdAt: "2026-08-16",
+        members: [
+          {
+            id: "m-1",
+            name: user.name,
+            email: user.email,
+            role: "Owner",
+            status: "active",
+            joinedAt: "2026-08-16"
+          }
+        ]
+      }
+    ]
+    setTeams(defaultAuthTeams)
+    setActiveTeamId("team-1")
+    setScopedItem("impact_iq_teams", JSON.stringify(defaultAuthTeams))
+    setScopedItem("impact_iq_active_team_id", "team-1")
     setIsLoading(false)
   }
 
@@ -175,11 +214,13 @@ export default function TeamPage() {
       fetchTeamsFromBackend()
     }
 
+    window.addEventListener("impact_iq_user_updated", handleSync)
     window.addEventListener("impact_iq_teams_updated", handleSync)
     window.addEventListener("storage", handleSync)
     const interval = setInterval(fetchTeamsFromBackend, 3000)
 
     return () => {
+      window.removeEventListener("impact_iq_user_updated", handleSync)
       window.removeEventListener("impact_iq_teams_updated", handleSync)
       window.removeEventListener("storage", handleSync)
       clearInterval(interval)
@@ -200,16 +241,17 @@ export default function TeamPage() {
   const handleCreateTeam = async () => {
     if (!teamName.trim()) return
 
+    const user = getUserIdentity()
     const newTeam: Team = {
       id: "team-" + Date.now(),
       name: teamName.trim(),
       description: teamDescription.trim() || `Engineering team for ${teamName.trim()}`,
-      lead: "Riyan Shah",
+      lead: user.name,
       members: [
         {
           id: "m-" + Date.now(),
-          name: "Riyan Shah",
-          email: "riyan@impactiq.dev",
+          name: user.name,
+          email: user.email,
           role: "Owner",
           status: "active",
           joinedAt: new Date().toISOString().split("T")[0]
@@ -218,17 +260,20 @@ export default function TeamPage() {
       createdAt: new Date().toISOString()
     }
 
-    try {
-      await fetch("http://localhost:8000/api/teams", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: teamName.trim(),
-          description: teamDescription.trim()
+    const isGuest = isGuestMode()
+    if (!isGuest) {
+      try {
+        await fetch("http://localhost:8000/api/teams", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: teamName.trim(),
+            description: teamDescription.trim()
+          })
         })
-      })
-    } catch (err) {
-      console.warn("Could not post team to backend server:", err)
+      } catch (err) {
+        console.warn("Could not post team to backend server:", err)
+      }
     }
 
     const updated = [newTeam, ...teams]
@@ -287,6 +332,7 @@ export default function TeamPage() {
 
     // Call Nodemailer API route to send email invitation
     try {
+      const currentUser = getUserIdentity()
       const res = await fetch("/api/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -295,7 +341,7 @@ export default function TeamPage() {
           name: inviteName.trim() || inviteEmail.split("@")[0],
           teamName: currentTeamName,
           role: inviteRole,
-          inviterName: "Riyan Shah"
+          inviterName: currentUser.name
         })
       })
       const data = await res.json()

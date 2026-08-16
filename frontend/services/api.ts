@@ -299,7 +299,7 @@ export const ApiService = {
     let securityFindings: SecurityFinding[] = []
     let breakingChanges: any[] = []
     let dependencies: any[] = []
-    let aiExplanation: AIExplanation
+    let aiExplanation: any
 
     if (diffText.includes('amount') && diffText.includes('charge_amount')) {
       // Breaking payment API change

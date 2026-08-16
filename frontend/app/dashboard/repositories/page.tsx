@@ -35,6 +35,11 @@ interface Repository {
   branch: string
 }
 
+interface TeamOption {
+  id: string
+  name: string
+}
+
 export default function RepositoriesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")

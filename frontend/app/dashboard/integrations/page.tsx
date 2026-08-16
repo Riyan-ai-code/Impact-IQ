@@ -127,6 +127,8 @@ const DEFAULT_INTEGRATIONS: IntegrationConfig[] = [
   }
 ]
 
+import { getScopedItem, setScopedItem, isGuestMode } from "@/lib/storageScope"
+
 export default function IntegrationsPage() {
   const [integrations, setIntegrations] = useState<IntegrationConfig[]>(DEFAULT_INTEGRATIONS)
   const [hasToken, setHasToken] = useState(false)
@@ -144,7 +146,7 @@ export default function IntegrationsPage() {
     // Sync GitHub token status
     const ghToken = localStorage.getItem("github_token")
     setHasToken(!!ghToken)
-    const savedConfigs = localStorage.getItem("impact_iq_integrations")
+    const savedConfigs = getScopedItem("impact_iq_integrations")
 
     if (savedConfigs) {
       try {
@@ -188,7 +190,7 @@ export default function IntegrationsPage() {
     })
 
     setIntegrations(updated)
-    localStorage.setItem("impact_iq_integrations", JSON.stringify(updated))
+    setScopedItem("impact_iq_integrations", JSON.stringify(updated))
     setActiveModal(null)
 
     setSaveSuccessMsg(`${activeModal.name} integration configured and connected successfully!`)
@@ -207,7 +209,7 @@ export default function IntegrationsPage() {
     })
 
     setIntegrations(updated)
-    localStorage.setItem("impact_iq_integrations", JSON.stringify(updated))
+    setScopedItem("impact_iq_integrations", JSON.stringify(updated))
   }
 
   const filteredIntegrations = integrations.filter(item => {

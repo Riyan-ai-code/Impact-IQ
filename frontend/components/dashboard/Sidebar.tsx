@@ -14,6 +14,7 @@ import {
   Layers2, 
   Settings, 
   Users, 
+  User,
   Bell, 
   BookOpen,
   ChevronDown,
@@ -36,39 +37,12 @@ export default function Sidebar() {
     email: string
     avatar: string
     role: string
-  }>(() => {
-    if (typeof window !== "undefined") {
-      const ghSaved = localStorage.getItem("github_connected_user")
-      const ghToken = localStorage.getItem("github_token")
-      if (ghSaved) {
-        try {
-          const gh = JSON.parse(ghSaved)
-          return {
-            isConnected: true,
-            name: gh.name || gh.login || "Connected Developer",
-            email: gh.email || `${gh.login || "dev"}@github.com`,
-            avatar: gh.avatar_url || `https://github.com/${gh.login || "github"}.png`,
-            role: "Owner & Lead"
-          }
-        } catch (e) {}
-      }
-      if (ghToken) {
-        return {
-          isConnected: true,
-          name: "Connected Developer",
-          email: "dev@impactiq.dev",
-          avatar: "https://github.com/github.png",
-          role: "Owner & Lead"
-        }
-      }
-    }
-    return {
-      isConnected: false,
-      name: "Guest",
-      email: "",
-      avatar: "",
-      role: ""
-    }
+  }>({
+    isConnected: false,
+    name: "Guest",
+    email: "",
+    avatar: "",
+    role: ""
   })
 
   // Team management state
@@ -78,17 +52,22 @@ export default function Sidebar() {
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      // 1. Check Nhost Auth user
-      const nhUser = nhostGetUser()
-      if (nhUser && (nhUser.displayName || nhUser.email)) {
-        setUserProfile({
-          isConnected: true,
-          name: nhUser.displayName || nhUser.email.split("@")[0],
-          email: nhUser.email,
-          avatar: nhUser.avatarUrl || `https://github.com/${nhUser.email.split("@")[0]}.png`,
-          role: "Owner & Lead"
-        })
-        return
+      // 1. Check custom saved user in ImpactIQ
+      const savedUser = localStorage.getItem("impact_iq_user")
+      if (savedUser) {
+        try {
+          const parsed = JSON.parse(savedUser)
+          if (parsed.name || parsed.displayName) {
+            setUserProfile({
+              isConnected: !parsed.isGuest,
+              name: parsed.name || parsed.displayName,
+              email: parsed.email || (parsed.isGuest ? "guest@impactiq.dev" : "dev@impactiq.dev"),
+              avatar: parsed.avatar || `https://github.com/${(parsed.githubUsername || parsed.email || "dev").split("@")[0]}.png`,
+              role: parsed.role || (parsed.isGuest ? "Guest User" : "Owner & Lead")
+            })
+            return
+          }
+        } catch (e) {}
       }
 
       // 2. Check GitHub token / connected user
@@ -131,35 +110,25 @@ export default function Sidebar() {
         }
       }
 
-      // 3. Check ImpactIQ user storage
-      const savedUser = localStorage.getItem("impact_iq_user")
-      if (savedUser) {
-        try {
-          const parsed = JSON.parse(savedUser)
-          if (parsed.displayName || parsed.name || parsed.email) {
-            setUserProfile({
-              isConnected: true,
-              name: parsed.displayName || parsed.name || parsed.email.split("@")[0],
-              email: parsed.email || "",
-              avatar: `https://github.com/${(parsed.email || "dev").split("@")[0]}.png`,
-              role: "Owner & Lead"
-            })
-            return
-          }
-        } catch (e) {}
-      }
-
-      // Default to Not Connected
+      // Default
       setUserProfile({
         isConnected: false,
-        name: "Guest",
-        email: "",
+        name: "Guest Developer",
+        email: "guest@impactiq.dev",
         avatar: "",
-        role: ""
+        role: "Guest Workspace"
       })
     }
 
     fetchUserProfile()
+
+    window.addEventListener("impact_iq_user_updated", fetchUserProfile)
+    window.addEventListener("storage", fetchUserProfile)
+
+    return () => {
+      window.removeEventListener("impact_iq_user_updated", fetchUserProfile)
+      window.removeEventListener("storage", fetchUserProfile)
+    }
   }, [])
 
   const fetchTeams = async () => {
@@ -286,8 +255,8 @@ export default function Sidebar() {
     {
       title: "Settings",
       items: [
-        { name: "Project Settings", href: "/dashboard/settings", icon: Settings },
-        { name: "Team", href: "/dashboard/team", icon: Users },
+        { name: "Settings", href: "/dashboard/settings", icon: Settings },
+        { name: "Team & Access", href: "/dashboard/team", icon: Users },
         { name: "Notifications", href: "/dashboard/notifications", icon: Bell },
       ]
     }

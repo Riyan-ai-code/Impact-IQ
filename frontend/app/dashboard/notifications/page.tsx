@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { 
   Bell, 
   ShieldAlert, 
@@ -12,15 +12,17 @@ import {
   CheckCircle2, 
   Mail, 
   MessageSquare, 
-  SlidersHorizontal,
-  Zap,
-  Clock,
-  Sparkles,
-  ChevronRight,
-  X
+  SlidersHorizontal, 
+  Zap, 
+  Clock, 
+  Sparkles, 
+  ChevronRight, 
+  X 
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+
+import { getScopedItem, setScopedItem, isGuestMode } from "@/lib/storageScope"
 
 interface NotificationItem {
   id: string
@@ -33,6 +35,49 @@ interface NotificationItem {
   actionUrl?: string
 }
 
+const DEFAULT_GUEST_NOTIFICATIONS: NotificationItem[] = [
+  {
+    id: "notif-guest-1",
+    title: "Guest Workspace Initialized",
+    description: "Welcome to ImpactIQ Sandbox. Explore demo microservice risk assessments and PR simulation.",
+    category: "system",
+    timestamp: "Just now",
+    isUnread: true,
+    actionUrl: "/dashboard/analysis"
+  }
+]
+
+const DEFAULT_AUTH_NOTIFICATIONS: NotificationItem[] = [
+  {
+    id: "notif-1",
+    title: "Critical Risk Detected in PR #42 (payment-service)",
+    description: "Automated AI scan flagged a breaking REST API schema change in /api/v1/charge and missing Stripe HMAC signature verification.",
+    category: "risk",
+    riskScore: 82,
+    timestamp: "10 minutes ago",
+    isUnread: true,
+    actionUrl: "/dashboard/analysis"
+  },
+  {
+    id: "notif-2",
+    title: "New Team Member Joined",
+    description: "Sarah Jenkins accepted your Nodemailer invitation and joined Platform Engineering as Developer.",
+    category: "team",
+    timestamp: "1 hour ago",
+    isUnread: true,
+    actionUrl: "/dashboard/team"
+  },
+  {
+    id: "notif-3",
+    title: "Slack Webhook Connection Verified",
+    description: "Slack integration for #dev-deployments was successfully tested and is active.",
+    category: "integration",
+    timestamp: "3 hours ago",
+    isUnread: false,
+    actionUrl: "/dashboard/integrations"
+  }
+]
+
 export default function NotificationsPage() {
   const [filter, setFilter] = useState<"all" | "unread" | "risk" | "team">("all")
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
@@ -43,58 +88,45 @@ export default function NotificationsPage() {
   const [githubBotComments, setGithubBotComments] = useState(true)
   const [minRiskThreshold, setMinRiskThreshold] = useState<number>(60)
 
-  // Mock initial notifications list
-  const [notifications, setNotifications] = useState<NotificationItem[]>([
-    {
-      id: "notif-1",
-      title: "Critical Risk Detected in PR #42 (payment-service)",
-      description: "Automated AI scan flagged a breaking REST API schema change in /api/v1/charge and missing Stripe HMAC signature verification.",
-      category: "risk",
-      riskScore: 82,
-      timestamp: "10 minutes ago",
-      isUnread: true,
-      actionUrl: "/dashboard/analysis"
-    },
-    {
-      id: "notif-2",
-      title: "New Team Member Joined",
-      description: "Sarah Jenkins accepted your Nodemailer invitation and joined Platform Engineering as Developer.",
-      category: "team",
-      timestamp: "1 hour ago",
-      isUnread: true,
-      actionUrl: "/dashboard/team"
-    },
-    {
-      id: "notif-3",
-      title: "Slack Webhook Connection Verified",
-      description: "Slack integration for #dev-deployments was successfully tested and is active.",
-      category: "integration",
-      timestamp: "3 hours ago",
-      isUnread: false,
-      actionUrl: "/dashboard/integrations"
-    },
-    {
-      id: "notif-4",
-      title: "Nhost GraphQL Database Sync Active",
-      description: "Your PostgreSQL database instance (ieoqkrnezzpfxpsugifg) is connected and tracking tables cleanly.",
-      category: "system",
-      timestamp: "1 day ago",
-      isUnread: false
+  // Initial notifications list from scoped storage
+  const [notifications, setNotifications] = useState<NotificationItem[]>([])
+
+  useEffect(() => {
+    const isGuest = isGuestMode()
+    const saved = getScopedItem("impact_iq_notifications")
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved)
+        if (Array.isArray(parsed)) {
+          setNotifications(parsed)
+          return
+        }
+      } catch (e) {}
     }
-  ])
+
+    const initial = isGuest ? DEFAULT_GUEST_NOTIFICATIONS : DEFAULT_AUTH_NOTIFICATIONS
+    setNotifications(initial)
+    setScopedItem("impact_iq_notifications", JSON.stringify(initial))
+  }, [])
 
   const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, isUnread: false })))
+    const updated = notifications.map(n => ({ ...n, isUnread: false }))
+    setNotifications(updated)
+    setScopedItem("impact_iq_notifications", JSON.stringify(updated))
     setSuccessMsg("All notifications marked as read.")
     setTimeout(() => setSuccessMsg(null), 4000)
   }
 
   const markAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, isUnread: false } : n))
+    const updated = notifications.map(n => n.id === id ? { ...n, isUnread: false } : n)
+    setNotifications(updated)
+    setScopedItem("impact_iq_notifications", JSON.stringify(updated))
   }
 
   const deleteNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id))
+    const updated = notifications.filter(n => n.id !== id)
+    setNotifications(updated)
+    setScopedItem("impact_iq_notifications", JSON.stringify(updated))
   }
 
   const savePreferences = () => {

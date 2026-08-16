@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     const smtpPass = process.env.SMTP_PASS || ""
     const fromEmail = process.env.SMTP_FROM || `"ImpactIQ Security" <noreply@impactiq.dev>`
 
-    let transporter: nodemailer.Transporter
+    let transporter: any
 
     if (smtpUser && smtpPass) {
       transporter = nodemailer.createTransport({
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
           <div class="logo-badge">🛡️</div>
           <h2>You've been invited to join ${teamName || "Engineering Team"}</h2>
           <p>Hi <strong>${name || email.split("@")[0]}</strong>,</p>
-          <p><strong>${inviterName || "Riyan Shah"}</strong> has invited you to join the <strong>${teamName || "Platform Engineering"}</strong> team on <strong>ImpactIQ</strong> — AI-Powered Cloud-Native Deployment & Engineering Analysis Platform.</p>
+          <p><strong>${inviterName || "Team Lead"}</strong> has invited you to join the <strong>${teamName || "Platform Engineering"}</strong> team on <strong>ImpactIQ</strong> — AI-Powered Cloud-Native Deployment & Engineering Analysis Platform.</p>
           
           <div class="role-box">
             <div class="role-title">Assigned RBAC Role: ${role || "Developer"}</div>
@@ -93,7 +93,7 @@ export async function POST(req: Request) {
       from: fromEmail,
       to: email,
       subject: `🛡️ Invitation to join ${teamName || "Engineering Team"} on ImpactIQ`,
-      text: `Hi ${name || email}, ${inviterName || "Riyan Shah"} has invited you to join the ${teamName || "Platform Engineering"} team on ImpactIQ as a ${role || "Developer"}. Join here: ${inviteLink}`,
+      text: `Hi ${name || email}, ${inviterName || "Team Lead"} has invited you to join the ${teamName || "Platform Engineering"} team on ImpactIQ as a ${role || "Developer"}. Join here: ${inviteLink}`,
       html: htmlContent,
     })
 

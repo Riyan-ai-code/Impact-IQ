@@ -59,6 +59,8 @@ interface Project {
   createdAt?: string
 }
 
+import { getScopedItem } from "@/lib/storageScope"
+
 export default function NewAnalysisPage() {
   // Mode selection: "auto" | "manual"
   const [analysisMode, setAnalysisMode] = useState<"auto" | "manual">("auto")
@@ -71,7 +73,7 @@ export default function NewAnalysisPage() {
   const [isLoadingProjects, setIsLoadingProjects] = useState<boolean>(true)
 
   useEffect(() => {
-    const savedProjects = localStorage.getItem("impact_iq_projects")
+    const savedProjects = getScopedItem("impact_iq_projects")
     if (savedProjects) {
       try {
         const parsed: Project[] = JSON.parse(savedProjects)
