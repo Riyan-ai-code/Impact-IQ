@@ -197,10 +197,10 @@ async def get_github_user_profile(
     if not github_token:
         # Fallback to demo profile if no token passed
         return {
-            "name": "Riyan Shah",
-            "login": "Riyan-ai-code",
-            "avatar_url": "https://github.com/Riyan-ai-code.png",
-            "email": "riyan@impactiq.dev"
+            "name": "Connected Developer",
+            "login": "dev",
+            "avatar_url": "https://github.com/github.png",
+            "email": "dev@impactiq.dev"
         }
     
     async with httpx.AsyncClient() as client:
@@ -215,18 +215,18 @@ async def get_github_user_profile(
     
     if response.status_code != 200:
         return {
-            "name": "Riyan Shah",
-            "login": "Riyan-ai-code",
-            "avatar_url": "https://github.com/Riyan-ai-code.png",
-            "email": "riyan@impactiq.dev"
+            "name": "Connected Developer",
+            "login": "dev",
+            "avatar_url": "https://github.com/github.png",
+            "email": "dev@impactiq.dev"
         }
     
     user_data = response.json()
     return {
-        "name": user_data.get("name") or user_data.get("login") or "Riyan Shah",
-        "login": user_data.get("login") or "Riyan-ai-code",
-        "avatar_url": user_data.get("avatar_url") or "https://github.com/Riyan-ai-code.png",
-        "email": user_data.get("email") or f"{user_data.get('login', 'riyan')}@impactiq.dev",
+        "name": user_data.get("name") or user_data.get("login") or "Connected Developer",
+        "login": user_data.get("login") or "dev",
+        "avatar_url": user_data.get("avatar_url") or "https://github.com/github.png",
+        "email": user_data.get("email") or f"{user_data.get('login', 'dev')}@impactiq.dev",
         "html_url": user_data.get("html_url")
     }
 
