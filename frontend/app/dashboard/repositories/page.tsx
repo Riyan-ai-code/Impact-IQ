@@ -236,6 +236,8 @@ export default function RepositoriesPage() {
           console.error("Error reading teams:", err)
         }
       }
+    }
+
     loadTeams()
 
     // Load active projects to show "Active Project" indicators
