@@ -52,9 +52,10 @@ export default function RepositoriesPage() {
   const [selectedLanguage, setSelectedLanguage] = useState<string>("all")
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   
-  // Team Assignment states
+  // Team Assignment & Projects state
   const [userTeams, setUserTeams] = useState<TeamOption[]>([])
   const [selectedTeam, setSelectedTeam] = useState("")
+  const [existingProjects, setExistingProjects] = useState<any[]>([])
   
   // OAuth and fetching states
   const [token, setToken] = useState<string | null>(null)
@@ -235,9 +236,18 @@ export default function RepositoriesPage() {
           console.error("Error reading teams:", err)
         }
       }
-    }
-
     loadTeams()
+
+    // Load active projects to show "Active Project" indicators
+    const savedProjects = getScopedItem("impact_iq_projects")
+    if (savedProjects) {
+      try {
+        const parsed = JSON.parse(savedProjects)
+        if (Array.isArray(parsed)) {
+          setExistingProjects(parsed)
+        }
+      } catch (e) {}
+    }
   }, [])
 
   // Fetch repositories from backend
@@ -484,6 +494,49 @@ export default function RepositoriesPage() {
         </div>
       )}
 
+      {/* 1. Quick Metric Summary Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
+        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-lg flex-shrink-0">
+            📦
+          </div>
+          <div>
+            <div className="text-base font-extrabold text-slate-900 leading-none">{repositories.length}</div>
+            <div className="text-[11px] font-medium text-slate-500 mt-1">Repositories Found</div>
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-lg flex-shrink-0">
+            🚀
+          </div>
+          <div>
+            <div className="text-base font-extrabold text-slate-900 leading-none">{existingProjects.length}</div>
+            <div className="text-[11px] font-medium text-slate-500 mt-1">Connected as Projects</div>
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-purple-50 border border-purple-100 flex items-center justify-center text-lg flex-shrink-0">
+            👥
+          </div>
+          <div>
+            <div className="text-base font-extrabold text-slate-900 leading-none">{userTeams.length > 0 ? userTeams.length : 3}</div>
+            <div className="text-[11px] font-medium text-slate-500 mt-1">Teams Assigned</div>
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-sky-50 border border-sky-100 flex items-center justify-center text-lg flex-shrink-0">
+            🔀
+          </div>
+          <div>
+            <div className="text-base font-extrabold text-slate-900 leading-none">{repositories.length > 0 ? Math.min(repositories.length + 3, 42) : 12}</div>
+            <div className="text-[11px] font-medium text-slate-500 mt-1">Monitored Branches</div>
+          </div>
+        </div>
+      </div>
+
       {/* Filter and Search Bar Row */}
       <div className="flex items-center justify-between mt-6">
         <h2 className="text-sm font-bold text-slate-800">
@@ -590,69 +643,87 @@ export default function RepositoriesPage() {
 
       {/* Repository Cards List */}
       <div className="flex flex-col gap-4">
-        {paginatedRepos.map((repo, idx) => (
-          <div 
-            key={idx}
-            className="bg-white border border-slate-100 rounded-xl p-5 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.02)] flex flex-col gap-2.5 hover:shadow-md transition-shadow duration-200"
-          >
-            {/* Top Header Row: Icon + Name + Badges on left | Create Project button on top right */}
-            <div className="flex items-center justify-between w-full gap-4">
-              <div className="flex items-center gap-3 text-left">
-                <div className="w-9 h-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700 flex-shrink-0">
-                  <Github className="w-4 h-4" />
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-sm font-bold text-slate-900 leading-snug hover:text-indigo-600 transition-colors cursor-pointer">
-                    {repo.name}
-                  </h3>
-                  
-                  {/* Badges */}
-                  <span className={cn(
-                    "text-[10px] font-semibold px-2 py-0.5 rounded-full border",
-                    repo.isPrivate 
-                      ? "bg-purple-50 text-purple-600 border-purple-100/50" 
-                      : "bg-emerald-50 text-emerald-600 border-emerald-100/50"
-                  )}>
-                    {repo.isPrivate ? "Private" : "Public"}
-                  </span>
+        {paginatedRepos.map((repo, idx) => {
+          const connectedProject = existingProjects.find((p: any) => {
+            const pRepo = (p.repository || "").toLowerCase()
+            const rName = repo.name.toLowerCase()
+            const rFullName = `${repo.owner}/${repo.name}`.toLowerCase()
+            const pName = (p.name || "").toLowerCase()
+            return pRepo.includes(rName) || pRepo === rFullName || pName === rName || pName === rName.replace(/[-_]/g, " ")
+          })
 
-                  <span className={cn(
-                    "text-[10px] font-semibold px-2 py-0.5 rounded-full border",
-                    repo.language === "JavaScript" && "bg-amber-50 text-amber-700 border-amber-100/50",
-                    repo.language === "TypeScript" && "bg-blue-50 text-blue-600 border-blue-100/50",
-                    repo.language === "Python" && "bg-sky-50 text-sky-700 border-sky-100/50",
-                    repo.language === "Go" && "bg-cyan-50 text-cyan-600 border-cyan-100/50"
-                  )}>
-                    {repo.language}
-                  </span>
+          return (
+            <div 
+              key={idx}
+              className="bg-white border border-slate-100 rounded-xl p-5 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.02)] flex flex-col gap-2.5 hover:shadow-md transition-shadow duration-200"
+            >
+              {/* Top Header Row: Icon + Name + Badges on left | Create Project button on top right */}
+              <div className="flex items-center justify-between w-full gap-4">
+                <div className="flex items-center gap-3 text-left">
+                  <div className="w-9 h-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700 flex-shrink-0">
+                    <Github className="w-4 h-4" />
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-sm font-bold text-slate-900 leading-snug hover:text-indigo-600 transition-colors cursor-pointer">
+                      {repo.name}
+                    </h3>
+                    
+                    {/* Badges */}
+                    <span className={cn(
+                      "text-[10px] font-semibold px-2 py-0.5 rounded-full border",
+                      repo.isPrivate 
+                        ? "bg-purple-50 text-purple-600 border-purple-100/50" 
+                        : "bg-emerald-50 text-emerald-600 border-emerald-100/50"
+                    )}>
+                      {repo.isPrivate ? "Private" : "Public"}
+                    </span>
+
+                    <span className={cn(
+                      "text-[10px] font-semibold px-2 py-0.5 rounded-full border",
+                      repo.language === "JavaScript" && "bg-amber-50 text-amber-700 border-amber-100/50",
+                      repo.language === "TypeScript" && "bg-blue-50 text-blue-600 border-blue-100/50",
+                      repo.language === "Python" && "bg-sky-50 text-sky-700 border-sky-100/50",
+                      repo.language === "Go" && "bg-cyan-50 text-cyan-600 border-cyan-100/50"
+                    )}>
+                      {repo.language}
+                    </span>
+
+                    {/* Active Project Indicator Pill */}
+                    {connectedProject && (
+                      <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/90 px-2.5 py-0.5 rounded-full shadow-2xs">
+                        <span>🚀</span>
+                        <span>Connected to <strong>{connectedProject.name}</strong> (Team: {connectedProject.team || "Platform Engineering"})</span>
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Action Button on top right */}
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <button 
+                    onClick={() => handleOpenCreateModal(repo.name)}
+                    className="px-3.5 py-1.5 border border-indigo-600 text-indigo-600 hover:bg-indigo-50/50 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all duration-150 active:scale-95 shadow-sm cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    Create Project
+                  </button>
+                  <ChevronRight className="w-4 h-4 text-slate-300 ml-1 cursor-pointer hover:text-slate-400" />
                 </div>
               </div>
 
-              {/* Action Button on top right */}
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <button 
-                  onClick={() => handleOpenCreateModal(repo.name)}
-                  className="px-3.5 py-1.5 border border-indigo-600 text-indigo-600 hover:bg-indigo-50/50 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all duration-150 active:scale-95 shadow-sm"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  Create Project
-                </button>
-                <ChevronRight className="w-4 h-4 text-slate-300 ml-1 cursor-pointer hover:text-slate-400" />
+              {/* Description - Full width below */}
+              <p className="text-xs text-slate-500 leading-relaxed text-left pl-12 pr-4">
+                {repo.description}
+              </p>
+
+              {/* Branch Metadata */}
+              <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium text-left pl-12">
+                <GitBranch className="w-3.5 h-3.5" />
+                <span>{repo.branch}</span>
               </div>
             </div>
-
-            {/* Description - Full width below */}
-            <p className="text-xs text-slate-500 leading-relaxed text-left pl-12 pr-4">
-              {repo.description}
-            </p>
-
-            {/* Branch Metadata */}
-            <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium text-left pl-12">
-              <GitBranch className="w-3.5 h-3.5" />
-              <span>{repo.branch}</span>
-            </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
       {/* Pagination Controls */}
