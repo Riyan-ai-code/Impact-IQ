@@ -273,6 +273,8 @@ function SettingsContent() {
     }
   ])
   const [roleRequestsTab, setRoleRequestsTab] = useState<"pending" | "approved">("pending")
+  const [grantsPage, setGrantsPage] = useState<number>(1)
+  const [pendingRequestsPage, setPendingRequestsPage] = useState<number>(1)
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false)
   const [targetRequestedRole, setTargetRequestedRole] = useState<RoleType>("Admin")
   const [requestReason, setRequestReason] = useState("")
