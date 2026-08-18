@@ -91,9 +91,9 @@ export default function NotificationsPage() {
   // Initial notifications list from scoped storage
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
 
-  useEffect(() => {
+  const loadNotifications = () => {
     const isGuest = isGuestMode()
-    const saved = getScopedItem("impact_iq_notifications")
+    const saved = getScopedItem("impact_iq_notifications") || localStorage.getItem("impact_iq_notifications")
     if (saved) {
       try {
         const parsed = JSON.parse(saved)
@@ -107,6 +107,18 @@ export default function NotificationsPage() {
     const initial = isGuest ? DEFAULT_GUEST_NOTIFICATIONS : DEFAULT_AUTH_NOTIFICATIONS
     setNotifications(initial)
     setScopedItem("impact_iq_notifications", JSON.stringify(initial))
+    localStorage.setItem("impact_iq_notifications", JSON.stringify(initial))
+  }
+
+  useEffect(() => {
+    loadNotifications()
+
+    window.addEventListener("impact_iq_notifications_updated", loadNotifications)
+    window.addEventListener("storage", loadNotifications)
+    return () => {
+      window.removeEventListener("impact_iq_notifications_updated", loadNotifications)
+      window.removeEventListener("storage", loadNotifications)
+    }
   }, [])
 
   const markAllAsRead = () => {

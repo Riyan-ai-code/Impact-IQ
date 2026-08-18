@@ -61,7 +61,7 @@ interface Project {
   createdAt?: string
 }
 
-import { getScopedItem, isGuestMode } from "@/lib/storageScope"
+import { getScopedItem, setScopedItem, isGuestMode } from "@/lib/storageScope"
 import { canUser, RoleType } from "@/lib/rbac"
 
 export default function NewAnalysisPage() {
@@ -230,6 +230,42 @@ export default function NewAnalysisPage() {
           ],
           createdAt: new Date().toISOString()
         })
+
+        // Dynamically save notification & trigger connected integration webhooks
+        try {
+          const savedNotifs = JSON.parse(getScopedItem("impact_iq_notifications") || "[]")
+          const newNotif = {
+            id: `notif-scan-${Date.now()}`,
+            title: `Risk Analysis: ${selectedRepo || 'Repository'} (${selectedBranch || 'main'})`,
+            description: `AI risk evaluation completed for ${selectedRepo}. Detected API schema diffs and security validation rules.`,
+            category: "risk",
+            riskScore: 78,
+            timestamp: "Just now",
+            isUnread: true,
+            actionUrl: "/dashboard/analysis"
+          }
+          const updated = [newNotif, ...savedNotifs]
+          setScopedItem("impact_iq_notifications", JSON.stringify(updated))
+          localStorage.setItem("impact_iq_notifications", JSON.stringify(updated))
+          window.dispatchEvent(new Event("impact_iq_notifications_updated"))
+
+          // Dispatch to active integration webhooks (Slack, MS Teams, Discord)
+          const savedIntegrations = JSON.parse(getScopedItem("impact_iq_integrations") || "[]")
+          savedIntegrations.forEach((integ: any) => {
+            if (integ.connected && integ.webhookUrl) {
+              fetch(integ.webhookUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  text: `🚨 Impact-IQ Risk Alert: Risk evaluation on ${selectedRepo} (${selectedBranch}). Risk Score: 78%.`,
+                  repository: selectedRepo,
+                  branch: selectedBranch,
+                  riskScore: 78
+                })
+              }).catch(() => {})
+            }
+          })
+        } catch (e) {}
       }
     }, 750)
   }

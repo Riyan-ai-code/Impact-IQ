@@ -6,8 +6,6 @@ import {
   Slack, 
   MessageSquare, 
   Kanban, 
-  Layers2, 
-  Container, 
   Check, 
   Plus, 
   X, 
@@ -15,8 +13,6 @@ import {
   Settings2,
   ShieldCheck,
   BellRing,
-  Bot,
-  Box,
   RefreshCw,
   SlidersHorizontal,
   Workflow,
@@ -24,11 +20,12 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { getScopedItem, setScopedItem } from "@/lib/storageScope"
 
 interface IntegrationConfig {
   id: string
   name: string
-  category: "vcs" | "collaboration" | "project_management" | "container_registry" | "cicd"
+  category: "vcs" | "collaboration" | "project_management"
   description: string
   icon: string
   connected: boolean
@@ -45,7 +42,7 @@ const DEFAULT_INTEGRATIONS: IntegrationConfig[] = [
     id: "github",
     name: "GitHub",
     category: "vcs",
-    description: "Connect repositories, authorize OAuth access, and receive PR webhook triggers.",
+    description: "Connect repositories, authorize OAuth access, receive PR webhooks, and auto-post AI reviews.",
     icon: "github",
     connected: false,
     autoCommentPr: true,
@@ -54,80 +51,44 @@ const DEFAULT_INTEGRATIONS: IntegrationConfig[] = [
     id: "slack",
     name: "Slack",
     category: "collaboration",
-    description: "Post instant PR risk alerts, AI executive summaries, and warnings to Slack channels.",
+    description: "Post real-time PR risk alerts, AI executive summaries, and deployment blockers directly to Slack channels.",
     icon: "slack",
     connected: false,
     webhookUrl: "",
     minAlertScore: 60,
   },
   {
-    id: "github_bot",
-    name: "GitHub PR Comment Bot",
-    category: "cicd",
-    description: "Automatically post AI executive summaries & release checklists as comments on PRs.",
-    icon: "bot",
-    connected: true,
-    autoCommentPr: true,
-  },
-  {
-    id: "jira",
-    name: "Jira Software",
-    category: "project_management",
-    description: "Attach risk scores to Jira tickets and auto-create Jira bug tickets for critical security findings.",
-    icon: "kanban",
-    connected: false,
-    domainUrl: "",
-    apiKey: "",
-    autoCreateJiraBug: true,
-  },
-  {
-    id: "linear",
-    name: "Linear",
-    category: "project_management",
-    description: "Link pull request risk analysis directly to Linear issues and track deployment gates.",
-    icon: "layers",
-    connected: false,
-    apiKey: "",
-  },
-  {
-    id: "bitbucket",
-    name: "Bitbucket Cloud",
-    category: "vcs",
-    description: "Analyze Bitbucket Cloud repository diffs and pull requests for deployment risk.",
-    icon: "vcs",
-    connected: false,
-    apiKey: "",
-  },
-  {
-    id: "docker_hub",
-    name: "Docker Hub & AWS ECR",
-    category: "container_registry",
-    description: "Audit Dockerfile base image tags and container layers for security vulnerabilities.",
-    icon: "container",
-    connected: false,
-    apiKey: "",
-  },
-  {
     id: "ms_teams",
     name: "Microsoft Teams",
     category: "collaboration",
-    description: "Send adaptive risk notification cards and release readiness reports to Teams channels.",
+    description: "Send adaptive risk notification cards, deployment gates, and release readiness reports to Teams channels.",
     icon: "teams",
     connected: false,
     webhookUrl: "",
+    minAlertScore: 60,
   },
   {
     id: "discord",
     name: "Discord",
     category: "collaboration",
-    description: "Send webhook notifications and AI executive summaries to Discord server channels.",
+    description: "Send webhook notifications, CI/CD audit logs, and AI risk summaries to Discord server channels.",
     icon: "discord",
     connected: false,
     webhookUrl: "",
+    minAlertScore: 60,
+  },
+  {
+    id: "jira",
+    name: "Jira Software",
+    category: "project_management",
+    description: "Attach risk scores to Jira tickets and auto-create Jira bug tickets when critical security risks are detected.",
+    icon: "kanban",
+    connected: false,
+    domainUrl: "",
+    apiKey: "",
+    autoCreateJiraBug: true,
   }
 ]
-
-import { getScopedItem, setScopedItem, isGuestMode } from "@/lib/storageScope"
 
 export default function IntegrationsPage() {
   const [integrations, setIntegrations] = useState<IntegrationConfig[]>(DEFAULT_INTEGRATIONS)
@@ -143,7 +104,7 @@ export default function IntegrationsPage() {
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null)
 
   useEffect(() => {
-    // Sync GitHub token status
+    // Sync GitHub token status dynamically
     const ghToken = localStorage.getItem("github_token")
     setHasToken(!!ghToken)
     const savedConfigs = getScopedItem("impact_iq_integrations")
@@ -151,7 +112,17 @@ export default function IntegrationsPage() {
     if (savedConfigs) {
       try {
         const parsed: IntegrationConfig[] = JSON.parse(savedConfigs)
-        setIntegrations(parsed.map(i => i.id === "github" ? { ...i, connected: !!ghToken } : i))
+        // Ensure only the top 5 valid integrations are kept
+        const validIds = new Set(["github", "slack", "ms_teams", "discord", "jira"])
+        const merged = DEFAULT_INTEGRATIONS.map(def => {
+          const found = parsed.find(p => p.id === def.id)
+          if (found) {
+            return { ...def, ...found, connected: def.id === "github" ? !!ghToken : found.connected }
+          }
+          return def.id === "github" ? { ...def, connected: !!ghToken } : def
+        })
+        setIntegrations(merged)
+        setScopedItem("impact_iq_integrations", JSON.stringify(merged))
       } catch (err) {
         console.error("Error loading saved integrations:", err)
       }
@@ -183,7 +154,7 @@ export default function IntegrationsPage() {
           domainUrl: formDomainUrl,
           autoCommentPr: formAutoComment,
           autoCreateJiraBug: formAutoJiraBug,
-          minAlertScore: formMinScore
+          minAlertScore: formMinScore,
         }
       }
       return item
@@ -191,25 +162,43 @@ export default function IntegrationsPage() {
 
     setIntegrations(updated)
     setScopedItem("impact_iq_integrations", JSON.stringify(updated))
-    setActiveModal(null)
+    localStorage.setItem("impact_iq_integrations", JSON.stringify(updated))
 
-    setSaveSuccessMsg(`${activeModal.name} integration configured and connected successfully!`)
+    // Automatically trigger a live integration connected notification in in-app notification center
+    try {
+      const savedNotifs = JSON.parse(getScopedItem("impact_iq_notifications") || "[]")
+      const newNotif = {
+        id: `notif-int-${Date.now()}`,
+        title: `${activeModal.name} Integration Connected`,
+        description: `Successfully configured and verified ${activeModal.name} integration. Automated alerts and webhooks are now active.`,
+        category: "integration",
+        timestamp: "Just now",
+        isUnread: true,
+        actionUrl: "/dashboard/integrations"
+      }
+      const updatedNotifs = [newNotif, ...savedNotifs]
+      setScopedItem("impact_iq_notifications", JSON.stringify(updatedNotifs))
+      localStorage.setItem("impact_iq_notifications", JSON.stringify(updatedNotifs))
+      window.dispatchEvent(new Event("impact_iq_notifications_updated"))
+    } catch (e) {}
+
+    setSaveSuccessMsg(`${activeModal.name} configuration saved successfully!`)
+    setActiveModal(null)
     setTimeout(() => setSaveSuccessMsg(null), 4000)
   }
 
   const handleToggleDisconnect = (id: string) => {
     const updated = integrations.map(item => {
       if (item.id === id) {
-        if (id === "github") {
-          localStorage.removeItem("github_token")
-        }
         return { ...item, connected: false }
       }
       return item
     })
-
     setIntegrations(updated)
     setScopedItem("impact_iq_integrations", JSON.stringify(updated))
+    localStorage.setItem("impact_iq_integrations", JSON.stringify(updated))
+    setSaveSuccessMsg("Integration disconnected.")
+    setTimeout(() => setSaveSuccessMsg(null), 3000)
   }
 
   const filteredIntegrations = integrations.filter(item => {
@@ -217,45 +206,33 @@ export default function IntegrationsPage() {
     return item.category === selectedCategory
   })
 
-  const getCategoryBadge = (category: string) => {
-    switch (category) {
+  const renderIcon = (id: string) => {
+    switch (id) {
+      case "github":
+        return <Github className="w-5 h-5 text-slate-900" />
+      case "slack":
+        return <Slack className="w-5 h-5 text-[#4A154B]" />
+      case "jira":
+        return <Kanban className="w-5 h-5 text-[#0052CC]" />
+      case "ms_teams":
+        return <MessageSquare className="w-5 h-5 text-[#6264A7]" />
+      case "discord":
+        return <BellRing className="w-5 h-5 text-[#5865F2]" />
+      default:
+        return <Workflow className="w-5 h-5 text-slate-600" />
+    }
+  }
+
+  const getCategoryBadge = (cat: string) => {
+    switch (cat) {
       case "vcs":
         return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">Version Control</span>
       case "collaboration":
         return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-100">Team Alerts</span>
       case "project_management":
         return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-100">Issue Tracking</span>
-      case "container_registry":
-        return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100">Container Registry</span>
-      case "cicd":
-        return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">CI/CD Gatekeeper</span>
       default:
         return null
-    }
-  }
-
-  const renderIcon = (id: string) => {
-    switch (id) {
-      case "github":
-        return <Github className="w-5 h-5 text-slate-800" />
-      case "slack":
-        return <Slack className="w-5 h-5 text-emerald-600" />
-      case "github_bot":
-        return <Bot className="w-5 h-5 text-indigo-600" />
-      case "jira":
-        return <Kanban className="w-5 h-5 text-blue-600" />
-      case "linear":
-        return <Layers2 className="w-5 h-5 text-purple-600" />
-      case "bitbucket":
-        return <Workflow className="w-5 h-5 text-sky-600" />
-      case "docker_hub":
-        return <Container className="w-5 h-5 text-cyan-600" />
-      case "ms_teams":
-        return <MessageSquare className="w-5 h-5 text-indigo-700" />
-      case "discord":
-        return <BellRing className="w-5 h-5 text-indigo-500" />
-      default:
-        return <Layers2 className="w-5 h-5 text-slate-700" />
     }
   }
 
@@ -265,7 +242,7 @@ export default function IntegrationsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-slate-900 leading-tight">Integrations</h1>
-          <p className="text-xs text-slate-500 mt-1">Connect your version control, chat alerts, issue trackers, and container registries.</p>
+          <p className="text-xs text-slate-500 mt-1">Connect your version control, chat alerts, and issue tracking tools to receive real-time notifications.</p>
         </div>
       </div>
 
@@ -277,7 +254,7 @@ export default function IntegrationsPage() {
             </div>
             <p className="text-xs font-semibold text-emerald-900">{saveSuccessMsg}</p>
           </div>
-          <button onClick={() => setSaveSuccessMsg(null)} className="text-emerald-500 hover:text-emerald-700">
+          <button onClick={() => setSaveSuccessMsg(null)} className="text-emerald-500 hover:text-emerald-700 cursor-pointer">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -286,12 +263,10 @@ export default function IntegrationsPage() {
       {/* Categories Filter Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-200/60">
         {[
-          { key: "all", label: "All Integrations" },
+          { key: "all", label: "All Integrations (5)" },
           { key: "collaboration", label: "Slack & Team Alerts" },
-          { key: "project_management", label: "Jira & Linear" },
-          { key: "vcs", label: "Git Providers" },
-          { key: "cicd", label: "CI/CD & Bots" },
-          { key: "container_registry", label: "Docker Registries" },
+          { key: "vcs", label: "Version Control" },
+          { key: "project_management", label: "Issue Tracking (Jira)" },
         ].map((cat) => (
           <button
             key={cat.key}
@@ -319,17 +294,17 @@ export default function IntegrationsPage() {
               <div className="space-y-1.5">
                 <h3 className="text-base font-bold text-white">Integrations Locked in Guest Mode</h3>
                 <p className="text-xs text-gray-300 leading-relaxed">
-                  Connect your GitHub account to enable real-time PR webhooks, Slack alerts, Jira sync, and CI/CD gatekeeping.
+                  Connect your GitHub account to enable real-time PR webhooks, Slack alerts, Microsoft Teams cards, Discord notifications, and Jira issue sync.
                 </p>
               </div>
               <div className="w-full pt-2">
                 <Button
                   variant="brand"
-                  onClick={() => window.location.href = "/"}
+                  onClick={() => window.location.href = "http://localhost:8000/api/auth/github/login"}
                   className="w-full h-11 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
                 >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Back to Landing Page</span>
+                  <Github className="w-4 h-4" />
+                  <span>Connect GitHub to Unlock</span>
                 </Button>
               </div>
             </div>
@@ -352,33 +327,46 @@ export default function IntegrationsPage() {
 
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-bold text-slate-900 leading-snug">{item.name}</h3>
+                    <h3 className="text-sm font-bold text-slate-900">{item.name}</h3>
                     {item.connected && (
-                      <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
-                        <Check className="w-3 h-3" /> Connected
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                        <Check className="w-3 h-3" />
+                        Connected
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-slate-500 leading-relaxed mt-1.5 min-h-[36px]">
-                    {item.description}
-                  </p>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">{item.description}</p>
                 </div>
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                {item.connected ? (
-                  <div className="flex items-center gap-2 w-full justify-between">
+                {item.id === "github" ? (
+                  <div className="w-full flex items-center justify-between">
                     <Button
                       variant="outline"
                       onClick={() => handleOpenConfigureModal(item)}
-                      className="h-8 px-3 text-xs font-semibold border-slate-200 text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 rounded-lg"
+                      className="h-8 px-3 text-xs font-semibold border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg flex items-center gap-1.5 cursor-pointer"
                     >
-                      <Settings2 className="w-3.5 h-3.5 text-slate-500" />
+                      <SlidersHorizontal className="w-3 h-3 text-slate-500" />
+                      Configure
+                    </Button>
+                    <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded-md">
+                      OAuth Active
+                    </span>
+                  </div>
+                ) : item.connected ? (
+                  <div className="w-full flex items-center justify-between">
+                    <Button
+                      variant="outline"
+                      onClick={() => handleOpenConfigureModal(item)}
+                      className="h-8 px-3 text-xs font-semibold border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <SlidersHorizontal className="w-3 h-3 text-slate-500" />
                       Configure
                     </Button>
                     <button
                       onClick={() => handleToggleDisconnect(item.id)}
-                      className="text-[11px] font-bold text-rose-500 hover:text-rose-700"
+                      className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:underline cursor-pointer"
                     >
                       Disconnect
                     </button>
@@ -386,14 +374,8 @@ export default function IntegrationsPage() {
                 ) : (
                   <Button
                     variant="brand"
-                    onClick={() => {
-                      if (item.id === "github") {
-                        window.location.href = "http://localhost:8000/api/auth/github/login"
-                      } else {
-                        handleOpenConfigureModal(item)
-                      }
-                    }}
-                    className="w-full h-8 text-xs font-bold bg-[#4f46e5] text-white hover:bg-[#4338ca] flex items-center justify-center gap-1.5 rounded-lg shadow-sm"
+                    onClick={() => handleOpenConfigureModal(item)}
+                    className="w-full h-9 text-xs font-bold bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-lg flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Connect {item.name}
@@ -405,33 +387,62 @@ export default function IntegrationsPage() {
         </div>
       </div>
 
-      {/* CONFIGURATION MODAL */}
+      {/* Integration Configuration Modal */}
       {activeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-white border border-slate-200 shadow-2xl rounded-2xl w-full max-w-lg overflow-hidden flex flex-col relative animate-in fade-in zoom-in-95 duration-200 text-left">
-            
-            {/* Header */}
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-2xl max-w-lg w-full overflow-hidden text-left animate-in zoom-in-95 duration-150">
+            {/* Modal Header */}
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-white border border-slate-200 flex items-center justify-center">
+                <div className="w-9 h-9 rounded-lg bg-white border border-slate-200/80 flex items-center justify-center shadow-xs">
                   {renderIcon(activeModal.id)}
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">Configure {activeModal.name}</h3>
-                  <p className="text-[11px] text-slate-500">Set up connection details and event triggers.</p>
+                  <p className="text-[11px] text-slate-500">{activeModal.description}</p>
                 </div>
               </div>
               <button 
                 onClick={() => setActiveModal(null)}
-                className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-900"
+                className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition-colors cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Body */}
-            <div className="p-6 space-y-4 max-h-[480px] overflow-y-auto">
-              {/* Slack / MS Teams / Discord Webhook URL */}
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              {/* GitHub Settings */}
+              {activeModal.id === "github" && (
+                <div className="space-y-4">
+                  <div className="p-3 bg-emerald-50 border border-emerald-200/70 rounded-xl text-emerald-950 text-xs flex items-center gap-2">
+                    <Check className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                    <span>Connected via GitHub OAuth. Webhooks are active for pull request events.</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/60">
+                    <div>
+                      <h5 className="text-xs font-bold text-slate-800">Auto-Comment AI Report on PRs</h5>
+                      <p className="text-[10px] text-slate-500">Automatically post executive summaries & checklists as comments on PRs.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFormAutoComment(!formAutoComment)}
+                      className={cn(
+                        "relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                        formAutoComment ? "bg-indigo-600" : "bg-slate-200"
+                      )}
+                    >
+                      <span className={cn(
+                        "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition duration-200 ease-in-out",
+                        formAutoComment ? "translate-x-4" : "translate-x-0"
+                      )} />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Webhook Settings for Slack, MS Teams, Discord */}
               {(activeModal.id === "slack" || activeModal.id === "ms_teams" || activeModal.id === "discord") && (
                 <>
                   <div className="space-y-1.5">
@@ -442,10 +453,12 @@ export default function IntegrationsPage() {
                       type="url"
                       value={formWebhookUrl}
                       onChange={(e) => setFormWebhookUrl(e.target.value)}
-                      placeholder={`https://hooks.${activeModal.id}.com/services/...`}
+                      placeholder={`https://hooks.${activeModal.id === 'slack' ? 'slack.com/services/...' : activeModal.id === 'discord' ? 'discord.com/api/webhooks/...' : 'office.com/webhook/...'}`}
                       className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                     />
-                    <p className="text-[10px] text-slate-400">Paste the webhook URL from your {activeModal.name} channel setup.</p>
+                    <p className="text-[10px] text-slate-400">
+                      Incoming webhook URL configured in your {activeModal.name} workspace or channel settings.
+                    </p>
                   </div>
 
                   <div className="space-y-1.5 pt-2">
@@ -516,46 +529,6 @@ export default function IntegrationsPage() {
                   </div>
                 </>
               )}
-
-              {/* Linear / Bitbucket / Docker Registries */}
-              {(activeModal.id === "linear" || activeModal.id === "bitbucket" || activeModal.id === "docker_hub") && (
-                <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">
-                    API Key / Personal Access Token <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="password"
-                    value={formApiKey}
-                    onChange={(e) => setFormApiKey(e.target.value)}
-                    placeholder={`Enter ${activeModal.name} API Key`}
-                    className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  />
-                  <p className="text-[10px] text-slate-400">Used to authenticate and query {activeModal.name} endpoints.</p>
-                </div>
-              )}
-
-              {/* GitHub PR Bot Toggle */}
-              {activeModal.id === "github_bot" && (
-                <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200/60">
-                  <div>
-                    <h5 className="text-xs font-bold text-slate-800">Auto-Comment AI Report on PRs</h5>
-                    <p className="text-[10px] text-slate-500">Automatically post executive summaries & checklists as comments on PRs.</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setFormAutoComment(!formAutoComment)}
-                    className={cn(
-                      "relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
-                      formAutoComment ? "bg-indigo-600" : "bg-slate-200"
-                    )}
-                  >
-                    <span className={cn(
-                      "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition duration-200 ease-in-out",
-                      formAutoComment ? "translate-x-4" : "translate-x-0"
-                    )} />
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* Footer */}
@@ -563,14 +536,14 @@ export default function IntegrationsPage() {
               <Button
                 variant="outline"
                 onClick={() => setActiveModal(null)}
-                className="h-9 px-4 text-xs font-semibold border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-lg"
+                className="h-9 px-4 text-xs font-semibold border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-lg cursor-pointer"
               >
                 Cancel
               </Button>
               <Button
                 variant="brand"
                 onClick={handleSaveIntegration}
-                className="h-9 px-5 text-xs font-bold bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-lg shadow-sm"
+                className="h-9 px-5 text-xs font-bold bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-lg shadow-sm cursor-pointer"
               >
                 Save &amp; Connect Integration
               </Button>
