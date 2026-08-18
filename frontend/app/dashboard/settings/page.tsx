@@ -45,7 +45,8 @@ import {
   GitMerge,
   Server,
   Flame,
-  FileSpreadsheet
+  FileSpreadsheet,
+  RefreshCw
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -1144,27 +1145,45 @@ function SettingsContent() {
                 </p>
               </div>
 
-              {/* Email Address - READ ONLY */}
+              {/* Email Address */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
                     <Mail className="w-3.5 h-3.5 text-indigo-600" />
-                    Email Address
+                    Email Address <span className="text-rose-500">*</span>
                   </label>
-                  <span className="text-[10px] font-semibold text-slate-400 flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded-md">
-                    <Lock className="w-3 h-3 text-slate-400" /> Read-only
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const ghToken = localStorage.getItem("github_token")
+                      if (ghToken) {
+                        fetch(`http://localhost:8000/api/auth/github/user?token=${ghToken}`)
+                          .then(res => res.ok ? res.json() : null)
+                          .then(gh => {
+                            if (gh && gh.email) {
+                              setUserEmail(gh.email)
+                              setAccountSaveMsg(`Synced email from GitHub: ${gh.email}`)
+                              setTimeout(() => setAccountSaveMsg(null), 3500)
+                            }
+                          })
+                          .catch(() => {})
+                      }
+                    }}
+                    className="text-[10px] font-bold text-indigo-600 hover:text-indigo-700 cursor-pointer flex items-center gap-1 hover:underline"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    <span>Sync from GitHub</span>
+                  </button>
                 </div>
                 <input
                   type="email"
                   value={userEmail}
-                  readOnly
-                  disabled
+                  onChange={(e) => setUserEmail(e.target.value)}
                   placeholder="your.email@company.com"
-                  className="w-full px-3.5 py-2.5 text-xs bg-slate-50 text-slate-500 border border-slate-200/90 rounded-xl cursor-not-allowed select-none font-medium focus:outline-none"
+                  className="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium text-slate-800"
                 />
                 <p className="text-[10px] text-slate-400">
-                  Verified primary email associated with your GitHub account.
+                  Used for deployment risk alerts, team role invitations, and Nodemailer email notifications.
                 </p>
               </div>
 
