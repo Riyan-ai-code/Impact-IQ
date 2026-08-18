@@ -205,12 +205,12 @@ export default function NewAnalysisPage() {
         clearInterval(interval)
         setIsAnalyzing(false)
 
-        setAutoReport({
+        const newAutoReport = {
           id: "auto-" + Date.now(),
           repository: selectedRepo,
           branch: selectedBranch,
           riskScore: 78,
-          riskLevel: "High",
+          riskLevel: "High" as const,
           summary: [
             "PR introduces a new Stripe webhook handler in `backend/api/webhooks.py` with missing signature validation.",
             "Altered REST API response payload schema for `/api/v1/charge`, removing legacy `transaction_id` field.",
@@ -229,7 +229,31 @@ export default function NewAnalysisPage() {
             "Add `USER node` directive to Dockerfile before building image."
           ],
           createdAt: new Date().toISOString()
-        })
+        }
+
+        setAutoReport(newAutoReport)
+
+        // Save analysis to History & Reports storage
+        try {
+          const savedHistory = JSON.parse(getScopedItem("impact_iq_analysis_history") || "[]")
+          const historyEntry = {
+            id: newAutoReport.id,
+            type: "automatic",
+            repository: newAutoReport.repository,
+            branch: newAutoReport.branch,
+            riskScore: newAutoReport.riskScore,
+            riskLevel: newAutoReport.riskLevel,
+            summary: newAutoReport.summary,
+            securityIssues: newAutoReport.securityIssues,
+            apiContractIssues: newAutoReport.apiContractIssues,
+            checklist: newAutoReport.checklist,
+            createdAt: newAutoReport.createdAt
+          }
+          const updatedHistory = [historyEntry, ...savedHistory]
+          setScopedItem("impact_iq_analysis_history", JSON.stringify(updatedHistory))
+          localStorage.setItem("impact_iq_analysis_history", JSON.stringify(updatedHistory))
+          window.dispatchEvent(new Event("impact_iq_analysis_updated"))
+        } catch (e) {}
 
         // Dynamically save notification & trigger connected integration webhooks
         try {
@@ -294,7 +318,7 @@ export default function NewAnalysisPage() {
         clearInterval(interval)
         setIsAnalyzing(false)
 
-        setManualResponse({
+        const newManualResponse = {
           id: "man-" + Date.now(),
           repository: selectedRepo,
           branch: selectedBranch,
@@ -310,7 +334,30 @@ export default function NewAnalysisPage() {
             "backend/api/charge.py: L18 - removed 'transaction_id' key from JSON response"
           ],
           createdAt: new Date().toISOString()
-        })
+        }
+
+        setManualResponse(newManualResponse)
+
+        try {
+          const savedHistory = JSON.parse(getScopedItem("impact_iq_analysis_history") || "[]")
+          const historyEntry = {
+            id: newManualResponse.id,
+            type: "manual",
+            repository: newManualResponse.repository,
+            branch: newManualResponse.branch,
+            riskScore: 65,
+            riskLevel: "Medium",
+            prompt: newManualResponse.prompt,
+            aiResponse: newManualResponse.aiResponse,
+            keyTakeaways: newManualResponse.keyTakeaways,
+            codeSnippetsFlagged: newManualResponse.codeSnippetsFlagged,
+            createdAt: newManualResponse.createdAt
+          }
+          const updatedHistory = [historyEntry, ...savedHistory]
+          setScopedItem("impact_iq_analysis_history", JSON.stringify(updatedHistory))
+          localStorage.setItem("impact_iq_analysis_history", JSON.stringify(updatedHistory))
+          window.dispatchEvent(new Event("impact_iq_analysis_updated"))
+        } catch (e) {}
       }
     }, 800)
   }
