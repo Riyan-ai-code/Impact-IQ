@@ -329,14 +329,15 @@ function SettingsContent() {
   }
 
   // Load account, project data, and audit logs
-  useEffect(() => {
+  const loadSettingsData = () => {
     const guest = isGuestMode()
     setIsGuest(guest)
 
     // 1. Load Account Profile & Authority
     const savedUser = localStorage.getItem("impact_iq_user")
     const ghSaved = localStorage.getItem("github_connected_user")
-    const savedTeams = getScopedItem("impact_iq_teams")
+    const savedTeams = getScopedItem("impact_iq_teams") || localStorage.getItem("impact_iq_teams")
+    const activeTeamId = getScopedItem("impact_iq_active_team_id") || localStorage.getItem("impact_iq_active_team_id")
 
     let determinedRole: RoleType = "Owner"
     let currentEmail = "dev@impactiq.dev"
@@ -390,22 +391,27 @@ function SettingsContent() {
       } catch (e) {}
     }
 
-    // Check if team member has a specific assigned role
+    let activeTeamObj: any = null
+
+    // Check if team member has a specific assigned role in active team
     if (savedTeams) {
       try {
         const parsedTeams = JSON.parse(savedTeams)
         if (Array.isArray(parsedTeams) && parsedTeams.length > 0) {
           setTeams(parsedTeams.map((t: any) => ({ id: t.id, name: t.name })))
-          const activeTeam = parsedTeams[0]
+          activeTeamObj = (activeTeamId ? parsedTeams.find((t: any) => t.id === activeTeamId) : null) || parsedTeams[0]
           
-          if (Array.isArray(activeTeam.members)) {
-            setAvailableTeamMembers(activeTeam.members.map((m: any) => ({
+          if (activeTeamObj && Array.isArray(activeTeamObj.members)) {
+            setAvailableTeamMembers(activeTeamObj.members.map((m: any) => ({
               name: m.name || m.email.split("@")[0],
               email: m.email,
               role: m.role || "Developer"
             })))
 
-            const member = activeTeam.members.find((m: any) => m.email === currentEmail || m.name === currentName)
+            const member = activeTeamObj.members.find((m: any) => 
+              (m.email && currentEmail && m.email.toLowerCase() === currentEmail.toLowerCase()) || 
+              (m.name && currentName && m.name.toLowerCase() === currentName.toLowerCase())
+            )
             if (member?.role && ROLE_OPTIONS.includes(member.role as RoleType)) {
               determinedRole = member.role as RoleType
             }
@@ -424,8 +430,6 @@ function SettingsContent() {
       try {
         const parsedReqs = JSON.parse(savedRequests)
         if (Array.isArray(parsedReqs)) {
-          const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
-          const now = Date.now()
           const validReqs = parsedReqs.filter((r: RoleChangeRequest) => {
             if (r.status === "pending") return true
             if (!r.createdAtEpoch) return true
@@ -437,29 +441,27 @@ function SettingsContent() {
       } catch (e) {}
     }
 
-    // 3. Load Projects & Roles (strictly per-project)
-    const savedProjects = getScopedItem("impact_iq_projects")
+    // 3. Load Projects & Roles (Hybrid Model: Inherits from active team, with project-level override)
+    const savedProjects = getScopedItem("impact_iq_projects") || localStorage.getItem("impact_iq_projects")
 
     if (savedProjects) {
       try {
         const parsed: any[] = JSON.parse(savedProjects)
         if (parsed.length > 0) {
           const mapped: Setting[] = parsed.map(p => {
+            // Hybrid Role Resolution:
+            // 1. Explicit Project-level override (p.userRole)
+            // 2. Fallback to Team-level role (from active team members)
+            // 3. Fallback to account determined role
             let roleForProject = (p.userRole as RoleType)
-            if (!roleForProject && savedTeams) {
-              try {
-                const teamsList = JSON.parse(savedTeams)
-                const team = teamsList.find((t: any) => t.name === p.team || t.id === p.team)
-                if (team && Array.isArray(team.members)) {
-                  const m = team.members.find((mem: any) => 
-                    (mem.email && currentEmail && mem.email.toLowerCase() === currentEmail.toLowerCase()) || 
-                    (mem.name && currentName && mem.name.toLowerCase() === currentName.toLowerCase())
-                  )
-                  if (m && m.role && ROLE_OPTIONS.includes(m.role as RoleType)) {
-                    roleForProject = m.role as RoleType
-                  }
-                }
-              } catch (e) {}
+            if (!roleForProject && activeTeamObj && Array.isArray(activeTeamObj.members)) {
+              const mem = activeTeamObj.members.find((m: any) =>
+                (m.email && currentEmail && m.email.toLowerCase() === currentEmail.toLowerCase()) ||
+                (m.name && currentName && m.name.toLowerCase() === currentName.toLowerCase())
+              )
+              if (mem && mem.role && ROLE_OPTIONS.includes(mem.role as RoleType)) {
+                roleForProject = mem.role as RoleType
+              }
             }
 
             return {
@@ -467,7 +469,7 @@ function SettingsContent() {
               name: p.name,
               description: p.description || "",
               branch: p.branch || "main",
-              team: p.team || "Platform Engineering",
+              team: p.team || (activeTeamObj ? activeTeamObj.name : "Platform Engineering"),
               userRole: roleForProject || determinedRole || "Developer",
               allowAdminRoleManagement: p.allowAdminRoleManagement !== undefined ? p.allowAdminRoleManagement : true,
               environment: p.environment || "Production",
@@ -478,12 +480,13 @@ function SettingsContent() {
             }
           })
 
-          const userTeamNames = teams.map(t => t.name)
-          const visibleMapped = userTeamNames.length > 0
-            ? mapped.filter(p => !p.team || userTeamNames.includes(p.team))
+          // Filter projects by active team if active team exists
+          const activeTeamName = activeTeamObj?.name
+          const teamFiltered = activeTeamName 
+            ? mapped.filter(p => p.team === activeTeamName || p.team === activeTeamObj?.id)
             : mapped
 
-          const finalProjects = visibleMapped.length > 0 ? visibleMapped : mapped
+          const finalProjects = teamFiltered.length > 0 ? teamFiltered : mapped
           setProjects(finalProjects)
           setSelectedProjectId(finalProjects[0].id)
           populateProjectForm(finalProjects[0])
@@ -497,6 +500,19 @@ function SettingsContent() {
     setProjects(DEFAULT_PROJECTS)
     setSelectedProjectId(DEFAULT_PROJECTS[0].id)
     populateProjectForm(DEFAULT_PROJECTS[0])
+  }
+
+  useEffect(() => {
+    loadSettingsData()
+
+    window.addEventListener("impact_iq_teams_updated", loadSettingsData)
+    window.addEventListener("impact_iq_projects_updated", loadSettingsData)
+    window.addEventListener("storage", loadSettingsData)
+    return () => {
+      window.removeEventListener("impact_iq_teams_updated", loadSettingsData)
+      window.removeEventListener("impact_iq_projects_updated", loadSettingsData)
+      window.removeEventListener("storage", loadSettingsData)
+    }
   }, [])
 
   const populateProjectForm = (project: Setting) => {
@@ -1190,7 +1206,12 @@ function SettingsContent() {
                 <FolderGit2 className="w-5 h-5" />
               </div>
               <div className="text-left">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">SELECT PROJECT</span>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">SELECT PROJECT</span>
+                  <span className="text-[9px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100">
+                    Team: {teamOwnership || "Current Team"}
+                  </span>
+                </div>
                 <select
                   value={selectedProjectId}
                   onChange={(e) => handleSelectProject(e.target.value)}
@@ -1200,6 +1221,9 @@ function SettingsContent() {
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
                 </select>
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Showing projects for <strong className="text-slate-600">{teamOwnership}</strong>. Switch active team in sidebar to manage other team projects.
+                </p>
               </div>
             </div>
 
