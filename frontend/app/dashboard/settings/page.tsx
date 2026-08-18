@@ -195,6 +195,7 @@ function SettingsContent() {
   // ==========================================
   const [userName, setUserName] = useState("")
   const [userEmail, setUserEmail] = useState("")
+  const [userAvatar, setUserAvatar] = useState("")
   const [userBio, setUserBio] = useState("")
   const [userGithub, setUserGithub] = useState("")
   const [isGuest, setIsGuest] = useState(true)
@@ -333,43 +334,86 @@ function SettingsContent() {
     const guest = isGuestMode()
     setIsGuest(guest)
 
-    // 1. Load Account Profile & Authority
-    const savedUser = localStorage.getItem("impact_iq_user")
+    // 1. Load Account Profile & Authority (Auto-sync with connected GitHub)
+    const ghToken = localStorage.getItem("github_token")
     const ghSaved = localStorage.getItem("github_connected_user")
+    const savedUser = localStorage.getItem("impact_iq_user")
     const savedTeams = getScopedItem("impact_iq_teams") || localStorage.getItem("impact_iq_teams")
     const activeTeamId = getScopedItem("impact_iq_active_team_id") || localStorage.getItem("impact_iq_active_team_id")
 
     let determinedRole: RoleType = "Owner"
     let currentEmail = "dev@impactiq.dev"
     let currentName = "Developer"
+    let currentAvatar = ""
+    let currentGithub = ""
+
+    // If GitHub OAuth is connected, automatically populate real GitHub profile details
+    if (ghSaved) {
+      try {
+        const gh = JSON.parse(ghSaved)
+        currentName = gh.name || gh.login || "Developer"
+        currentEmail = gh.email || `${gh.login}@users.noreply.github.com`
+        currentGithub = gh.login || ""
+        currentAvatar = gh.avatar_url || ""
+        setUserName(currentName)
+        setUserEmail(currentEmail)
+        setUserGithub(currentGithub)
+        setUserAvatar(currentAvatar)
+      } catch (e) {}
+    }
 
     if (savedUser) {
       try {
         const parsed = JSON.parse(savedUser)
-        currentName = parsed.name || parsed.displayName || (guest ? "Guest Developer" : "Developer")
-        currentEmail = parsed.email || (guest ? "guest@impactiq.dev" : "dev@impactiq.dev")
-        setUserName(currentName)
-        setUserEmail(currentEmail)
+        if (!ghSaved) {
+          currentName = parsed.name || parsed.displayName || (guest ? "Guest Developer" : "Developer")
+          currentEmail = parsed.email || (guest ? "guest@impactiq.dev" : "dev@impactiq.dev")
+          currentGithub = parsed.githubUsername || ""
+          currentAvatar = parsed.avatar || ""
+          setUserName(currentName)
+          setUserEmail(currentEmail)
+          setUserGithub(currentGithub)
+          setUserAvatar(currentAvatar)
+        }
         setUserBio(parsed.bio || "")
-        setUserGithub(parsed.githubUsername || "")
         if (parsed.role && ROLE_OPTIONS.includes(parsed.role as RoleType)) {
           determinedRole = parsed.role as RoleType
         }
       } catch (e) {}
-    } else if (ghSaved) {
-      try {
-        const gh = JSON.parse(ghSaved)
-        currentName = gh.name || gh.login || "Developer"
-        currentEmail = gh.email || `${gh.login}@github.com`
-        setUserName(currentName)
-        setUserEmail(currentEmail)
-        setUserGithub(gh.login || "")
-      } catch (e) {}
-    } else if (guest) {
+    } else if (guest && !ghSaved) {
       currentName = "Guest Developer"
       currentEmail = "guest@impactiq.dev"
       setUserName(currentName)
       setUserEmail(currentEmail)
+    }
+
+    // If token exists, refresh live profile from backend to get latest primary email
+    if (ghToken) {
+      fetch(`http://localhost:8000/api/auth/github/user?token=${ghToken}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(gh => {
+          if (gh && gh.login) {
+            localStorage.setItem("github_connected_user", JSON.stringify(gh))
+            setUserName(gh.name || gh.login)
+            setUserEmail(gh.email || `${gh.login}@users.noreply.github.com`)
+            setUserGithub(gh.login)
+            setUserAvatar(gh.avatar_url || "")
+
+            const existing = localStorage.getItem("impact_iq_user")
+            const parsed = existing ? JSON.parse(existing) : {}
+            const updated = {
+              ...parsed,
+              name: gh.name || gh.login,
+              displayName: gh.name || gh.login,
+              email: gh.email || `${gh.login}@users.noreply.github.com`,
+              githubUsername: gh.login,
+              avatar: gh.avatar_url,
+              isGuest: false
+            }
+            localStorage.setItem("impact_iq_user", JSON.stringify(updated))
+          }
+        })
+        .catch(() => {})
     }
 
     // Load and auto-purge Audit Logs older than 7 days
@@ -848,8 +892,9 @@ function SettingsContent() {
           team: teamOwnership,
           userRole: projectRole,
           allowAdminRoleManagement: allowAdminRoleManagement,
-          environment: environment,
-          criticalityTier: criticalityTier,
+          // Priority & criticality can only be updated by the Project Owner
+          environment: isProjectOwner ? environment : (p.environment || environment),
+          criticalityTier: isProjectOwner ? criticalityTier : (p.criticalityTier || criticalityTier),
           requireSeniorReview: requireSeniorReview,
           minimumApprovals: minimumApprovals,
           blockDirectCommits: blockDirectCommits
@@ -1034,20 +1079,37 @@ function SettingsContent() {
           <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white font-extrabold text-2xl flex items-center justify-center shadow-md">
-                  {userName ? userName.charAt(0).toUpperCase() : "U"}
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white font-extrabold text-2xl flex items-center justify-center shadow-md overflow-hidden border border-slate-100 flex-shrink-0">
+                  {userAvatar ? (
+                    <img 
+                      src={userAvatar} 
+                      alt={userName}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { e.currentTarget.style.display = 'none' }}
+                    />
+                  ) : null}
+                  <span className={userAvatar ? "hidden" : ""}>{userName ? userName.charAt(0).toUpperCase() : "U"}</span>
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-1 text-left">
                   <div className="flex items-center gap-2">
                     <h3 className="text-base font-bold text-slate-900">{userName || "User Profile"}</h3>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                      {userAccountRole} Authority
+                    <span className={cn("px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border flex items-center gap-1 shadow-2xs", currentRoleInfo.badgeColor)}>
+                      <span>{ROLE_ICONS[userAccountRole]}</span>
+                      <span>{userAccountRole} Authority</span>
+                      <span className="text-[9px] bg-white/60 px-1 py-0.2 rounded font-mono font-bold">Tier {currentRoleInfo.level}</span>
                     </span>
                   </div>
                   <p className="text-xs text-slate-500">{userEmail}</p>
-                  <span className="inline-block text-[10px] font-semibold text-slate-400">
-                    {isGuest ? "Guest Mode Profile" : "Production Account"}
-                  </span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="inline-block text-[10px] font-semibold text-slate-400">
+                      {isGuest ? "Guest Mode Sandbox" : "GitHub Verified Identity"}
+                    </span>
+                    {userGithub && (
+                      <span className="text-[10px] text-indigo-600 font-bold bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                        @{userGithub}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -1078,7 +1140,7 @@ function SettingsContent() {
                   className="w-full px-3.5 py-2.5 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium"
                 />
                 <p className="text-[10px] text-slate-400">
-                  This name will appear on all team rosters, invite notices, and audit logs.
+                  Synced directly from your GitHub profile identity.
                 </p>
               </div>
 
@@ -1102,7 +1164,7 @@ function SettingsContent() {
                   className="w-full px-3.5 py-2.5 text-xs bg-slate-50 text-slate-500 border border-slate-200/90 rounded-xl cursor-not-allowed select-none font-medium focus:outline-none"
                 />
                 <p className="text-[10px] text-slate-400">
-                  Managed by your authentication provider and cannot be changed here.
+                  Verified primary email associated with your GitHub account.
                 </p>
               </div>
 
@@ -1133,7 +1195,7 @@ function SettingsContent() {
             </div>
 
             {/* Bio / Summary */}
-            <div className="space-y-1.5 pt-2">
+            <div className="space-y-1.5 pt-2 text-left">
               <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">
                 Bio &amp; Engineering Focus
               </label>
@@ -1147,9 +1209,9 @@ function SettingsContent() {
             </div>
 
             <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
-              <p className="text-[11px] text-slate-500">
+              <span className="text-[11px] text-slate-400">
                 Changes saved here will immediately update your team membership card and dashboard identity.
-              </p>
+              </span>
 
               <Button
                 variant="brand"
@@ -1161,6 +1223,67 @@ function SettingsContent() {
               </Button>
             </div>
 
+          </div>
+
+          {/* ========================================================= */}
+          {/* 🛡️ ACCOUNT AUTHORITY & ROLE BREAKDOWN CARD */}
+          {/* ========================================================= */}
+          <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs space-y-5 text-left">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center text-lg">
+                  {ROLE_ICONS[userAccountRole]}
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <span>Your Active Workspace Authority:</span>
+                    <span className={cn("px-2.5 py-0.5 rounded-full text-[11px] font-bold border", currentRoleInfo.badgeColor)}>
+                      {ROLE_ICONS[userAccountRole]} {userAccountRole} (Tier {currentRoleInfo.level})
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">{currentRoleInfo.description}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Permissions list */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+              <div className="p-4 bg-emerald-50/50 border border-emerald-100 rounded-xl space-y-2.5">
+                <span className="text-[11px] font-bold text-emerald-900 uppercase tracking-wide flex items-center gap-1.5">
+                  <Check className="w-4 h-4 text-emerald-600" />
+                  Granted Authority Powers
+                </span>
+                <ul className="space-y-1.5 text-xs text-emerald-950">
+                  {currentRoleInfo.allowed.slice(0, 5).map((p, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-[11px] leading-snug">
+                      <span className="text-emerald-600 font-bold">•</span>
+                      <span>{p}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-xl space-y-2.5">
+                <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                  Hybrid Role Hierarchy
+                </span>
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  Under the <strong>Hybrid Role Model</strong>, your baseline authority is inherited from your role in the active team. Specific critical projects may have designated <strong>Project Owners</strong> and <strong>Maintainers</strong>.
+                </p>
+                <div className="pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setActiveTab("project")}
+                    className="h-8 px-3 text-xs font-bold border-indigo-200 bg-white hover:bg-indigo-50 text-indigo-700 rounded-lg flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                  >
+                    <span>View Project Overrides &amp; Tiers</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -1732,18 +1855,32 @@ function SettingsContent() {
               </div>
             </div>
 
+            {/* Notice for Non-Owners */}
+            {!isProjectOwner && (
+              <div className="flex items-center gap-2 p-3 bg-amber-50/90 border border-amber-200 rounded-xl text-amber-900 text-xs">
+                <Lock className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                <span>Priority &amp; Criticality settings are sovereign to the <strong>Project Owner</strong> ({projectRole} view only).</span>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Environment Tag */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
                   <Server className="w-3.5 h-3.5 text-slate-500" />
                   Target Environment
+                  {!isProjectOwner && <span className="text-[9px] text-amber-700 bg-amber-100 px-1.5 py-0.2 rounded font-normal">Owner Only</span>}
                 </label>
                 <select
                   value={environment}
-                  disabled={!canEdit}
+                  disabled={!isProjectOwner}
                   onChange={(e) => setEnvironment(e.target.value as any)}
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20 font-bold text-slate-800 cursor-pointer"
+                  className={cn(
+                    "w-full px-3 py-2 text-xs border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20 font-bold",
+                    isProjectOwner 
+                      ? "bg-white border-slate-200 text-slate-800 cursor-pointer" 
+                      : "bg-slate-50 text-slate-500 border-slate-200/80 cursor-not-allowed select-none"
+                  )}
                 >
                   <option value="Production">🚀 Production (Live User Traffic)</option>
                   <option value="Staging">🧪 Staging (Pre-release QA &amp; Testing)</option>
@@ -1758,12 +1895,18 @@ function SettingsContent() {
                 <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
                   <Flame className="w-3.5 h-3.5 text-rose-500" />
                   Business Criticality Tier
+                  {!isProjectOwner && <span className="text-[9px] text-amber-700 bg-amber-100 px-1.5 py-0.2 rounded font-normal">Owner Only</span>}
                 </label>
                 <select
                   value={criticalityTier}
-                  disabled={!canEdit}
+                  disabled={!isProjectOwner}
                   onChange={(e) => setCriticalityTier(e.target.value as any)}
-                  className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500/20 font-bold text-slate-800 cursor-pointer"
+                  className={cn(
+                    "w-full px-3 py-2 text-xs border rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500/20 font-bold",
+                    isProjectOwner 
+                      ? "bg-white border-slate-200 text-slate-800 cursor-pointer" 
+                      : "bg-slate-50 text-slate-500 border-slate-200/80 cursor-not-allowed select-none"
+                  )}
                 >
                   <option value="Tier 1 - Mission Critical">🔴 Tier 1 - Mission Critical (1.5x Risk Weight &amp; Strict Merge Gate)</option>
                   <option value="Tier 2 - Business Standard">🟡 Tier 2 - Business Standard (1.0x Standard Risk Weight)</option>
