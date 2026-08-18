@@ -23,7 +23,6 @@ import {
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { createProjectInNhost, fetchProjectsFromNhost, fetchTeamsFromNhost } from "@/services/nhostService"
-import { nhostSignOut } from "@/services/nhostAuthService"
 import { getScopedItem, setScopedItem } from "@/lib/storageScope"
 
 interface Repository {
@@ -445,10 +444,6 @@ export default function RepositoriesPage() {
     window.location.href = "http://localhost:8000/api/auth/github/login"
   }
 
-  const handleDisconnect = () => {
-    nhostSignOut()
-  }
-
   const monitoredBranchesCount = useMemo(() => {
     const branchesSet = new Set<string>()
     existingProjects.forEach((p: any) => {
@@ -539,13 +534,6 @@ export default function RepositoriesPage() {
             >
               <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
               Reconnect
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={handleDisconnect}
-              className="h-9 px-3.5 border-rose-200/60 bg-white hover:bg-rose-50 text-rose-600 text-xs font-semibold rounded-lg transition-all"
-            >
-              Disconnect
             </Button>
           </div>
         </div>
