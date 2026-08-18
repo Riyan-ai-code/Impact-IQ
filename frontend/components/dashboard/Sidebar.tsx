@@ -22,7 +22,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { nhostGetUser, nhostSignOut } from "@/services/nhostAuthService"
-
+import { fetchTeamsFromNhost } from "@/services/nhostService"
 import { getScopedItem, setScopedItem } from "@/lib/storageScope"
 
 export default function Sidebar() {
@@ -132,50 +132,91 @@ export default function Sidebar() {
   }, [])
 
   const fetchTeams = async () => {
+    let loaded: any[] = []
+
+    // 1. Backend API
     try {
       const res = await fetch("http://localhost:8000/api/teams")
       if (res.ok) {
         const data = await res.json()
-        if (Array.isArray(data)) {
-          setTeams(data)
-          const savedActiveId = localStorage.getItem("impact_iq_active_team_id")
-          if (data.length > 0) {
-            if (savedActiveId && data.some((t: any) => t.id === savedActiveId)) {
-              setActiveTeamId(savedActiveId)
-            } else if (!activeTeamId) {
-              setActiveTeamId(data[0].id)
-            }
-          } else {
-            setActiveTeamId(null)
-          }
-          return
+        if (Array.isArray(data) && data.length > 0) {
+          loaded = data
         }
       }
     } catch (e) {}
 
-    const saved = getScopedItem("impact_iq_teams")
-    if (saved) {
+    // 2. Nhost GraphQL
+    if (loaded.length === 0) {
       try {
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed)) {
-          setTeams(parsed)
-          const savedActiveId = getScopedItem("impact_iq_active_team_id")
-          if (parsed.length > 0) {
-            if (savedActiveId && parsed.some((t: any) => t.id === savedActiveId)) {
-              setActiveTeamId(savedActiveId)
-            } else if (!activeTeamId) {
-              setActiveTeamId(parsed[0].id)
-            }
-          } else {
-            setActiveTeamId(null)
-          }
-          return
+        const nhostTeams = await fetchTeamsFromNhost()
+        if (nhostTeams && nhostTeams.length > 0) {
+          loaded = nhostTeams
         }
       } catch (e) {}
     }
 
-    setTeams([])
-    setActiveTeamId(null)
+    // 3. Scoped Storage
+    if (loaded.length === 0) {
+      const saved = getScopedItem("impact_iq_teams")
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            loaded = parsed
+          }
+        } catch (e) {}
+      }
+    }
+
+    // 4. Direct / Global Storage
+    if (loaded.length === 0) {
+      const directKeys = ["impact_iq_teams", "impact_iq_teams_guest", "impact_iq_teams_auth_user"]
+      for (const k of directKeys) {
+        const val = localStorage.getItem(k)
+        if (val) {
+          try {
+            const parsed = JSON.parse(val)
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              loaded = parsed
+              break
+            }
+          } catch (e) {}
+        }
+      }
+    }
+
+    // 5. Dynamic impact_iq_teams_* keys in localStorage
+    if (loaded.length === 0) {
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i)
+          if (key && key.startsWith("impact_iq_teams_")) {
+            const val = localStorage.getItem(key)
+            if (val) {
+              const parsed = JSON.parse(val)
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                loaded = parsed
+                break
+              }
+            }
+          }
+        }
+      } catch (e) {}
+    }
+
+    setTeams(loaded)
+
+    // Determine active team
+    const savedActiveId = getScopedItem("impact_iq_active_team_id") || localStorage.getItem("impact_iq_active_team_id")
+    if (savedActiveId && loaded.some((t: any) => t.id === savedActiveId)) {
+      setActiveTeamId(savedActiveId)
+    } else if (loaded.length > 0) {
+      setActiveTeamId(loaded[0].id)
+      setScopedItem("impact_iq_active_team_id", loaded[0].id)
+      localStorage.setItem("impact_iq_active_team_id", loaded[0].id)
+    } else {
+      setActiveTeamId(null)
+    }
   }
 
   useEffect(() => {
@@ -194,12 +235,13 @@ export default function Sidebar() {
       window.removeEventListener("storage", handleTeamsSync)
       clearInterval(interval)
     }
-  }, [])
+  }, [userProfile.name, userProfile.email])
 
   const activeTeam = teams.find(t => t.id === activeTeamId) || (teams.length > 0 ? teams[0] : null)
 
   const handleJoinTeam = (team: any) => {
     setActiveTeamId(team.id)
+    setScopedItem("impact_iq_active_team_id", team.id)
     localStorage.setItem("impact_iq_active_team_id", team.id)
 
     // Check if user is in team roster
@@ -222,6 +264,7 @@ export default function Sidebar() {
         return t
       })
       setTeams(updatedTeams)
+      setScopedItem("impact_iq_teams", JSON.stringify(updatedTeams))
       localStorage.setItem("impact_iq_teams", JSON.stringify(updatedTeams))
     }
 

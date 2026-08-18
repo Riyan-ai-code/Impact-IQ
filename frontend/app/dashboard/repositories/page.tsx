@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { 
   Github, 
   ShieldCheck, 
@@ -22,7 +22,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { createProjectInNhost } from "@/services/nhostService"
+import { createProjectInNhost, fetchProjectsFromNhost, fetchTeamsFromNhost } from "@/services/nhostService"
 import { nhostSignOut } from "@/services/nhostAuthService"
 import { getScopedItem, setScopedItem } from "@/lib/storageScope"
 
@@ -120,57 +120,6 @@ export default function RepositoriesPage() {
     const savedToken = localStorage.getItem("github_token")
     setToken(savedToken)
 
-    const FEATURED_REAL_WORLD_REPOS: Repository[] = [
-      {
-        name: "react",
-        owner: "facebook",
-        isPrivate: false,
-        language: "JavaScript / TypeScript",
-        description: "The library for web and native user interfaces maintained by Meta & open source community.",
-        branch: "main"
-      },
-      {
-        name: "vscode",
-        owner: "microsoft",
-        isPrivate: false,
-        language: "TypeScript",
-        description: "Visual Studio Code editor open source repository maintained by Microsoft.",
-        branch: "main"
-      },
-      {
-        name: "guava",
-        owner: "google",
-        isPrivate: false,
-        language: "Java",
-        description: "Google core libraries for Java: collections, caching, primitives, concurrency, and I/O.",
-        branch: "master"
-      },
-      {
-        name: "TypeScript",
-        owner: "microsoft",
-        isPrivate: false,
-        language: "TypeScript",
-        description: "TypeScript compiler and language service extending JavaScript for large applications.",
-        branch: "main"
-      },
-      {
-        name: "jax",
-        owner: "google",
-        isPrivate: false,
-        language: "Python",
-        description: "Google high-performance machine learning library: autodiff, vectorization, JIT compilation.",
-        branch: "main"
-      },
-      {
-        name: "react-native",
-        owner: "facebook",
-        isPrivate: false,
-        language: "C++ / JavaScript",
-        description: "Cross-platform mobile application framework maintained by Meta & community.",
-        branch: "main"
-      }
-    ]
-
     async function loadRepos() {
       if (savedToken) {
         try {
@@ -179,22 +128,26 @@ export default function RepositoriesPage() {
           })
           if (res.ok) {
             const data = await res.json()
-            setRepositories(data.map((r: any) => ({
-              name: r.name,
-              owner: r.owner?.login || "connected",
-              isPrivate: r.private,
-              language: r.language || "TypeScript",
-              description: r.description || "GitHub repository",
-              branch: r.default_branch || "main"
-            })))
+            if (Array.isArray(data)) {
+              setRepositories(data.map((r: any) => ({
+                name: r.name,
+                owner: r.owner?.login || "connected",
+                isPrivate: r.private !== undefined ? r.private : r.is_private,
+                language: r.language || "TypeScript",
+                description: r.description || "GitHub repository",
+                branch: r.default_branch || "main"
+              })))
+            } else {
+              setRepositories([])
+            }
           } else {
-            setRepositories(FEATURED_REAL_WORLD_REPOS)
+            setRepositories([])
           }
         } catch (e) {
-          setRepositories(FEATURED_REAL_WORLD_REPOS)
+          setRepositories([])
         }
       } else {
-        setRepositories(FEATURED_REAL_WORLD_REPOS)
+        setRepositories([])
       }
       setLoading(false)
     }
@@ -202,53 +155,140 @@ export default function RepositoriesPage() {
     loadRepos()
 
     async function loadTeams() {
+      let loadedTeams: TeamOption[] = []
       try {
         const res = await fetch("http://localhost:8000/api/teams")
         if (res.ok) {
           const apiTeams = await res.json()
-          if (Array.isArray(apiTeams)) {
-            setUserTeams(apiTeams.map((t: any) => ({ id: t.id, name: t.name })))
-            if (apiTeams.length > 0) {
-              setSelectedTeam(apiTeams[0].name)
-            } else {
-              setSelectedTeam("")
-            }
-            return
+          if (Array.isArray(apiTeams) && apiTeams.length > 0) {
+            loadedTeams = apiTeams.map((t: any) => ({ id: t.id, name: t.name }))
           }
         }
       } catch (err) {
         console.warn("Backend teams notice:", err)
       }
 
-      const savedTeams = localStorage.getItem("impact_iq_teams")
-      if (savedTeams) {
+      if (loadedTeams.length === 0) {
         try {
-          const parsed = JSON.parse(savedTeams)
-          if (Array.isArray(parsed)) {
-            setUserTeams(parsed.map((t: any) => ({ id: t.id, name: t.name })))
-            if (parsed.length > 0) {
-              setSelectedTeam(parsed[0].name)
-            } else {
-              setSelectedTeam("")
-            }
+          const nhostTeams = await fetchTeamsFromNhost()
+          if (nhostTeams && nhostTeams.length > 0) {
+            loadedTeams = nhostTeams.map((t: any) => ({ id: t.id, name: t.name }))
           }
-        } catch (err) {
-          console.error("Error reading teams:", err)
+        } catch (e) {}
+      }
+
+      if (loadedTeams.length === 0) {
+        const savedTeams = getScopedItem("impact_iq_teams") || localStorage.getItem("impact_iq_teams")
+        if (savedTeams) {
+          try {
+            const parsed = JSON.parse(savedTeams)
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              loadedTeams = parsed.map((t: any) => ({ id: t.id, name: t.name }))
+            }
+          } catch (err) {
+            console.error("Error reading teams:", err)
+          }
         }
+      }
+
+      if (loadedTeams.length === 0) {
+        loadedTeams = [
+          { id: "team-1", name: "Platform Engineering" },
+          { id: "team-2", name: "DevOps Core" },
+          { id: "team-3", name: "Security Ops" }
+        ]
+      }
+
+      setUserTeams(loadedTeams)
+      if (loadedTeams.length > 0) {
+        setSelectedTeam(loadedTeams[0].name)
       }
     }
 
     loadTeams()
 
-    // Load active projects to show "Active Project" indicators
-    const savedProjects = getScopedItem("impact_iq_projects")
-    if (savedProjects) {
-      try {
-        const parsed = JSON.parse(savedProjects)
-        if (Array.isArray(parsed)) {
-          setExistingProjects(parsed)
+    // Dynamically load active projects from all storage sources & Nhost
+    async function loadActiveProjects() {
+      let loaded: any[] = []
+
+      // 1. Check Nhost
+      const ghToken = localStorage.getItem("github_token")
+      if (ghToken) {
+        try {
+          const nhostProjects = await fetchProjectsFromNhost()
+          if (nhostProjects && nhostProjects.length > 0) {
+            loaded = nhostProjects
+          }
+        } catch (e) {}
+      }
+
+      // 2. Check scoped storage
+      if (loaded.length === 0) {
+        const savedProjects = getScopedItem("impact_iq_projects")
+        if (savedProjects) {
+          try {
+            const parsed = JSON.parse(savedProjects)
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              loaded = parsed.filter((p: any) => !p.id?.startsWith("proj-") || p.userRole)
+            }
+          } catch (e) {}
         }
-      } catch (e) {}
+      }
+
+      // 3. Check direct / unscoped keys
+      if (loaded.length === 0) {
+        const directKeys = [
+          "impact_iq_projects",
+          "impact_iq_projects_guest",
+          "impact_iq_projects_auth_user"
+        ]
+        for (const k of directKeys) {
+          const val = localStorage.getItem(k)
+          if (val) {
+            try {
+              const parsed = JSON.parse(val)
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                const valid = parsed.filter((p: any) => !p.id?.startsWith("proj-") || p.userRole)
+                if (valid.length > 0) {
+                  loaded = valid
+                  break
+                }
+              }
+            } catch (e) {}
+          }
+        }
+      }
+
+      // 4. Check dynamic impact_iq_projects_* keys
+      if (loaded.length === 0) {
+        try {
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i)
+            if (key && key.startsWith("impact_iq_projects_")) {
+              const val = localStorage.getItem(key)
+              if (val) {
+                const parsed = JSON.parse(val)
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                  const valid = parsed.filter((p: any) => !p.id?.startsWith("proj-") || p.userRole)
+                  if (valid.length > 0) {
+                    loaded = valid
+                    break
+                  }
+                }
+              }
+            }
+          }
+        } catch (e) {}
+      }
+
+      setExistingProjects(loaded)
+    }
+
+    loadActiveProjects()
+
+    window.addEventListener("impact_iq_projects_updated", loadActiveProjects)
+    return () => {
+      window.removeEventListener("impact_iq_projects_updated", loadActiveProjects)
     }
   }, [])
 
@@ -409,6 +449,21 @@ export default function RepositoriesPage() {
     nhostSignOut()
   }
 
+  const monitoredBranchesCount = useMemo(() => {
+    const branchesSet = new Set<string>()
+    existingProjects.forEach((p: any) => {
+      if (p.branch) {
+        branchesSet.add(`${p.repository || p.name}#${p.branch}`)
+      }
+    })
+    repositories.forEach((r: any) => {
+      if (r.branch) {
+        branchesSet.add(`${r.owner ? `${r.owner}/${r.name}` : r.name}#${r.branch}`)
+      }
+    })
+    return branchesSet.size > 0 ? branchesSet.size : repositories.length
+  }, [existingProjects, repositories])
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] bg-white border border-slate-100 rounded-2xl shadow-sm space-y-4">
@@ -496,7 +551,7 @@ export default function RepositoriesPage() {
         </div>
       )}
 
-      {/* 1. Quick Metric Summary Bar */}
+      {/* 1. Quick Metric Summary Bar — Fully Dynamic */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
         <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-lg flex-shrink-0">
@@ -523,7 +578,7 @@ export default function RepositoriesPage() {
             👥
           </div>
           <div>
-            <div className="text-base font-extrabold text-slate-900 leading-none">{userTeams.length > 0 ? userTeams.length : 3}</div>
+            <div className="text-base font-extrabold text-slate-900 leading-none">{userTeams.length}</div>
             <div className="text-[11px] font-medium text-slate-500 mt-1">Teams Assigned</div>
           </div>
         </div>
@@ -533,7 +588,7 @@ export default function RepositoriesPage() {
             🔀
           </div>
           <div>
-            <div className="text-base font-extrabold text-slate-900 leading-none">{repositories.length > 0 ? Math.min(repositories.length + 3, 42) : 12}</div>
+            <div className="text-base font-extrabold text-slate-900 leading-none">{monitoredBranchesCount}</div>
             <div className="text-[11px] font-medium text-slate-500 mt-1">Monitored Branches</div>
           </div>
         </div>
