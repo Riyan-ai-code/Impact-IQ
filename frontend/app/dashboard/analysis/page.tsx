@@ -502,7 +502,7 @@ export default function NewAnalysisPage() {
               </div>
               <Button
                 onClick={() => window.location.href = "/dashboard/repositories"}
-                className="h-8 px-3 text-xs font-bold text-white bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 rounded-lg cursor-pointer"
+                className="h-8 px-3 text-xs font-bold text-white bg-[#FF8066] hover:bg-[#ff6c4a] dark:bg-indigo-600 dark:hover:bg-indigo-500 rounded-lg cursor-pointer"
               >
                 Create Project &rarr;
               </Button>
@@ -536,7 +536,7 @@ export default function NewAnalysisPage() {
               className={cn(
                 "h-11 px-6 text-xs font-bold rounded-xl flex items-center gap-2 shadow-xs transition-all",
                 canTriggerAnalysis && !isAnalyzing
-                  ? "bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white cursor-pointer"
+                  ? "bg-[#FF8066] hover:bg-[#ff6c4a] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white cursor-pointer"
                   : "bg-surface-2 text-content-muted border border-border cursor-not-allowed opacity-70"
               )}
             >
@@ -607,7 +607,7 @@ export default function NewAnalysisPage() {
               <Button
                 disabled={isAnalyzing}
                 onClick={handleRunManualAnalysis}
-                className="h-11 px-6 text-xs font-bold bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white rounded-xl flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-75"
+                className="h-11 px-6 text-xs font-bold bg-[#FF8066] hover:bg-[#ff6c4a] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white rounded-xl flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-75"
               >
                 {isAnalyzing ? (
                   <>

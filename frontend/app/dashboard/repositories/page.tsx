@@ -441,6 +441,7 @@ export default function RepositoriesPage() {
   }
 
   const handleConnectGithub = () => {
+    localStorage.setItem("post_login_redirect", "/dashboard/repositories")
     window.location.href = "http://localhost:8000/api/auth/github/login"
   }
 
@@ -518,7 +519,7 @@ export default function RepositoriesPage() {
       {token && (
         <div className="bg-white dark:bg-[#141829] border border-[#845EC2]/25 rounded-2xl p-4.5 flex items-center justify-between shadow-xs text-left">
           <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#845EC2] to-[#FF8066] text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+            <div className="w-10 h-10 rounded-xl bg-[#FF8066] text-white flex items-center justify-center flex-shrink-0 shadow-xs">
               <Check className="w-5 h-5" />
             </div>
             <div>
@@ -705,7 +706,7 @@ export default function RepositoriesPage() {
               {/* Top Header Row: Icon + Name + Badges on left | Create Project button on top right */}
               <div className="flex items-center justify-between w-full gap-4">
                 <div className="flex items-center gap-3 text-left">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#845EC2] to-[#FF8066] text-white flex items-center justify-center shadow-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                  <div className="w-10 h-10 rounded-xl bg-[#FF8066] text-white flex items-center justify-center shadow-xs flex-shrink-0 group-hover:scale-105 transition-transform">
                     <Github className="w-5 h-5" />
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
@@ -729,7 +730,7 @@ export default function RepositoriesPage() {
 
                     {/* Active Project Indicator Pill */}
                     {connectedProject && (
-                      <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#845EC2] bg-gradient-to-r from-[#845EC2]/10 to-[#FF8066]/10 border border-[#845EC2]/30 px-2.5 py-0.5 rounded-full shadow-2xs">
+                      <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#FF8066] bg-[#FF8066]/10 border border-[#FF8066]/30 px-2.5 py-0.5 rounded-full shadow-2xs">
                         <span>🚀</span>
                         <span>Connected to <strong>{connectedProject.name}</strong> (Team: {connectedProject.team || "Platform Engineering"})</span>
                       </span>
@@ -741,7 +742,7 @@ export default function RepositoriesPage() {
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <button 
                     onClick={() => handleOpenCreateModal(repo.name)}
-                    className="px-4 py-1.5 bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all duration-150 active:scale-95 shadow-xs cursor-pointer"
+                    className="px-4 py-1.5 bg-[#FF8066] hover:bg-[#ff6c4a] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all duration-150 active:scale-95 shadow-xs cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Create Project
@@ -792,8 +793,8 @@ export default function RepositoriesPage() {
                   className={cn(
                     "w-7 h-7 text-xs font-bold rounded-lg transition-all duration-150 cursor-pointer",
                     currentPage === page
-                      ? "bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 text-white shadow-xs"
-                      : "text-[#6E6678] hover:bg-[#845EC2]/10 bg-white dark:bg-[#141829] border border-[#845EC2]/15"
+                      ? "bg-[#FF8066] dark:bg-indigo-600 text-white shadow-xs"
+                      : "text-[#6E6678] hover:bg-[#FF8066]/10 bg-white dark:bg-[#141829] border border-[#FF8066]/15"
                   )}
                 >
                   {page}
@@ -1147,7 +1148,7 @@ export default function RepositoriesPage() {
                   variant="brand" 
                   disabled={isCreatingProject}
                   onClick={handleCreateProject}
-                  className="h-10 text-xs font-bold bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white flex items-center gap-2 px-5 rounded-lg disabled:opacity-75 cursor-pointer shadow-xs"
+                  className="h-10 text-xs font-bold bg-[#FF8066] hover:bg-[#ff6c4a] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white flex items-center gap-2 px-5 rounded-lg disabled:opacity-75 cursor-pointer shadow-xs"
                 >
                   {isCreatingProject ? (
                     <>

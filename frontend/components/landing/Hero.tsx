@@ -88,7 +88,7 @@ export default function Hero() {
           
           <h1 className="text-4xl sm:text-5xl lg:text-5.5xl font-extrabold tracking-tight text-content-primary leading-[1.12]">
             Predict. Prioritize. <br />
-            Deploy with <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-400 dark:via-indigo-300 dark:to-teal-300">Absolute Confidence.</span>
+            Deploy with <span className="text-[#FF8066] dark:from-indigo-400 dark:via-indigo-300 dark:to-teal-300">Absolute Confidence.</span>
           </h1>
 
           <p className="text-base sm:text-lg text-content-secondary leading-relaxed max-w-xl">
@@ -99,7 +99,7 @@ export default function Hero() {
           <div className="flex flex-col sm:flex-row gap-3.5 w-full sm:w-auto pt-2">
             <button 
               onClick={handleLaunch}
-              className="w-full sm:w-auto bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white text-sm font-semibold py-3.5 px-7 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer group"
+              className="w-full sm:w-auto bg-[#FF8066] hover:bg-[#ff6c4a] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white text-sm font-semibold py-3.5 px-7 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer group"
             >
               Launch Platform
               <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />

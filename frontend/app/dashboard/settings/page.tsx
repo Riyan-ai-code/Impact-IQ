@@ -1032,7 +1032,7 @@ function SettingsContent() {
             className={cn(
               "flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
               activeTab === "account"
-                ? "bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 text-white shadow-xs"
+                ? "bg-[#FF8066] dark:bg-indigo-600 text-white shadow-xs"
                 : "text-content-secondary hover:text-content-primary"
             )}
           >
@@ -1046,7 +1046,7 @@ function SettingsContent() {
             className={cn(
               "flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
               activeTab === "project"
-                ? "bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 text-white shadow-xs"
+                ? "bg-[#FF8066] dark:bg-indigo-600 text-white shadow-xs"
                 : "text-content-secondary hover:text-content-primary"
             )}
           >
@@ -1117,7 +1117,7 @@ function SettingsContent() {
               <Button
                 variant="brand"
                 onClick={handleSaveAccount}
-                className="h-10 px-5 text-xs font-bold bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white rounded-xl flex items-center gap-2 shadow-xs transition-all cursor-pointer self-start sm:self-auto"
+                className="h-10 px-5 text-xs font-bold bg-[#FF8066] hover:bg-[#ff6c4a] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white rounded-xl flex items-center gap-2 shadow-xs transition-all cursor-pointer self-start sm:self-auto"
               >
                 <Save className="w-4 h-4" />
                 <span>Save Profile Changes</span>
@@ -1235,7 +1235,7 @@ function SettingsContent() {
               <Button
                 variant="brand"
                 onClick={handleSaveAccount}
-                className="h-9 px-4 text-xs font-bold bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white rounded-lg flex items-center gap-2 shadow-xs cursor-pointer"
+                className="h-9 px-4 text-xs font-bold bg-[#FF8066] hover:bg-[#ff6c4a] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white rounded-lg flex items-center gap-2 shadow-xs cursor-pointer"
               >
                 <Check className="w-4 h-4" />
                 <span>Save Profile</span>
@@ -1376,7 +1376,7 @@ function SettingsContent() {
               className={cn(
                 "h-9 px-4 text-xs font-bold rounded-lg flex items-center gap-2 shadow-xs transition-all",
                 canEdit
-                  ? "bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white cursor-pointer"
+                  ? "bg-[#FF8066] hover:bg-[#ff6c4a] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white cursor-pointer"
                   : "bg-surface-2 text-content-muted border border-border cursor-not-allowed opacity-70"
               )}
             >
@@ -1533,7 +1533,7 @@ function SettingsContent() {
                                   variant="brand"
                                   size="sm"
                                   onClick={() => handleApproveRequest(req)}
-                                  className="h-8 px-3 text-xs font-bold bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white rounded-lg cursor-pointer flex items-center gap-1.5 shadow-xs"
+                                  className="h-8 px-3 text-xs font-bold bg-[#FF8066] hover:bg-[#ff6c4a] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white rounded-lg cursor-pointer flex items-center gap-1.5 shadow-xs"
                                 >
                                   <CheckCheck className="w-3.5 h-3.5" />
                                   <span>Approve &amp; Grant</span>
@@ -1657,7 +1657,7 @@ function SettingsContent() {
                                 className={cn(
                                   "w-6 h-6 rounded-md text-xs font-bold transition-all cursor-pointer",
                                   grantsPage === pNum
-                                    ? "bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 text-white shadow-xs"
+                                    ? "bg-[#FF8066] dark:bg-indigo-600 text-white shadow-xs"
                                     : "text-slate-600 hover:bg-slate-100"
                                 )}
                               >
@@ -2191,7 +2191,7 @@ function SettingsContent() {
                             setTargetRequestedRole(explainingRole !== projectRole ? explainingRole : "Admin")
                             setIsRequestModalOpen(true)
                           }}
-                          className="h-9 px-3.5 text-xs bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white rounded-lg flex items-center gap-1.5 font-bold shadow-xs cursor-pointer transition-all flex-shrink-0"
+                          className="h-9 px-3.5 text-xs bg-[#FF8066] hover:bg-[#ff6c4a] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white rounded-lg flex items-center gap-1.5 font-bold shadow-xs cursor-pointer transition-all flex-shrink-0"
                         >
                           <Send className="w-3.5 h-3.5" />
                           <span>Request Role Change</span>
@@ -2351,7 +2351,7 @@ function SettingsContent() {
                           className={cn(
                             "w-7 h-7 rounded-lg text-xs font-bold transition-all cursor-pointer",
                             auditPage === pNum
-                              ? "bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 text-white shadow-xs"
+                              ? "bg-[#FF8066] dark:bg-indigo-600 text-white shadow-xs"
                               : "text-slate-600 hover:bg-slate-100"
                           )}
                         >
@@ -2618,7 +2618,7 @@ function SettingsContent() {
                 variant="brand" 
                 disabled={isSendingEmail}
                 onClick={handleSubmitRoleRequest} 
-                className="h-9 px-4 text-xs font-bold bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white rounded-lg flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
+                className="h-9 px-4 text-xs font-bold bg-[#FF8066] hover:bg-[#ff6c4a] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white rounded-lg flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
               >
                 {isSendingEmail ? (
                   <>

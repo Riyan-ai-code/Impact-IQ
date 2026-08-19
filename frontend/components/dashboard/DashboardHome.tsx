@@ -149,7 +149,7 @@ export default function DashboardHome() {
         {isGuest ? (
           <div className="space-y-6">
             {/* Guest Header Banner */}
-            <div className="bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-[#0f1219] dark:via-[#141829] dark:to-[#1a1f3a] border border-border rounded-2xl p-6 md:p-8 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+            <div className="bg-[#FF8066] dark:from-[#0f1219] dark:via-[#141829] dark:to-[#1a1f3a] dark:bg-gradient-to-r border border-border rounded-2xl p-6 md:p-8 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
               <div className="space-y-2 z-10 max-w-xl">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 border border-white/30 text-white text-[10px] font-bold uppercase tracking-[0.5px]">
                   <ShieldCheck className="w-3.5 h-3.5" />
@@ -170,7 +170,10 @@ export default function DashboardHome() {
                   <span>Run New Analysis</span>
                 </Button>
                 <Button
-                  onClick={() => window.location.href = "http://localhost:8000/api/auth/github/login"}
+                  onClick={() => {
+                    localStorage.setItem("post_login_redirect", "/dashboard")
+                    window.location.href = "http://localhost:8000/api/auth/github/login"
+                  }}
                   className="h-11 px-4 text-xs font-bold bg-black/20 hover:bg-black/30 border border-white/20 text-white rounded-xl flex items-center gap-2 transition-all cursor-pointer"
                 >
                   <Github className="w-4 h-4" />
@@ -327,7 +330,7 @@ export default function DashboardHome() {
           /* ========================================================================= */
           <div className="space-y-6">
             {/* Authenticated Header Banner */}
-            <div className="bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-[#0f1219] dark:via-[#141829] dark:to-[#1a1f3a] border border-border rounded-2xl p-6 md:p-8 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
+            <div className="bg-[#FF8066] dark:from-[#0f1219] dark:via-[#141829] dark:to-[#1a1f3a] dark:bg-gradient-to-r border border-border rounded-2xl p-6 md:p-8 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
               <div className="space-y-2 z-10 max-w-xl">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 border border-white/30 text-white text-[10px] font-bold uppercase tracking-[0.5px]">
                   <CheckCircle2 className="w-3.5 h-3.5" />
@@ -413,7 +416,7 @@ export default function DashboardHome() {
                 </h3>
                 <Button
                   onClick={() => window.location.href = "/dashboard/repositories"}
-                  className="h-8 px-3 text-xs font-bold text-white bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 rounded-lg cursor-pointer flex items-center gap-1.5 shadow-xs"
+                  className="h-8 px-3 text-xs font-bold text-white bg-[#FF8066] hover:bg-[#ff6c4a] dark:bg-indigo-600 dark:hover:bg-indigo-500 rounded-lg cursor-pointer flex items-center gap-1.5 shadow-xs"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add Project</span>
@@ -433,7 +436,7 @@ export default function DashboardHome() {
                   </div>
                   <Button
                     onClick={() => window.location.href = "/dashboard/repositories"}
-                    className="h-10 px-5 text-xs font-bold text-white bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 rounded-xl inline-flex items-center gap-2 shadow-xs cursor-pointer"
+                    className="h-10 px-5 text-xs font-bold text-white bg-[#FF8066] hover:bg-[#ff6c4a] dark:bg-indigo-600 dark:hover:bg-indigo-500 rounded-xl inline-flex items-center gap-2 shadow-xs cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Create Project from GitHub Repositories</span>

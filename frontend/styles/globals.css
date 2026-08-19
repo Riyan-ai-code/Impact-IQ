@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 @layer base {
-  /* LIGHT MODE (5-Color Gradient Palette: #845EC2, #4B4453, #B0A8B9, #C34A36, #FF8066) */
+  /* LIGHT MODE (Clean Solid Orange Brand Theme: #FF8066) */
   :root,
   :root.light,
   html:not(.dark) {
@@ -17,22 +17,25 @@
     --text-secondary: #6e6678;
     --text-muted: #b0a8b9;
 
-    --border-color: rgba(132, 94, 194, 0.20);
-    --border-color-subtle: rgba(176, 168, 185, 0.30);
+    --border-color: rgba(255, 128, 102, 0.25);
+    --border-color-subtle: rgba(176, 168, 185, 0.25);
 
-    /* 5-Color Multi-Stop Gradients */
-    --grad-primary: linear-gradient(135deg, #845ec2 0%, #c34a36 50%, #ff8066 100%);
-    --grad-hero: linear-gradient(to right, #845ec2, #b0a8b9, #c34a36, #ff8066);
-    --grad-purple: linear-gradient(135deg, #845ec2 0%, #4b4453 100%);
-    --grad-coral: linear-gradient(135deg, #c34a36 0%, #ff8066 100%);
-    --grad-soft: linear-gradient(135deg, #845ec2 0%, #b0a8b9 100%);
+    /* Solid Orange Accent Tokens */
+    --color-brand-orange: #ff8066;
+    --color-brand-orange-hover: #ff6c4a;
+
+    --grad-primary: #ff8066;
+    --grad-hero: #ff8066;
+    --grad-purple: #ff8066;
+    --grad-coral: #ff8066;
+    --grad-soft: #ff8066;
 
     /* Semantic Tags (Light Mode) */
-    --tag-typescript-text: #845ec2;
-    --tag-typescript-bg: rgba(132, 94, 194, 0.12);
+    --tag-typescript-text: #ff8066;
+    --tag-typescript-bg: rgba(255, 128, 102, 0.12);
 
-    --tag-p2p-text: #845ec2;
-    --tag-p2p-bg: rgba(132, 94, 194, 0.12);
+    --tag-p2p-text: #ff8066;
+    --tag-p2p-bg: rgba(255, 128, 102, 0.12);
 
     --tag-iot-text: #059669;
     --tag-iot-bg: rgba(5, 150, 105, 0.12);
@@ -43,11 +46,11 @@
     --tag-dependencies-text: #ff8066;
     --tag-dependencies-bg: rgba(255, 128, 102, 0.15);
 
-    /* Gradient Icons */
-    --grad-indigo: linear-gradient(135deg, #845ec2 0%, #4b4453 100%);
-    --grad-purple: linear-gradient(135deg, #845ec2 0%, #ff8066 100%);
-    --grad-teal: linear-gradient(135deg, #0d9488 0%, #047857 100%);
-    --grad-pink: linear-gradient(135deg, #c34a36 0%, #ff8066 100%);
+    /* Solid Brand Icons */
+    --grad-indigo: #ff8066;
+    --grad-purple: #ff8066;
+    --grad-teal: #0d9488;
+    --grad-pink: #ff8066;
 
     --radius: 0.75rem;
   }
@@ -67,12 +70,15 @@
     --border-color: rgba(156, 163, 184, 0.15);
     --border-color-subtle: rgba(156, 163, 184, 0.10);
 
-    /* Dark Mode Custom Gradients */
-    --grad-primary: linear-gradient(135deg, #818cf8 0%, #a855f7 50%, #2dd4bf 100%);
-    --grad-hero: linear-gradient(to right, #818cf8, #c084fc, #2dd4bf);
-    --grad-purple: linear-gradient(135deg, #c084fc 0%, #a855f7 100%);
-    --grad-coral: linear-gradient(135deg, #f472b6 0%, #ec4899 100%);
-    --grad-soft: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+    /* Dark Mode Accent Tokens */
+    --color-brand-orange: #6366f1;
+    --color-brand-orange-hover: #4f46e5;
+
+    --grad-primary: #6366f1;
+    --grad-hero: #6366f1;
+    --grad-purple: #8b5cf6;
+    --grad-coral: #ec4899;
+    --grad-soft: #6366f1;
 
     /* Semantic Tags */
     --tag-typescript-text: #60a5fa;
@@ -90,11 +96,11 @@
     --tag-dependencies-text: #fbbf24;
     --tag-dependencies-bg: rgba(251, 191, 36, 0.15);
 
-    /* Gradient Icons */
-    --grad-indigo: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
-    --grad-purple: linear-gradient(135deg, #c084fc 0%, #a855f7 100%);
-    --grad-teal: linear-gradient(135deg, #2dd4bf 0%, #14b8a6 100%);
-    --grad-pink: linear-gradient(135deg, #f472b6 0%, #ec4899 100%);
+    /* Icons */
+    --grad-indigo: #6366f1;
+    --grad-purple: #8b5cf6;
+    --grad-teal: #2dd4bf;
+    --grad-pink: #f472b6;
   }
 }
 
@@ -111,7 +117,7 @@
 }
 
 /* ==========================================================================
-   GLOBAL LIGHT MODE STYLES & OVERRIDES (Force-applied across entire app)
+   GLOBAL LIGHT MODE STYLES & OVERRIDES (Solid Orange Theme)
    ========================================================================== */
 html:not(.dark) body,
 html:not(.dark) main,
@@ -126,21 +132,21 @@ html.light main {
 html:not(.dark) aside,
 html.light aside {
   background-color: #f4eff9 !important;
-  border-right: 1px solid rgba(132, 94, 194, 0.18) !important;
+  border-right: 1px solid rgba(255, 128, 102, 0.18) !important;
 }
 
 /* Header in Light Mode */
 html:not(.dark) header,
 html.light header {
   background-color: #ffffff !important;
-  border-bottom: 1px solid rgba(132, 94, 194, 0.18) !important;
+  border-bottom: 1px solid rgba(255, 128, 102, 0.18) !important;
 }
 
 /* All Cards, Popovers, Modals & Containers in Light Mode */
 html:not(.dark) .bg-white,
 html.light .bg-white {
   background-color: #ffffff !important;
-  border-color: rgba(132, 94, 194, 0.20) !important;
+  border-color: rgba(255, 128, 102, 0.20) !important;
 }
 
 /* Secondary Backgrounds in Light Mode */
@@ -161,7 +167,7 @@ html:not(.dark) .border-gray-100,
 html:not(.dark) .border-gray-200,
 html.light .border-slate-100,
 html.light .border-slate-200 {
-  border-color: rgba(132, 94, 194, 0.18) !important;
+  border-color: rgba(255, 128, 102, 0.18) !important;
 }
 
 /* Headings & High-contrast Text in Light Mode */
@@ -199,7 +205,7 @@ html.light .text-slate-400 {
   color: #b0a8b9 !important;
 }
 
-/* Primary Action Buttons in Light Mode (Automatically uses 5-color gradient) */
+/* Primary Action Buttons in Light Mode (SOLID ORANGE #FF8066) */
 html:not(.dark) .bg-indigo-600,
 html:not(.dark) .bg-\[\#4f46e5\],
 html:not(.dark) [class*="bg-[#4f46e5]"],
@@ -209,10 +215,18 @@ html:not(.dark) button.bg-brand,
 html.light .bg-indigo-600,
 html.light .bg-\[\#4f46e5\],
 html.light [class*="bg-[#4f46e5]"] {
-  background-image: linear-gradient(135deg, #845ec2 0%, #c34a36 50%, #ff8066 100%) !important;
+  background-color: #ff8066 !important;
+  background-image: none !important;
   color: #ffffff !important;
   border: none !important;
-  box-shadow: 0 2px 8px -2px rgba(132, 94, 194, 0.35) !important;
+  box-shadow: 0 2px 8px -2px rgba(255, 128, 102, 0.40) !important;
+}
+
+html:not(.dark) .bg-indigo-600:hover,
+html:not(.dark) .bg-\[\#4f46e5\]:hover,
+html:not(.dark) [class*="bg-[#4f46e5]"]:hover,
+html.light .bg-indigo-600:hover {
+  background-color: #ff6c4a !important;
 }
 
 /* Primary Brand Text / Icons in Light Mode */
@@ -221,7 +235,7 @@ html:not(.dark) .text-indigo-700,
 html:not(.dark) .text-purple-600,
 html:not(.dark) .text-purple-700,
 html.light .text-indigo-600 {
-  color: #845ec2 !important;
+  color: #ff8066 !important;
 }
 
 /* Badges & Semantic Pills in Light Mode */
@@ -229,9 +243,9 @@ html:not(.dark) .bg-indigo-50,
 html:not(.dark) .bg-purple-50,
 html.light .bg-indigo-50,
 html.light .bg-purple-50 {
-  background-color: rgba(132, 94, 194, 0.12) !important;
-  border-color: rgba(132, 94, 194, 0.25) !important;
-  color: #845ec2 !important;
+  background-color: rgba(255, 128, 102, 0.12) !important;
+  border-color: rgba(255, 128, 102, 0.25) !important;
+  color: #ff8066 !important;
 }
 
 html:not(.dark) .bg-emerald-50,
@@ -266,7 +280,7 @@ html.light input:not([type="checkbox"]):not([type="radio"]),
 html.light select,
 html.light textarea {
   background-color: #f8f4fc !important;
-  border-color: rgba(132, 94, 194, 0.22) !important;
+  border-color: rgba(255, 128, 102, 0.22) !important;
   color: #4b4453 !important;
 }
 
@@ -276,29 +290,29 @@ html:not(.dark) textarea:focus,
 html.light input:focus,
 html.light select:focus,
 html.light textarea:focus {
-  border-color: #845ec2 !important;
-  box-shadow: 0 0 0 3px rgba(132, 94, 194, 0.15) !important;
+  border-color: #ff8066 !important;
+  box-shadow: 0 0 0 3px rgba(255, 128, 102, 0.18) !important;
 }
 
 /* Tables in Light Mode */
 html:not(.dark) th,
 html.light th {
-  background-color: rgba(132, 94, 194, 0.06) !important;
-  color: #845ec2 !important;
-  border-bottom: 1px solid rgba(132, 94, 194, 0.15) !important;
+  background-color: rgba(255, 128, 102, 0.08) !important;
+  color: #ff8066 !important;
+  border-bottom: 1px solid rgba(255, 128, 102, 0.18) !important;
 }
 
 html:not(.dark) tr:hover td,
 html.light tr:hover td {
-  background-color: rgba(132, 94, 194, 0.04) !important;
+  background-color: rgba(255, 128, 102, 0.04) !important;
 }
 
 /* Active Nav Border Accent in Light Mode */
 html:not(.dark) .nav-item-active,
 html.light .nav-item-active {
-  border-left: 3px solid #845ec2 !important;
-  background-color: rgba(132, 94, 194, 0.10) !important;
-  color: #845ec2 !important;
+  border-left: 3px solid #ff8066 !important;
+  background-color: rgba(255, 128, 102, 0.10) !important;
+  color: #ff8066 !important;
 }
 
 /* ==========================================================================
@@ -362,44 +376,6 @@ html.light .nav-item-active {
   border-left: 3px solid #6366f1 !important;
   background-color: var(--surface-2) !important;
   color: #f1f5ff !important;
-}
-
-/* ==========================================================================
-   GRADIENTS & SURFACE UTILITIES
-   ========================================================================== */
-.bg-gradient-palette {
-  background-image: var(--grad-primary);
-}
-
-.bg-gradient-hero {
-  background-image: var(--grad-hero);
-}
-
-.bg-gradient-coral {
-  background-image: var(--grad-coral);
-}
-
-.bg-gradient-purple {
-  background-image: var(--grad-purple);
-}
-
-.text-gradient-palette {
-  background-image: var(--grad-hero);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.surface-1 {
-  background-color: var(--surface-1);
-}
-
-.surface-2 {
-  background-color: var(--surface-2);
-}
-
-.surface-3 {
-  background-color: var(--surface-3);
 }
 
 /* Hide scrollbars */

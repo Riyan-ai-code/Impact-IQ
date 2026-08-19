@@ -14,14 +14,14 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const Comp = asChild ? Slot : "button"
     
     const variants = {
-      default: "bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 text-white hover:opacity-95 shadow-xs transition-all",
+      default: "bg-[#FF8066] hover:bg-[#ff6c4a] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white shadow-xs transition-all",
       destructive: "bg-[#C34A36] text-white hover:opacity-90 shadow-xs",
       outline: "border border-[var(--border-color)] bg-[var(--surface-1)] text-[var(--text-primary)] hover:bg-[var(--surface-2)] transition-colors",
       secondary: "bg-[var(--surface-2)] text-[var(--text-primary)] hover:bg-[var(--surface-3)] transition-colors",
       ghost: "hover:bg-[var(--surface-2)] text-[var(--text-primary)] transition-colors",
-      link: "text-[#845EC2] dark:text-indigo-400 underline-offset-4 hover:underline",
-      brand: "bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 text-white hover:opacity-95 shadow-xs transition-all",
-      brandOutline: "border border-[#845EC2]/30 bg-transparent text-[#845EC2] dark:text-indigo-400 hover:bg-[#845EC2]/10 transition-colors"
+      link: "text-[#FF8066] dark:text-indigo-400 underline-offset-4 hover:underline",
+      brand: "bg-[#FF8066] hover:bg-[#ff6c4a] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white shadow-xs transition-all",
+      brandOutline: "border border-[#FF8066]/30 bg-transparent text-[#FF8066] dark:text-indigo-400 hover:bg-[#FF8066]/10 transition-colors"
     }
 
     const sizes = {

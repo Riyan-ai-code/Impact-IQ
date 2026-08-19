@@ -433,7 +433,7 @@ export default function TeamPage() {
         <Button
           variant="brand"
           onClick={() => setIsCreateTeamModalOpen(true)}
-          className="h-10 text-xs font-bold bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white rounded-xl flex items-center gap-2 shadow-xs transition-all duration-150 cursor-pointer"
+          className="h-10 text-xs font-bold bg-[#FF8066] hover:bg-[#ff6c4a] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white rounded-xl flex items-center gap-2 shadow-xs transition-all duration-150 cursor-pointer"
         >
           <Building2 className="w-4 h-4" />
           Create New Team
@@ -457,7 +457,7 @@ export default function TeamPage() {
       {/* If No Teams Exist — Empty State */}
       {teams.length === 0 ? (
         <div className="flex flex-col items-center justify-center min-h-[55vh] p-8 border-2 border-dashed border-[#845EC2]/30 rounded-3xl bg-white dark:bg-[#141829] space-y-5 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#845EC2] to-[#FF8066] text-white flex items-center justify-center shadow-md">
+          <div className="w-16 h-16 rounded-2xl bg-[#FF8066] text-white flex items-center justify-center shadow-md">
             <Users className="w-8 h-8" />
           </div>
 
@@ -471,7 +471,7 @@ export default function TeamPage() {
           <Button
             variant="brand"
             onClick={() => setIsCreateTeamModalOpen(true)}
-            className="px-6 h-11 text-xs font-bold bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white rounded-xl flex items-center gap-2 transition-all duration-150 shadow-sm cursor-pointer"
+            className="px-6 h-11 text-xs font-bold bg-[#FF8066] hover:bg-[#ff6c4a] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white rounded-xl flex items-center gap-2 transition-all duration-150 shadow-sm cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Create Your First Team
@@ -483,7 +483,7 @@ export default function TeamPage() {
           {/* Team Switcher Selector */}
           <div className="flex items-center justify-between bg-white dark:bg-[#141829] border border-[#845EC2]/20 dark:border-white/10 rounded-2xl p-4.5 shadow-sm">
             <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#845EC2] to-[#FF8066] text-white flex items-center justify-center flex-shrink-0 shadow-xs">
+              <div className="w-10 h-10 rounded-xl bg-[#FF8066] text-white flex items-center justify-center flex-shrink-0 shadow-xs">
                 <Building2 className="w-5 h-5" />
               </div>
               <div className="text-left">
@@ -639,7 +639,7 @@ export default function TeamPage() {
                       <tr key={member.id} className="hover:bg-[#845EC2]/5 transition-colors">
                         <td className="py-3.5 px-5">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#845EC2] to-[#FF8066] text-white font-bold flex items-center justify-center text-xs flex-shrink-0 shadow-2xs">
+                            <div className="w-8 h-8 rounded-xl bg-[#FF8066] text-white font-bold flex items-center justify-center text-xs flex-shrink-0 shadow-2xs">
                               {member.name.charAt(0).toUpperCase()}
                             </div>
                             <div>
@@ -701,7 +701,7 @@ export default function TeamPage() {
           <div className="bg-white dark:bg-[#141829] border border-[#845EC2]/25 shadow-2xl rounded-2xl w-full max-w-xl overflow-hidden flex flex-col relative animate-in fade-in zoom-in-95 duration-200 text-left">
             <div className="px-6 py-4 border-b border-[#845EC2]/15 flex items-center justify-between bg-[#845EC2]/5">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#845EC2] to-[#FF8066] text-white flex items-center justify-center shadow-xs">
+                <div className="w-9 h-9 rounded-xl bg-[#FF8066] text-white flex items-center justify-center shadow-xs">
                   <Users className="w-5 h-5" />
                 </div>
                 <div>
@@ -734,7 +734,7 @@ export default function TeamPage() {
                 {activeTeam.members.map((member) => (
                   <div key={member.id} className="py-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#845EC2] to-[#FF8066] text-white font-bold flex items-center justify-center text-xs flex-shrink-0 shadow-2xs">
+                      <div className="w-9 h-9 rounded-xl bg-[#FF8066] text-white font-bold flex items-center justify-center text-xs flex-shrink-0 shadow-2xs">
                         {member.name.charAt(0).toUpperCase()}
                       </div>
                       <div>
@@ -782,7 +782,7 @@ export default function TeamPage() {
           <div className="bg-white dark:bg-[#141829] border border-[#845EC2]/25 shadow-2xl rounded-2xl w-full max-w-md overflow-hidden flex flex-col relative animate-in fade-in zoom-in-95 duration-200 text-left">
             <div className="px-6 py-4 border-b border-[#845EC2]/15 flex items-center justify-between bg-[#845EC2]/5">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#845EC2] to-[#FF8066] text-white flex items-center justify-center shadow-xs">
+                <div className="w-8 h-8 rounded-xl bg-[#FF8066] text-white flex items-center justify-center shadow-xs">
                   <Building2 className="w-4.5 h-4.5" />
                 </div>
                 <h3 className="text-sm font-extrabold text-[#4B4453] dark:text-[#f1f5ff]">Create Engineering Team</h3>
@@ -822,7 +822,7 @@ export default function TeamPage() {
               <Button variant="outline" onClick={() => setIsCreateTeamModalOpen(false)} className="h-9 px-4 text-xs font-bold border-[#845EC2]/30 text-[#4B4453] dark:text-[#f1f5ff] rounded-xl cursor-pointer">
                 Cancel
               </Button>
-              <Button variant="brand" onClick={handleCreateTeam} className="h-9 px-5 text-xs font-bold bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white rounded-xl cursor-pointer shadow-xs">
+              <Button variant="brand" onClick={handleCreateTeam} className="h-9 px-5 text-xs font-bold bg-[#FF8066] hover:bg-[#ff6c4a] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white rounded-xl cursor-pointer shadow-xs">
                 Create Team
               </Button>
             </div>
@@ -836,7 +836,7 @@ export default function TeamPage() {
           <div className="bg-white dark:bg-[#141829] border border-[#845EC2]/25 shadow-2xl rounded-2xl w-full max-w-md overflow-hidden flex flex-col relative animate-in fade-in zoom-in-95 duration-200 text-left">
             <div className="px-6 py-4 border-b border-[#845EC2]/15 flex items-center justify-between bg-[#845EC2]/5">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#845EC2] to-[#FF8066] text-white flex items-center justify-center shadow-xs">
+                <div className="w-8 h-8 rounded-xl bg-[#FF8066] text-white flex items-center justify-center shadow-xs">
                   <UserPlus className="w-4.5 h-4.5" />
                 </div>
                 <h3 className="text-sm font-extrabold text-[#4B4453] dark:text-[#f1f5ff]">Invite Team Member</h3>
@@ -894,7 +894,7 @@ export default function TeamPage() {
                 variant="brand"
                 disabled={isSendingEmail || !inviteEmail.trim()}
                 onClick={handleInviteMember}
-                className="h-9 px-5 text-xs font-bold bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white rounded-xl cursor-pointer shadow-xs disabled:opacity-75 flex items-center gap-2"
+                className="h-9 px-5 text-xs font-bold bg-[#FF8066] hover:bg-[#ff6c4a] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white rounded-xl cursor-pointer shadow-xs disabled:opacity-75 flex items-center gap-2"
               >
                 {isSendingEmail ? (
                   <>

@@ -239,7 +239,7 @@ export default function ProjectsPage() {
         <div className="flex items-center gap-2.5 px-4 py-2 bg-white dark:bg-[#141829] border border-[#845EC2]/25 rounded-2xl shadow-xs self-start sm:self-auto">
           <FolderGit2 className="w-4.5 h-4.5 text-[#845EC2]" />
           <span className="text-xs font-bold text-[#4B4453] dark:text-[#9ca3b8]">Total Projects:</span>
-          <span className="text-xs font-extrabold text-white bg-gradient-to-r from-[#845EC2] to-[#FF8066] px-2.5 py-0.5 rounded-lg shadow-xs">
+          <span className="text-xs font-extrabold text-white bg-[#FF8066] px-2.5 py-0.5 rounded-lg shadow-xs">
             {filteredProjects.length}
           </span>
         </div>
@@ -272,7 +272,7 @@ export default function ProjectsPage() {
         {/* Empty State when no real projects exist or match search */}
         {filteredProjects.length === 0 ? (
           <div className="flex flex-col items-center justify-center min-h-[45vh] p-8 border-2 border-dashed border-[#845EC2]/30 rounded-3xl bg-white dark:bg-[#141829] space-y-4 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#845EC2] to-[#FF8066] text-white flex items-center justify-center shadow-md">
+            <div className="w-14 h-14 rounded-2xl bg-[#FF8066] text-white flex items-center justify-center shadow-md">
               <FolderGit2 className="w-7 h-7" />
             </div>
             
@@ -297,7 +297,7 @@ export default function ProjectsPage() {
             ) : (
               <Button
                 onClick={() => router.push("/dashboard/repositories")}
-                className="px-5 h-10 text-xs font-bold bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white rounded-xl flex items-center gap-2 shadow-sm cursor-pointer"
+                className="px-5 h-10 text-xs font-bold bg-[#FF8066] hover:bg-[#ff6c4a] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white rounded-xl flex items-center gap-2 shadow-sm cursor-pointer"
               >
                 <span>Connect Repositories</span>
                 <ExternalLink className="w-3.5 h-3.5 ml-0.5" />
@@ -315,7 +315,7 @@ export default function ProjectsPage() {
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#845EC2] to-[#FF8066] text-white flex items-center justify-center shadow-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                      <div className="w-10 h-10 rounded-xl bg-[#FF8066] text-white flex items-center justify-center shadow-xs flex-shrink-0 group-hover:scale-105 transition-transform">
                         <FolderGit2 className="w-5 h-5" />
                       </div>
                       <div>
@@ -376,7 +376,7 @@ export default function ProjectsPage() {
 
                   <Button
                     onClick={() => router.push(`/dashboard/analysis`)}
-                    className="h-8 px-4 text-xs font-bold text-white bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 flex items-center gap-1.5 rounded-xl cursor-pointer shadow-xs transition-all flex-shrink-0"
+                    className="h-8 px-4 text-xs font-bold text-white bg-[#FF8066] hover:bg-[#ff6c4a] dark:bg-indigo-600 dark:hover:bg-indigo-500 flex items-center gap-1.5 rounded-xl cursor-pointer shadow-xs transition-all flex-shrink-0"
                   >
                     <span>Analyze</span>
                     <ExternalLink className="w-3 h-3" />
@@ -413,7 +413,7 @@ export default function ProjectsPage() {
                     className={cn(
                       "w-8 h-8 rounded-lg text-xs font-bold transition-all cursor-pointer",
                       currentPage === page
-                        ? "bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 text-white shadow-xs"
+                        ? "bg-[#FF8066] dark:bg-indigo-600 text-white shadow-xs"
                         : "bg-surface-1 text-content-secondary hover:bg-surface-2 border border-border"
                     )}
                   >

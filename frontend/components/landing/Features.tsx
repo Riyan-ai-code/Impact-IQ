@@ -139,7 +139,7 @@ export default function Features() {
             Platform Architecture & Capabilities
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-content-primary">
-            How ImpactIQ Works <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-400 dark:via-indigo-300 dark:to-teal-300">Under the Hood</span>
+            How ImpactIQ Works <span className="text-[#FF8066] dark:from-indigo-400 dark:via-indigo-300 dark:to-teal-300">Under the Hood</span>
           </h2>
           <p className="mt-4 text-content-secondary max-w-2xl mx-auto text-sm sm:text-base leading-relaxed">
             Explore the core engine, deterministic AST parsers, and automated guardrails that power each internal module.

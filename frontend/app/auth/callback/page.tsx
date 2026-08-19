@@ -42,13 +42,15 @@ function CallbackHandler() {
         window.dispatchEvent(new Event("impact_iq_teams_updated"))
         window.dispatchEvent(new Event("storage"))
 
-        // Redirect back to landing page so the user sees their account on the landing page
-        router.push("/")
+        // Redirect directly to dashboard
+        const redirectUrl = localStorage.getItem("post_login_redirect") || "/dashboard"
+        localStorage.removeItem("post_login_redirect")
+        router.push(redirectUrl)
       } else if (error) {
         console.error("GitHub OAuth Error:", error)
-        router.push(`/?error=${encodeURIComponent(error)}`)
+        router.push(`/dashboard?error=${encodeURIComponent(error)}`)
       } else {
-        router.push("/")
+        router.push("/dashboard")
       }
     }
 
