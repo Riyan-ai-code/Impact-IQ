@@ -10,50 +10,84 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
+        border: "var(--border-color)",
+        input: "var(--border-color)",
         ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+        background: "var(--bg-page)",
+        foreground: "var(--text-primary)",
+
+        // Exact Surface Hierarchy
+        surface: {
+          sidebar: "var(--bg-sidebar)",
+          1: "var(--surface-1)",
+          2: "var(--surface-2)",
+          3: "var(--surface-3)",
         },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+
+        // Exact Typography Tokens
+        content: {
+          primary: "var(--text-primary)",
+          secondary: "var(--text-secondary)",
+          muted: "var(--text-muted)",
         },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+
+        // Palette Specific Colors (Light Mode Palette: #845EC2, #4B4453, #B0A8B9, #C34A36, #FF8066)
+        palette: {
+          purple: "#845EC2",
+          charcoal: "#4B4453",
+          mist: "#B0A8B9",
+          terracotta: "#C34A36",
+          coral: "#FF8066",
         },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
+
+        // Primary & Secondary Brand Accents
         brand: {
-          DEFAULT: "#4f46e5", // Indigo accent
-          hover: "#4338ca",
-          light: "#e0e7ff",
-          dark: "#312e81"
+          DEFAULT: "var(--tag-typescript-text)",
+          hover: "#845EC2",
+          light: "#B0A8B9",
+          dark: "#4B4453"
         },
+
+        // Semantic Tag Tokens
+        tag: {
+          typescript: {
+            text: "var(--tag-typescript-text)",
+            bg: "var(--tag-typescript-bg)",
+          },
+          p2p: {
+            text: "var(--tag-p2p-text)",
+            bg: "var(--tag-p2p-bg)",
+          },
+          iot: {
+            text: "var(--tag-iot-text)",
+            bg: "var(--tag-iot-bg)",
+          },
+          security: {
+            text: "var(--tag-security-text)",
+            bg: "var(--tag-security-bg)",
+          },
+          dependencies: {
+            text: "var(--tag-dependencies-text)",
+            bg: "var(--tag-dependencies-bg)",
+          },
+        },
+
         risk: {
-          high: "#ef4444",
-          medium: "#f59e0b",
+          high: "#C34A36",
+          medium: "#FF8066",
           low: "#10b981",
         }
+      },
+      backgroundImage: {
+        'gradient-palette': "var(--grad-primary)",
+        'gradient-hero': "var(--grad-hero)",
+        'gradient-purple': "var(--grad-purple)",
+        'gradient-coral': "var(--grad-coral)",
+        'gradient-soft': "var(--grad-soft)",
+        'icon-indigo': "var(--grad-indigo)",
+        'icon-purple': "var(--grad-purple)",
+        'icon-teal': "var(--grad-teal)",
+        'icon-pink': "var(--grad-pink)",
       },
       borderRadius: {
         lg: "var(--radius)",

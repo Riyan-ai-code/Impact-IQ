@@ -130,7 +130,6 @@ export default function NewAnalysisPage() {
       try {
         const parsed: Project[] = JSON.parse(savedProjects)
         if (parsed.length > 0) {
-          // Strict team isolation: Team A only sees Team A projects
           const teamProjects = parsed.filter((p: any) => !p.team || myTeams.includes(p.team))
           const finalProjects = teamProjects.length > 0 ? teamProjects : parsed
           setCreatedProjects(finalProjects)
@@ -272,23 +271,6 @@ export default function NewAnalysisPage() {
           setScopedItem("impact_iq_notifications", JSON.stringify(updated))
           localStorage.setItem("impact_iq_notifications", JSON.stringify(updated))
           window.dispatchEvent(new Event("impact_iq_notifications_updated"))
-
-          // Dispatch to active integration webhooks (Slack, MS Teams, Discord)
-          const savedIntegrations = JSON.parse(getScopedItem("impact_iq_integrations") || "[]")
-          savedIntegrations.forEach((integ: any) => {
-            if (integ.connected && integ.webhookUrl) {
-              fetch(integ.webhookUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  text: `🚨 Impact-IQ Risk Alert: Risk evaluation on ${selectedRepo} (${selectedBranch}). Risk Score: 78%.`,
-                  repository: selectedRepo,
-                  branch: selectedBranch,
-                  riskScore: 78
-                })
-              }).catch(() => {})
-            }
-          })
         } catch (e) {}
       }
     }, 750)
@@ -330,8 +312,8 @@ export default function NewAnalysisPage() {
             "ORM Safety: SQL queries are fully parameterized and safe."
           ],
           codeSnippetsFlagged: [
-            "backend/api/webhooks.py: L42 - missing stripe.Webhook.construct_event(payload, sig, endpoint_secret)",
-            "backend/api/charge.py: L18 - removed 'transaction_id' key from JSON response"
+            "backend/api/webhooks.py:42 &mdash; Missing signature verification before payload deserialization",
+            "backend/api/charge.py:18 &mdash; Breaking payload key removal `transaction_id`"
           ],
           createdAt: new Date().toISOString()
         }
@@ -345,8 +327,6 @@ export default function NewAnalysisPage() {
             type: "manual",
             repository: newManualResponse.repository,
             branch: newManualResponse.branch,
-            riskScore: 65,
-            riskLevel: "Medium",
             prompt: newManualResponse.prompt,
             aiResponse: newManualResponse.aiResponse,
             keyTakeaways: newManualResponse.keyTakeaways,
@@ -359,45 +339,65 @@ export default function NewAnalysisPage() {
           window.dispatchEvent(new Event("impact_iq_analysis_updated"))
         } catch (e) {}
       }
-    }, 800)
+    }, 750)
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 max-w-5xl mx-auto pb-12 select-none text-content-primary">
+      {/* Top Breadcrumb & Page Info */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border pb-4 text-left">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 leading-tight">Run Code Analysis</h1>
-          <p className="text-xs text-slate-500 mt-1">Choose between Automatic AI Risk Analysis or Manual Prompted Analysis.</p>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-brand animate-pulse" />
+            <span className="text-[10px] font-bold text-content-muted uppercase tracking-[0.5px]">
+              AI Code Scanner
+            </span>
+          </div>
+          <h1 className="text-xl font-extrabold text-content-primary tracking-tight mt-1">
+            New Impact &amp; Risk Analysis
+          </h1>
+          <p className="text-xs text-content-secondary mt-0.5">
+            Evaluate pull requests against AST syntax trees, predict breaking contract changes, and calculate blast radius.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={() => window.location.href = "/dashboard/history"}
+            className="h-9 px-3 text-xs font-bold bg-surface-1 hover:bg-surface-2 border border-border text-content-primary rounded-xl cursor-pointer"
+          >
+            <FileText className="w-4 h-4 mr-1.5 text-brand" />
+            View Past Scans
+          </Button>
         </div>
       </div>
 
-      {/* Execution Path Switcher Tabs */}
+      {/* Analysis Mode Toggle Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         
-        {/* PATH A: AUTOMATIC AI ANALYSIS */}
+        {/* PATH A: AUTOMATIC AI RISK SCAN */}
         <div
           onClick={() => setAnalysisMode("auto")}
           className={cn(
-            "p-5 rounded-2xl border text-left cursor-pointer transition-all space-y-3 relative overflow-hidden",
+            "p-5 rounded-2xl border text-left cursor-pointer transition-all duration-150 space-y-3 relative overflow-hidden",
             analysisMode === "auto"
-              ? "border-indigo-600 bg-white ring-2 ring-indigo-500/20 shadow-md"
-              : "border-slate-200 bg-white hover:bg-slate-50 opacity-80"
+              ? "border-brand bg-surface-2 shadow-xs border-l-[3px]"
+              : "border-border bg-surface-1 hover:bg-surface-2 opacity-80"
           )}
         >
           <div className="flex items-center justify-between">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+            <div className="w-10 h-10 rounded-xl bg-[var(--tag-typescript-bg)] border border-border flex items-center justify-center text-brand">
               <Zap className="w-5 h-5" />
             </div>
             {analysisMode === "auto" && (
-              <span className="flex items-center gap-1 text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
+              <span className="flex items-center gap-1 text-[10px] font-bold text-brand bg-[var(--tag-typescript-bg)] px-2.5 py-0.5 rounded-full border border-border">
                 <Check className="w-3.5 h-3.5" /> Selected Path
               </span>
             )}
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-900">Path 1: Automatic AI Analysis</h3>
-            <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+            <h3 className="text-sm font-bold text-content-primary">Path 1: Automatic AI Risk Scan</h3>
+            <p className="text-xs text-content-secondary mt-1 leading-relaxed">
               Automated engine parses Git diffs, calculates Risk Score (0-100%), scans security flaws, and generates action checklists in 1 click.
             </p>
           </div>
@@ -407,25 +407,25 @@ export default function NewAnalysisPage() {
         <div
           onClick={() => setAnalysisMode("manual")}
           className={cn(
-            "p-5 rounded-2xl border text-left cursor-pointer transition-all space-y-3 relative overflow-hidden",
+            "p-5 rounded-2xl border text-left cursor-pointer transition-all duration-150 space-y-3 relative overflow-hidden",
             analysisMode === "manual"
-              ? "border-indigo-600 bg-white ring-2 ring-indigo-500/20 shadow-md"
-              : "border-slate-200 bg-white hover:bg-slate-50 opacity-80"
+              ? "border-brand bg-surface-2 shadow-xs border-l-[3px]"
+              : "border-border bg-surface-1 hover:bg-surface-2 opacity-80"
           )}
         >
           <div className="flex items-center justify-between">
-            <div className="w-10 h-10 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600">
+            <div className="w-10 h-10 rounded-xl bg-[var(--tag-p2p-bg)] border border-border flex items-center justify-center text-[var(--tag-p2p-text)]">
               <MessageSquareCode className="w-5 h-5" />
             </div>
             {analysisMode === "manual" && (
-              <span className="flex items-center gap-1 text-[10px] font-bold text-purple-600 bg-purple-50 px-2.5 py-0.5 rounded-full border border-purple-100">
+              <span className="flex items-center gap-1 text-[10px] font-bold text-[var(--tag-p2p-text)] bg-[var(--tag-p2p-bg)] px-2.5 py-0.5 rounded-full border border-border">
                 <Check className="w-3.5 h-3.5" /> Selected Path
               </span>
             )}
           </div>
           <div>
-            <h3 className="text-sm font-bold text-slate-900">Path 2: Manual Prompted Analysis</h3>
-            <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+            <h3 className="text-sm font-bold text-content-primary">Path 2: Manual Prompted Analysis</h3>
+            <p className="text-xs text-content-secondary mt-1 leading-relaxed">
               Ask your own specific questions and custom prompts about the pull request. The AI answers your exact query directly.
             </p>
           </div>
@@ -434,26 +434,26 @@ export default function NewAnalysisPage() {
       </div>
 
       {/* Target Project, Repository & Branch Bar */}
-      <div className="bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm space-y-4 text-left">
+      <div className="bg-surface-1 border border-border rounded-xl p-5 shadow-xs space-y-4 text-left">
         <div className="flex items-center justify-between">
-          <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-            <Github className="w-4 h-4 text-slate-700" />
+          <h3 className="text-xs font-bold text-content-primary uppercase tracking-[0.5px] flex items-center gap-2">
+            <Github className="w-4 h-4 text-content-muted" />
             Target Project &amp; Repository
           </h3>
-          <span className="text-[10px] text-slate-400 font-semibold">Loaded from Created Projects</span>
+          <span className="text-[10px] text-content-muted font-semibold">Loaded from Created Projects</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Created Projects Select */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">
+            <label className="text-[11px] font-bold text-content-secondary uppercase tracking-[0.5px]">
               Select Created Project <span className="text-rose-500">*</span>
             </label>
             <select
               value={selectedProjectId}
               disabled={isLoadingProjects}
               onChange={(e) => handleSelectProject(e.target.value)}
-              className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-bold text-slate-900 cursor-pointer disabled:opacity-75"
+              className="w-full px-3 py-2 text-xs bg-surface-2 border border-border rounded-lg focus:outline-none font-bold text-content-primary cursor-pointer disabled:opacity-75"
             >
               {isLoadingProjects ? (
                 <option value="">Loading created projects...</option>
@@ -471,48 +471,38 @@ export default function NewAnalysisPage() {
 
           {/* Target Branch or PR Select */}
           <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1">
-              <GitBranch className="w-3.5 h-3.5 text-slate-400" /> Target Branch or PR
+            <label className="text-[11px] font-bold text-content-secondary uppercase tracking-[0.5px] flex items-center gap-1">
+              <GitBranch className="w-3.5 h-3.5 text-content-muted" /> Target Branch or PR
             </label>
             <input
               type="text"
               value={selectedBranch}
               onChange={(e) => setSelectedBranch(e.target.value)}
               placeholder="e.g. main or PR #42"
-              className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 font-medium"
+              className="w-full px-3 py-2 text-xs bg-surface-2 border border-border rounded-lg focus:outline-none font-medium text-content-primary"
             />
           </div>
 
-          {/* Team Access & Role Security Notice */}
+          {/* Team Access Notice */}
           {selectedProjectObj && !isMemberOfProjectTeam && (
-            <div className="md:col-span-2 bg-rose-50 border border-rose-200 rounded-xl p-3.5 flex items-center gap-2.5 mt-2">
-              <ShieldAlert className="w-4 h-4 text-rose-600 flex-shrink-0" />
-              <p className="text-xs text-rose-900 font-semibold">
+            <div className="md:col-span-2 bg-[var(--tag-security-bg)] border border-border rounded-xl p-3.5 flex items-center gap-2.5 mt-2">
+              <ShieldAlert className="w-4 h-4 text-[var(--tag-security-text)] flex-shrink-0" />
+              <p className="text-xs text-[var(--tag-security-text)] font-semibold">
                 <strong>Access Restricted:</strong> This project is owned by <strong>&ldquo;{projectTeam}&rdquo;</strong>. Only members of <strong>&ldquo;{projectTeam}&rdquo;</strong> can build or run risk scans.
-              </p>
-            </div>
-          )}
-
-          {selectedProjectObj && isMemberOfProjectTeam && isViewerRole && (
-            <div className="md:col-span-2 bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-center gap-2.5 mt-2">
-              <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-              <p className="text-xs text-amber-900 font-semibold">
-                <strong>Read-Only Role:</strong> You have Viewer permissions on <strong>{selectedProjectObj.name}</strong> and cannot trigger new builds or scans.
               </p>
             </div>
           )}
 
           {/* Empty Projects Alert Banner */}
           {!isLoadingProjects && createdProjects.length === 0 && (
-            <div className="md:col-span-2 bg-amber-50/70 border border-amber-200/80 rounded-xl p-3.5 flex items-center justify-between mt-2">
-              <div className="flex items-center gap-2 text-xs text-amber-900 font-semibold">
-                <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+            <div className="md:col-span-2 bg-[var(--tag-dependencies-bg)] border border-border rounded-xl p-3.5 flex items-center justify-between mt-2">
+              <div className="flex items-center gap-2 text-xs text-[var(--tag-dependencies-text)] font-semibold">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
                 <span>No created projects found. Create your first project from repositories to run risk analysis.</span>
               </div>
               <Button
-                variant="outline"
                 onClick={() => window.location.href = "/dashboard/repositories"}
-                className="h-8 px-3 text-xs font-bold border-amber-300 text-amber-900 bg-white hover:bg-amber-100/60 rounded-lg cursor-pointer"
+                className="h-8 px-3 text-xs font-bold text-white bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 rounded-lg cursor-pointer"
               >
                 Create Project &rarr;
               </Button>
@@ -524,31 +514,30 @@ export default function NewAnalysisPage() {
       {/* MODE SPECIFIC EXECUTION FORM */}
       {analysisMode === "auto" ? (
         /* AUTOMATIC AI ANALYSIS FORM */
-        <div className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm space-y-4 text-left">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="bg-surface-1 border border-border rounded-xl p-6 shadow-xs space-y-4 text-left">
+          <div className="flex items-center justify-between pb-3 border-b border-border">
             <div className="flex items-center gap-2">
-              <Zap className="w-5 h-5 text-indigo-600" />
-              <h2 className="text-sm font-bold text-slate-900">Automatic AI Risk Scan</h2>
+              <Zap className="w-5 h-5 text-brand" />
+              <h2 className="text-sm font-bold text-content-primary">Automatic AI Risk Scan</h2>
             </div>
-            <span className="text-[11px] text-slate-500">Run automated risk scoring, security scans &amp; checklist generation</span>
+            <span className="text-[11px] text-content-muted">Run automated risk scoring, security scans &amp; checklist generation</span>
           </div>
 
           <div className="flex items-center justify-between pt-2">
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-content-secondary">
               {!canTriggerAnalysis 
                 ? "Builds & scans are locked for this project due to team ownership or role restrictions."
                 : "Click below to analyze the pull request using ImpactIQ's automated AI engine."
               }
             </p>
             <Button
-              variant="brand"
               disabled={isAnalyzing || !canTriggerAnalysis || createdProjects.length === 0}
               onClick={handleRunAutomaticAnalysis}
               className={cn(
-                "h-11 px-6 text-xs font-bold rounded-lg flex items-center gap-2 shadow-md transition-all",
+                "h-11 px-6 text-xs font-bold rounded-xl flex items-center gap-2 shadow-xs transition-all",
                 canTriggerAnalysis && !isAnalyzing
-                  ? "bg-[#4f46e5] hover:bg-[#4338ca] text-white cursor-pointer"
-                  : "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-70"
+                  ? "bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white cursor-pointer"
+                  : "bg-surface-2 text-content-muted border border-border cursor-not-allowed opacity-70"
               )}
             >
               {isAnalyzing ? (
@@ -567,17 +556,17 @@ export default function NewAnalysisPage() {
         </div>
       ) : (
         /* MANUAL PROMPTED ANALYSIS FORM */
-        <div className="bg-white border border-slate-100 rounded-xl p-6 shadow-sm space-y-4 text-left">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div className="bg-surface-1 border border-border rounded-xl p-6 shadow-xs space-y-4 text-left">
+          <div className="flex items-center justify-between pb-3 border-b border-border">
             <div className="flex items-center gap-2">
-              <MessageSquareCode className="w-5 h-5 text-purple-600" />
-              <h2 className="text-sm font-bold text-slate-900">Manual Prompted Analysis</h2>
+              <MessageSquareCode className="w-5 h-5 text-brand" />
+              <h2 className="text-sm font-bold text-content-primary">Manual Prompted Analysis</h2>
             </div>
-            <span className="text-[11px] text-slate-500">Ask custom questions and prompts about this PR</span>
+            <span className="text-[11px] text-content-muted">Ask custom questions and prompts about this PR</span>
           </div>
 
           <div className="space-y-3">
-            <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">
+            <label className="text-[11px] font-bold text-content-secondary uppercase tracking-[0.5px]">
               What do you want to know about this code change? <span className="text-rose-500">*</span>
             </label>
             <textarea
@@ -585,30 +574,30 @@ export default function NewAnalysisPage() {
               onChange={(e) => setUserPrompt(e.target.value)}
               placeholder="e.g. Does this PR break backward compatibility? Check for SQL injection or unhandled errors..."
               rows={4}
-              className="w-full px-3.5 py-2.5 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 leading-relaxed font-medium"
+              className="w-full px-3.5 py-2.5 text-xs bg-surface-2 border border-border rounded-xl focus:outline-none leading-relaxed font-medium text-content-primary"
             />
 
             {/* Prompt presets */}
             <div className="flex flex-wrap gap-2 pt-1">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider self-center mr-1">Quick Prompts:</span>
+              <span className="text-[10px] font-bold text-content-muted uppercase tracking-[0.5px] self-center mr-1">Quick Prompts:</span>
               <button
                 type="button"
                 onClick={() => setUserPrompt("Check if this PR introduces breaking REST API schema changes for mobile app clients.")}
-                className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-100 cursor-pointer"
+                className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-[var(--tag-typescript-bg)] text-[var(--tag-typescript-text)] border border-border cursor-pointer hover:bg-surface-3"
               >
                 + API Backward Compatibility Check
               </button>
               <button
                 type="button"
                 onClick={() => setUserPrompt("Analyze SQL queries in this PR for unparameterized SQL injection vulnerabilities.")}
-                className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-100 cursor-pointer"
+                className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-[var(--tag-typescript-bg)] text-[var(--tag-typescript-text)] border border-border cursor-pointer hover:bg-surface-3"
               >
                 + SQL Injection Audit
               </button>
               <button
                 type="button"
                 onClick={() => setUserPrompt("Explain the architectural flow changes introduced in this PR in plain technical terms.")}
-                className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-100 cursor-pointer"
+                className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-[var(--tag-typescript-bg)] text-[var(--tag-typescript-text)] border border-border cursor-pointer hover:bg-surface-3"
               >
                 + Explain Code Flow
               </button>
@@ -616,10 +605,9 @@ export default function NewAnalysisPage() {
 
             <div className="pt-3 flex items-center justify-end">
               <Button
-                variant="brand"
                 disabled={isAnalyzing}
                 onClick={handleRunManualAnalysis}
-                className="h-11 px-6 text-xs font-bold bg-purple-600 hover:bg-purple-700 text-white rounded-lg flex items-center gap-2 shadow-md cursor-pointer disabled:opacity-75"
+                className="h-11 px-6 text-xs font-bold bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white rounded-xl flex items-center gap-2 shadow-xs cursor-pointer disabled:opacity-75"
               >
                 {isAnalyzing ? (
                   <>
@@ -640,47 +628,47 @@ export default function NewAnalysisPage() {
 
       {/* AUTOMATIC ANALYSIS REPORT OUTPUT */}
       {autoReport && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg space-y-6 text-left animate-in fade-in zoom-in-95 duration-300">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+        <div className="bg-surface-1 border border-border rounded-2xl p-6 shadow-xl space-y-6 text-left animate-fadeIn">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-border">
             <div>
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Automatic AI Analysis Report</span>
-              <h2 className="text-lg font-bold text-slate-900 mt-1">{autoReport.repository} &mdash; {autoReport.branch}</h2>
+              <span className="text-xs font-bold text-content-muted uppercase tracking-[0.5px]">Automatic AI Analysis Report</span>
+              <h2 className="text-lg font-bold text-content-primary mt-1">{autoReport.repository} &mdash; {autoReport.branch}</h2>
             </div>
 
             <div className="flex items-center gap-3">
               <div className="text-right">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Risk Score</span>
-                <span className="text-xl font-extrabold text-rose-600">{autoReport.riskScore}% ({autoReport.riskLevel} Risk)</span>
+                <span className="text-[10px] font-bold text-content-muted uppercase tracking-[0.5px] block">Risk Score</span>
+                <span className="text-xl font-extrabold text-[var(--tag-security-text)]">{autoReport.riskScore}% ({autoReport.riskLevel} Risk)</span>
               </div>
-              <div className="w-12 h-12 rounded-2xl bg-rose-600 text-white font-extrabold text-lg flex items-center justify-center shadow-md">
+              <div className="w-12 h-12 rounded-2xl bg-[var(--tag-security-bg)] text-[var(--tag-security-text)] border border-border font-extrabold text-lg flex items-center justify-center shadow-xs">
                 {autoReport.riskScore}%
               </div>
             </div>
           </div>
 
           <div className="space-y-2">
-            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-indigo-600" /> AI Executive Summary
+            <h4 className="text-xs font-bold text-content-primary uppercase tracking-[0.5px] flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-brand" /> AI Executive Summary
             </h4>
-            <div className="bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 space-y-2">
+            <div className="bg-surface-2 border border-border rounded-xl p-4 space-y-2">
               {autoReport.summary.map((item, idx) => (
-                <p key={idx} className="text-xs text-slate-700 flex items-start gap-2 leading-relaxed">
-                  <span className="text-indigo-600 font-bold">•</span>
+                <p key={idx} className="text-xs text-content-secondary flex items-start gap-2 leading-relaxed">
+                  <span className="text-brand font-bold">•</span>
                   <span>{item}</span>
                 </p>
               ))}
             </div>
           </div>
 
-          <div className="space-y-2 pt-2 border-t border-slate-100">
-            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-              <Check className="w-4 h-4 text-emerald-600" /> Deployment Action Checklist
+          <div className="space-y-2 pt-2 border-t border-border">
+            <h4 className="text-xs font-bold text-content-primary uppercase tracking-[0.5px] flex items-center gap-2">
+              <Check className="w-4 h-4 text-[var(--tag-iot-text)]" /> Deployment Action Checklist
             </h4>
-            <div className="space-y-2 bg-emerald-50/40 border border-emerald-100 rounded-xl p-4">
+            <div className="space-y-2 bg-surface-2 border border-border rounded-xl p-4">
               {autoReport.checklist.map((item, idx) => (
-                <div key={idx} className="flex items-center gap-3 bg-white p-2.5 rounded-lg border border-emerald-100">
-                  <input type="checkbox" className="rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer" />
-                  <span className="text-xs font-medium text-slate-800">{item}</span>
+                <div key={idx} className="flex items-center gap-3 bg-surface-1 p-2.5 rounded-lg border border-border">
+                  <input type="checkbox" className="rounded text-brand cursor-pointer" />
+                  <span className="text-xs font-medium text-content-primary">{item}</span>
                 </div>
               ))}
             </div>
@@ -690,39 +678,39 @@ export default function NewAnalysisPage() {
 
       {/* MANUAL PROMPTED ANALYSIS RESPONSE OUTPUT */}
       {manualResponse && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-lg space-y-6 text-left animate-in fade-in zoom-in-95 duration-300">
-          <div className="pb-4 border-b border-slate-100 space-y-2">
+        <div className="bg-surface-1 border border-border rounded-2xl p-6 shadow-xl space-y-6 text-left animate-fadeIn">
+          <div className="pb-4 border-b border-border space-y-2">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-100 uppercase tracking-wider">
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--tag-p2p-bg)] text-[var(--tag-p2p-text)] border border-border uppercase tracking-[0.5px]">
                 Manual Prompted AI Analysis
               </span>
             </div>
-            <h2 className="text-base font-bold text-slate-900">{manualResponse.repository} &mdash; {manualResponse.branch}</h2>
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-700 font-mono leading-relaxed">
-              <strong className="text-slate-900 block text-[10px] uppercase font-sans mb-1">Your Custom Prompt:</strong>
+            <h2 className="text-base font-bold text-content-primary">{manualResponse.repository} &mdash; {manualResponse.branch}</h2>
+            <div className="bg-surface-2 border border-border rounded-xl p-3 text-xs text-content-primary font-mono leading-relaxed">
+              <strong className="text-brand block text-[10px] uppercase font-sans mb-1">Your Custom Prompt:</strong>
               &ldquo;{manualResponse.prompt}&rdquo;
             </div>
           </div>
 
           {/* AI Response Output */}
           <div className="space-y-2">
-            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-              <BrainCircuit className="w-4 h-4 text-purple-600" /> AI Findings Response
+            <h4 className="text-xs font-bold text-content-primary uppercase tracking-[0.5px] flex items-center gap-2">
+              <BrainCircuit className="w-4 h-4 text-brand" /> AI Findings Response
             </h4>
-            <div className="bg-purple-50/40 border border-purple-100 rounded-xl p-4 text-xs text-slate-800 leading-relaxed whitespace-pre-line font-sans">
+            <div className="bg-surface-2 border border-border rounded-xl p-4 text-xs text-content-secondary leading-relaxed whitespace-pre-line font-sans">
               {manualResponse.aiResponse}
             </div>
           </div>
 
           {/* Key Takeaways */}
           <div className="space-y-2">
-            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-              <ListChecks className="w-4 h-4 text-emerald-600" /> Key Takeaways &amp; Next Steps
+            <h4 className="text-xs font-bold text-content-primary uppercase tracking-[0.5px] flex items-center gap-2">
+              <ListChecks className="w-4 h-4 text-[var(--tag-iot-text)]" /> Key Takeaways &amp; Next Steps
             </h4>
             <div className="space-y-2">
               {manualResponse.keyTakeaways.map((item, idx) => (
-                <div key={idx} className="p-3 bg-white border border-slate-200/80 rounded-xl flex items-start gap-2.5 text-xs text-slate-700">
-                  <Check className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <div key={idx} className="p-3 bg-surface-2 border border-border rounded-xl flex items-start gap-2.5 text-xs text-content-primary">
+                  <Check className="w-4 h-4 text-[var(--tag-iot-text)] flex-shrink-0 mt-0.5" />
                   <span>{item}</span>
                 </div>
               ))}
@@ -730,13 +718,13 @@ export default function NewAnalysisPage() {
           </div>
 
           {/* Flagged Code Snippets */}
-          <div className="space-y-2 pt-2 border-t border-slate-100">
-            <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
-              <Code2 className="w-4 h-4 text-rose-600" /> Flagged Code Locations
+          <div className="space-y-2 pt-2 border-t border-border">
+            <h4 className="text-xs font-bold text-content-primary uppercase tracking-[0.5px] flex items-center gap-2">
+              <Code2 className="w-4 h-4 text-[var(--tag-security-text)]" /> Flagged Code Locations
             </h4>
             <div className="space-y-2">
               {manualResponse.codeSnippetsFlagged.map((snippet, idx) => (
-                <div key={idx} className="p-3 bg-slate-900 text-slate-200 rounded-xl text-xs font-mono">
+                <div key={idx} className="p-3 bg-surface-2 border border-border rounded-xl text-xs font-mono text-content-primary">
                   {snippet}
                 </div>
               ))}

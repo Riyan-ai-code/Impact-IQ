@@ -16,12 +16,10 @@ import {
   Users, 
   User,
   Bell, 
-  BookOpen,
   ChevronDown,
   LogOut
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { nhostGetUser, nhostSignOut } from "@/services/nhostAuthService"
 import { fetchTeamsFromNhost } from "@/services/nhostService"
 import { getScopedItem, setScopedItem } from "@/lib/storageScope"
 
@@ -52,25 +50,7 @@ export default function Sidebar() {
 
   useEffect(() => {
     const fetchUserProfile = async () => {
-      // 1. Check custom saved user in ImpactIQ
-      const savedUser = localStorage.getItem("impact_iq_user")
-      if (savedUser) {
-        try {
-          const parsed = JSON.parse(savedUser)
-          if (parsed.name || parsed.displayName) {
-            setUserProfile({
-              isConnected: !parsed.isGuest,
-              name: parsed.name || parsed.displayName,
-              email: parsed.email || (parsed.isGuest ? "guest@impactiq.dev" : "dev@impactiq.dev"),
-              avatar: parsed.avatar || `https://github.com/${(parsed.githubUsername || parsed.email || "dev").split("@")[0]}.png`,
-              role: parsed.role || (parsed.isGuest ? "Guest User" : "Owner & Lead")
-            })
-            return
-          }
-        } catch (e) {}
-      }
-
-      // 2. Check GitHub token / connected user
+      // 1. Check real GitHub token & connected user first
       const ghToken = localStorage.getItem("github_token") || localStorage.getItem("github_connected")
       const ghSaved = localStorage.getItem("github_connected_user")
 
@@ -90,7 +70,7 @@ export default function Sidebar() {
         } catch (e) {}
       }
 
-      if (ghToken) {
+      if (ghToken && !ghToken.startsWith("guest") && ghToken !== "true") {
         try {
           const res = await fetch(`http://localhost:8000/api/auth/github/user?token=${ghToken}`)
           if (res.ok) {
@@ -108,6 +88,34 @@ export default function Sidebar() {
         } catch (err) {
           console.warn("Backend user fetch notice:", err)
         }
+      }
+
+      // 2. Check custom saved non-guest user
+      const savedUser = localStorage.getItem("impact_iq_user")
+      if (savedUser) {
+        try {
+          const parsed = JSON.parse(savedUser)
+          if (parsed && !parsed.isGuest && (parsed.name || parsed.displayName)) {
+            setUserProfile({
+              isConnected: true,
+              name: parsed.name || parsed.displayName,
+              email: parsed.email || "dev@impactiq.dev",
+              avatar: parsed.avatar || "",
+              role: parsed.role || "Owner & Lead"
+            })
+            return
+          }
+          if (parsed && parsed.isGuest) {
+            setUserProfile({
+              isConnected: false,
+              name: parsed.name || "Guest Developer",
+              email: parsed.email || "guest@impactiq.dev",
+              avatar: "",
+              role: "Guest Workspace"
+            })
+            return
+          }
+        } catch (e) {}
       }
 
       // Default
@@ -134,7 +142,6 @@ export default function Sidebar() {
   const fetchTeams = async () => {
     let loaded: any[] = []
 
-    // 1. Backend API
     try {
       const res = await fetch("http://localhost:8000/api/teams")
       if (res.ok) {
@@ -145,7 +152,6 @@ export default function Sidebar() {
       }
     } catch (e) {}
 
-    // 2. Nhost GraphQL
     if (loaded.length === 0) {
       try {
         const nhostTeams = await fetchTeamsFromNhost()
@@ -155,7 +161,6 @@ export default function Sidebar() {
       } catch (e) {}
     }
 
-    // 3. Scoped Storage
     if (loaded.length === 0) {
       const saved = getScopedItem("impact_iq_teams")
       if (saved) {
@@ -168,45 +173,8 @@ export default function Sidebar() {
       }
     }
 
-    // 4. Direct / Global Storage
-    if (loaded.length === 0) {
-      const directKeys = ["impact_iq_teams", "impact_iq_teams_guest", "impact_iq_teams_auth_user"]
-      for (const k of directKeys) {
-        const val = localStorage.getItem(k)
-        if (val) {
-          try {
-            const parsed = JSON.parse(val)
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              loaded = parsed
-              break
-            }
-          } catch (e) {}
-        }
-      }
-    }
-
-    // 5. Dynamic impact_iq_teams_* keys in localStorage
-    if (loaded.length === 0) {
-      try {
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i)
-          if (key && key.startsWith("impact_iq_teams_")) {
-            const val = localStorage.getItem(key)
-            if (val) {
-              const parsed = JSON.parse(val)
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                loaded = parsed
-                break
-              }
-            }
-          }
-        }
-      } catch (e) {}
-    }
-
     setTeams(loaded)
 
-    // Determine active team
     const savedActiveId = getScopedItem("impact_iq_active_team_id") || localStorage.getItem("impact_iq_active_team_id")
     if (savedActiveId && loaded.some((t: any) => t.id === savedActiveId)) {
       setActiveTeamId(savedActiveId)
@@ -244,7 +212,6 @@ export default function Sidebar() {
     setScopedItem("impact_iq_active_team_id", team.id)
     localStorage.setItem("impact_iq_active_team_id", team.id)
 
-    // Check if user is in team roster
     const isMember = team.members?.some((m: any) => m.email === userProfile.email || m.name === userProfile.name)
     if (!isMember && userProfile.name) {
       const newMember = {
@@ -268,11 +235,8 @@ export default function Sidebar() {
       localStorage.setItem("impact_iq_teams", JSON.stringify(updatedTeams))
     }
 
-    // Set role
     const currentRole = team.members?.find((m: any) => m.name === userProfile.name || m.email === userProfile.email)?.role || "Owner"
     setUserRole(currentRole)
-
-    // Dispatch global event so all pages update automatically
     window.dispatchEvent(new Event("impact_iq_teams_updated"))
     setIsProfileMenuOpen(false)
   }
@@ -306,14 +270,14 @@ export default function Sidebar() {
   ]
 
   return (
-    <aside className="w-64 h-full bg-[#080d1a] text-gray-400 flex flex-col justify-between border-r border-white/5 flex-shrink-0 z-30 select-none">
+    <aside className="w-64 h-full bg-[#f3f4ff] dark:bg-[#0f1219] text-content-secondary flex flex-col justify-between border-r border-border flex-shrink-0 z-30 select-none transition-colors duration-150">
       {/* Top Brand Block */}
-      <div className="p-5 border-b border-white/5 flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-lg bg-[#4f46e5] flex items-center justify-center text-white shadow-md">
+      <div className="p-5 border-b border-border flex items-center gap-2.5 bg-[#f3f4ff] dark:bg-[#0f1219]">
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-indigo-500 flex items-center justify-center text-white shadow-xs">
           <ShieldCheck className="w-5 h-5" />
         </div>
-        <span className="text-lg font-bold tracking-tight text-white flex items-center">
-          Impact<span className="font-medium text-white">IQ</span>
+        <span className="text-lg font-bold tracking-tight text-content-primary flex items-center">
+          Impact<span className="font-semibold text-brand">IQ</span>
         </span>
       </div>
 
@@ -321,7 +285,7 @@ export default function Sidebar() {
       <div className="flex-1 py-4 overflow-y-auto no-scrollbar px-3 space-y-5">
         {sections.map((section, sectionIdx) => (
           <div key={sectionIdx} className="space-y-1.5">
-            <h4 className="px-3 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+            <h4 className="px-3 text-[10px] font-bold text-content-muted uppercase tracking-[0.5px]">
               {section.title}
             </h4>
             <ul className="space-y-1">
@@ -333,11 +297,6 @@ export default function Sidebar() {
                 const isRepositoriesActive = isRepositories && pathname === "/dashboard/repositories"
                 
                 const isActive = isDashboardActive || isRepositoriesActive || (!isDashboard && !isRepositories && pathname === item.href)
-                const activeClass = isDashboardActive 
-                  ? "bg-[#4f46e5] text-white" 
-                  : isRepositoriesActive 
-                    ? "bg-white/10 text-white" 
-                    : "bg-[#4f46e5] text-white"
 
                 const Icon = item.icon
                 return (
@@ -346,10 +305,10 @@ export default function Sidebar() {
                       <div className={cn(
                         "flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer",
                         isActive 
-                          ? activeClass 
-                          : "hover:bg-white/5 hover:text-white"
+                          ? "bg-surface-2 dark:bg-[#1a1f3a] text-content-primary border-l-[3px] border-brand shadow-xs" 
+                          : "hover:bg-surface-2 hover:text-content-primary text-content-secondary"
                       )}>
-                        <Icon className={cn("w-4.5 h-4.5", isActive ? "text-white" : "text-gray-500")} />
+                        <Icon className={cn("w-4 h-4", isActive ? "text-brand" : "text-content-muted")} />
                         <span>{item.name}</span>
                       </div>
                     </Link>
@@ -362,116 +321,115 @@ export default function Sidebar() {
       </div>
 
       {/* Bottom Profile & Team Block */}
-      <div className="p-4 border-t border-white/5 bg-[#050912] flex-shrink-0 relative">
+      <div className="p-4 border-t border-border bg-[#eef0ff] dark:bg-[#0a0e27] flex-shrink-0 relative transition-colors duration-150">
         <div>
           <div 
             onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-            className="flex items-center justify-between p-3 rounded-xl bg-slate-900/50 border border-white/10 hover:bg-slate-900/80 transition-colors cursor-pointer group"
+            className="flex items-center justify-between p-2.5 rounded-xl bg-surface-1 border border-border hover:bg-surface-2 transition-colors cursor-pointer group"
           >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="relative flex-shrink-0">
-                  <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-xs border border-white/10 overflow-hidden">
-                    {Boolean(userProfile.avatar) && (
-                      <img 
-                        src={userProfile.avatar} 
-                        alt={userProfile.name}
-                        className="w-full h-full object-cover" 
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none'
-                        }}
-                      />
-                    )}
-                    <span className="text-xs font-bold">{userProfile.name.charAt(0)}</span>
-                  </div>
-                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-[#050912]" />
-                </div>
-
-                <div className="text-left leading-tight min-w-0 flex-1">
-                  <h4 className="text-xs font-bold text-white truncate max-w-[120px]">{userProfile.name}</h4>
-                  {activeTeam ? (
-                    <span className="text-[10px] text-indigo-400 font-semibold block truncate max-w-[120px]">
-                      {activeTeam.name} • {userRole}
-                    </span>
-                  ) : (
-                    <span className="text-[10px] text-amber-400 font-bold block truncate">
-                      No Team Connected
-                    </span>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="relative flex-shrink-0">
+                <div className="w-8 h-8 rounded-full bg-brand text-white flex items-center justify-center font-bold text-xs border border-border overflow-hidden">
+                  {Boolean(userProfile.avatar) && (
+                    <img 
+                      src={userProfile.avatar} 
+                      alt={userProfile.name}
+                      className="w-full h-full object-cover" 
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none'
+                      }}
+                    />
                   )}
+                  <span className="text-xs font-bold">{userProfile.name.charAt(0)}</span>
                 </div>
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-surface-1" />
               </div>
-              <ChevronDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-white transition-colors flex-shrink-0 ml-1" />
-            </div>
 
-            {/* Sidebar Profile & Team Switcher Popover */}
-            {isProfileMenuOpen && (
-              <div className="absolute bottom-full left-4 mb-2 w-64 bg-[#0a0f1d] border border-white/10 rounded-xl shadow-2xl py-3 text-left z-50 animate-in fade-in duration-150 space-y-2">
-                <div className="px-4 pb-2 border-b border-white/5 space-y-0.5">
-                  <p className="text-xs font-bold text-white">{userProfile.name}</p>
-                  <p className="text-[10px] text-gray-400 truncate">{userProfile.email || "dev@impactiq.dev"}</p>
-                </div>
-
-                {/* Team Switcher Section */}
-                <div className="px-4 py-1 space-y-2">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">
-                    ENGINEERING TEAMS
+              <div className="text-left leading-tight min-w-0 flex-1">
+                <h4 className="text-xs font-bold text-content-primary truncate max-w-[120px]">{userProfile.name}</h4>
+                {activeTeam ? (
+                  <span className="text-[10px] text-brand font-semibold block truncate max-w-[120px]">
+                    {activeTeam.name} • {userRole}
                   </span>
-
-                  {teams.length === 0 ? (
-                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-2.5 space-y-2 text-center">
-                      <p className="text-[10px] text-amber-300 font-bold">No Team Connected</p>
-                      <button
-                        onClick={() => { setIsProfileMenuOpen(false); router.push("/dashboard/team"); }}
-                        className="w-full py-1 text-[10px] font-bold bg-amber-500 hover:bg-amber-600 text-slate-900 rounded-md cursor-pointer transition-colors"
-                      >
-                        + Create a Team
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-1.5 max-h-36 overflow-y-auto no-scrollbar">
-                      {teams.map((t: any) => {
-                        const isSelected = t.id === activeTeamId
-                        return (
-                          <div
-                            key={t.id}
-                            className={cn(
-                              "w-full px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center justify-between border transition-all",
-                              isSelected 
-                                ? "bg-indigo-600/90 border-indigo-500 text-white shadow-xs" 
-                                : "bg-white/5 border-white/5 text-gray-300 hover:bg-white/10 hover:text-white"
-                            )}
-                          >
-                            <span className="truncate max-w-[110px]">{t.name}</span>
-                            {isSelected ? (
-                              <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded text-white font-mono flex-shrink-0">Active</span>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => handleJoinTeam(t)}
-                                className="text-[9px] bg-indigo-500 hover:bg-indigo-400 text-white font-bold px-2 py-0.5 rounded cursor-pointer transition-colors flex-shrink-0"
-                              >
-                                Join Team
-                              </button>
-                            )}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                <div className="pt-2 border-t border-white/5 px-2">
-                  <button
-                    onClick={() => { setIsProfileMenuOpen(false); router.push("/dashboard/team"); }}
-                    className="w-full px-3 py-1.5 text-xs font-semibold text-gray-300 hover:bg-white/5 rounded-lg flex items-center gap-2 cursor-pointer"
-                  >
-                    <Users className="w-3.5 h-3.5 text-gray-400" />
-                    Manage Teams
-                  </button>
-                </div>
-
+                ) : (
+                  <span className="text-[10px] text-amber-500 font-bold block truncate">
+                    No Team Connected
+                  </span>
+                )}
               </div>
-            )}
+            </div>
+            <ChevronDown className="w-3.5 h-3.5 text-content-muted group-hover:text-content-primary transition-colors flex-shrink-0 ml-1" />
           </div>
+
+          {/* Sidebar Profile & Team Switcher Popover */}
+          {isProfileMenuOpen && (
+            <div className="absolute bottom-full left-4 mb-2 w-64 bg-surface-1 border border-border rounded-xl shadow-xl py-3 text-left z-50 animate-fadeIn space-y-2">
+              <div className="px-4 pb-2 border-b border-border space-y-0.5">
+                <p className="text-xs font-bold text-content-primary">{userProfile.name}</p>
+                <p className="text-[10px] text-content-muted truncate">{userProfile.email || "dev@impactiq.dev"}</p>
+              </div>
+
+              {/* Team Switcher Section */}
+              <div className="px-4 py-1 space-y-2">
+                <span className="text-[10px] font-bold text-content-muted uppercase tracking-[0.5px] block">
+                  ENGINEERING TEAMS
+                </span>
+
+                {teams.length === 0 ? (
+                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-2.5 space-y-2 text-center">
+                    <p className="text-[10px] text-amber-500 font-bold">No Team Connected</p>
+                    <button
+                      onClick={() => { setIsProfileMenuOpen(false); router.push("/dashboard/team"); }}
+                      className="w-full py-1 text-[10px] font-bold bg-amber-500 hover:bg-amber-600 text-slate-900 rounded-md cursor-pointer transition-colors"
+                    >
+                      + Create a Team
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5 max-h-36 overflow-y-auto no-scrollbar">
+                    {teams.map((t: any) => {
+                      const isSelected = t.id === activeTeamId
+                      return (
+                        <div
+                          key={t.id}
+                          className={cn(
+                            "w-full px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center justify-between border transition-all",
+                            isSelected 
+                              ? "bg-brand border-brand text-white" 
+                              : "bg-surface-2 border-border text-content-secondary hover:bg-surface-3 hover:text-content-primary"
+                          )}
+                        >
+                          <span className="truncate max-w-[110px]">{t.name}</span>
+                          {isSelected ? (
+                            <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded text-white font-mono flex-shrink-0">Active</span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleJoinTeam(t)}
+                              className="text-[9px] bg-brand hover:bg-brand-hover text-white font-bold px-2 py-0.5 rounded cursor-pointer transition-colors flex-shrink-0"
+                            >
+                              Join Team
+                            </button>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-2 border-t border-border px-2">
+                <button
+                  onClick={() => { setIsProfileMenuOpen(false); router.push("/dashboard/team"); }}
+                  className="w-full px-3 py-1.5 text-xs font-semibold text-content-secondary hover:bg-surface-2 rounded-lg flex items-center gap-2 cursor-pointer"
+                >
+                  <Users className="w-3.5 h-3.5 text-content-muted" />
+                  Manage Teams
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </aside>
   )

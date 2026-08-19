@@ -9,18 +9,26 @@ export function isGuestMode(): boolean {
 
   const ghToken = localStorage.getItem("github_token") || localStorage.getItem("github_connected")
   const ghSaved = localStorage.getItem("github_connected_user")
-  const savedUser = localStorage.getItem("impact_iq_user")
 
-  if (savedUser) {
+  // If valid GitHub user or token exists, user is definitely authenticated (NOT guest)
+  if (ghSaved) {
     try {
-      const user = JSON.parse(savedUser)
-      if (user.isGuest === true) return true
-      if (user.id || user.email) return false
+      const gh = JSON.parse(ghSaved)
+      if (gh.name || gh.login || gh.email) return false
     } catch (e) {}
   }
 
-  if (ghToken || ghSaved) {
+  if (ghToken && !ghToken.startsWith("guest") && ghToken !== "true") {
     return false
+  }
+
+  const savedUser = localStorage.getItem("impact_iq_user")
+  if (savedUser) {
+    try {
+      const user = JSON.parse(savedUser)
+      if (user.isGuest === false && (user.name || user.email || user.id)) return false
+      if (user.isGuest === true) return true
+    } catch (e) {}
   }
 
   return true

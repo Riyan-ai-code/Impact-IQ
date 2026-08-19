@@ -434,7 +434,7 @@ export default function NotificationsPage() {
             <Button
               variant="brand"
               onClick={savePreferences}
-              className="w-full h-10 text-xs font-bold bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-lg flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+              className="w-full h-10 text-xs font-bold bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white rounded-xl flex items-center justify-center gap-2 shadow-xs cursor-pointer"
             >
               <Check className="w-4 h-4" />
               Save Alert Preferences

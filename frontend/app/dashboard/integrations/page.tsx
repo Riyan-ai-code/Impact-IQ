@@ -274,8 +274,8 @@ export default function IntegrationsPage() {
             className={cn(
               "px-3.5 py-2 text-xs font-semibold rounded-lg transition-all whitespace-nowrap cursor-pointer",
               selectedCategory === cat.key
-                ? "bg-indigo-600 text-white shadow-sm font-bold"
-                : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-50"
+                ? "bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 text-white shadow-xs font-bold"
+                : "bg-surface-1 border border-border text-content-secondary hover:bg-surface-2"
             )}
           >
             {cat.label}
@@ -375,7 +375,7 @@ export default function IntegrationsPage() {
                   <Button
                     variant="brand"
                     onClick={() => handleOpenConfigureModal(item)}
-                    className="w-full h-9 text-xs font-bold bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-lg flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                    className="w-full h-9 text-xs font-bold bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white rounded-lg flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Connect {item.name}
@@ -543,7 +543,7 @@ export default function IntegrationsPage() {
               <Button
                 variant="brand"
                 onClick={handleSaveIntegration}
-                className="h-9 px-5 text-xs font-bold bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-lg shadow-sm cursor-pointer"
+                className="h-9 px-5 text-xs font-bold bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white rounded-xl shadow-xs cursor-pointer"
               >
                 Save &amp; Connect Integration
               </Button>

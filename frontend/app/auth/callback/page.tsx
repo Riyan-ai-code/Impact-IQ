@@ -25,22 +25,30 @@ function CallbackHandler() {
           if (res.ok) {
             const userData = await res.json()
             localStorage.setItem("github_connected_user", JSON.stringify(userData))
+            localStorage.setItem("impact_iq_user", JSON.stringify({
+              name: userData.name || userData.login,
+              email: userData.email || `${userData.login}@github.com`,
+              avatar: userData.avatar_url,
+              role: "Owner & Lead",
+              isGuest: false
+            }))
           }
         } catch (e) {
           console.warn("Notice: could not fetch profile info during callback", e)
         }
 
         // Notify app components of updated GitHub state
+        window.dispatchEvent(new Event("impact_iq_user_updated"))
         window.dispatchEvent(new Event("impact_iq_teams_updated"))
         window.dispatchEvent(new Event("storage"))
 
-        // Redirect to connected repositories page
-        router.push("/dashboard/repositories")
+        // Redirect back to landing page so the user sees their account on the landing page
+        router.push("/")
       } else if (error) {
         console.error("GitHub OAuth Error:", error)
-        router.push(`/dashboard?error=${encodeURIComponent(error)}`)
+        router.push(`/?error=${encodeURIComponent(error)}`)
       } else {
-        router.push("/dashboard")
+        router.push("/")
       }
     }
 
@@ -48,10 +56,10 @@ function CallbackHandler() {
   }, [router, searchParams])
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-[#030712] text-white">
       <div className="flex flex-col items-center space-y-4">
         <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-xs font-bold text-slate-700">Fetching GitHub profile & repositories...</p>
+        <p className="text-xs font-bold text-slate-300">Authenticating GitHub account...</p>
       </div>
     </div>
   )
@@ -60,8 +68,8 @@ function CallbackHandler() {
 export default function AuthCallbackPage() {
   return (
     <Suspense fallback={
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
-        <p className="text-sm font-semibold text-slate-600">Loading auth details...</p>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#030712] text-white">
+        <p className="text-sm font-semibold text-slate-400">Loading auth details...</p>
       </div>
     }>
       <CallbackHandler />

@@ -219,7 +219,7 @@ export default function ReportsPage() {
           <Button
             variant="brand"
             onClick={handlePrint}
-            className="h-9 px-4 text-xs font-bold bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-xl flex items-center gap-1.5 shadow-xs cursor-pointer"
+            className="h-9 px-4 text-xs font-bold bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white rounded-xl flex items-center gap-1.5 shadow-xs cursor-pointer"
           >
             <Printer className="w-3.5 h-3.5" />
             <span>Print Report</span>

@@ -215,7 +215,7 @@ export default function AnalysisHistoryPage() {
           <Link href="/dashboard/analysis">
             <Button
               variant="brand"
-              className="h-9 px-4 text-xs font-bold bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-xl flex items-center gap-2 shadow-xs cursor-pointer"
+              className="h-9 px-4 text-xs font-bold bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white rounded-xl flex items-center gap-2 shadow-xs cursor-pointer"
             >
               <Sparkles className="w-4 h-4" />
               <span>Run New Analysis</span>
@@ -346,7 +346,7 @@ export default function AnalysisHistoryPage() {
           </p>
           <div className="pt-2">
             <Link href="/dashboard/analysis">
-              <Button variant="brand" className="h-8 px-4 text-xs font-bold bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-lg">
+              <Button variant="brand" className="h-8 px-4 text-xs font-bold bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white rounded-lg">
                 Run First Analysis
               </Button>
             </Link>
@@ -626,7 +626,7 @@ export default function AnalysisHistoryPage() {
               <Button
                 variant="brand"
                 onClick={() => setIsModalOpen(false)}
-                className="h-9 px-5 text-xs font-bold bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-xl"
+                className="h-9 px-5 text-xs font-bold bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white rounded-xl"
               >
                 Close
               </Button>

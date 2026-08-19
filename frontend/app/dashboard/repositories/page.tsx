@@ -516,23 +516,23 @@ export default function RepositoriesPage() {
 
       {/* GitHub Connected Banner (Only for connected accounts) */}
       {token && (
-        <div className="bg-[#ecfdf5]/80 border border-emerald-200/60 rounded-xl p-4 flex items-center justify-between shadow-sm text-left">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
+        <div className="bg-white dark:bg-[#141829] border border-[#845EC2]/25 rounded-2xl p-4.5 flex items-center justify-between shadow-xs text-left">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#845EC2] to-[#FF8066] text-white flex items-center justify-center flex-shrink-0 shadow-xs">
               <Check className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900 leading-snug">GitHub Connected Successfully</h3>
-              <p className="text-xs text-slate-500 mt-0.5">We found {repositories.length} repositories in your account.</p>
+              <h3 className="text-sm font-extrabold text-[#4B4453] dark:text-[#f1f5ff] leading-snug">GitHub Connected Successfully</h3>
+              <p className="text-xs text-[#6E6678] dark:text-[#9ca3b8] mt-0.5">We found {repositories.length} repositories in your account.</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <Button 
               variant="outline" 
               onClick={handleConnectGithub}
-              className="h-9 px-3.5 border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg flex items-center gap-2 shadow-sm transition-all"
+              className="h-9 px-4 border-[#845EC2]/30 bg-white dark:bg-[#141829] hover:bg-[#845EC2]/10 text-[#845EC2] text-xs font-bold rounded-xl flex items-center gap-2 shadow-xs transition-all cursor-pointer"
             >
-              <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
+              <RefreshCw className="w-3.5 h-3.5 text-[#845EC2]" />
               Reconnect
             </Button>
           </div>
@@ -540,57 +540,57 @@ export default function RepositoriesPage() {
       )}
 
       {/* 1. Quick Metric Summary Bar — Fully Dynamic */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
-        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-lg flex-shrink-0">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 text-left">
+        <div className="bg-white dark:bg-[#141829] border border-[#845EC2]/20 dark:border-white/10 rounded-2xl p-4 shadow-sm flex items-center gap-3.5 hover:border-[#845EC2]/40 transition-colors">
+          <div className="w-10 h-10 rounded-xl bg-[#845EC2]/10 border border-[#845EC2]/25 flex items-center justify-center text-lg flex-shrink-0">
             📦
           </div>
           <div>
-            <div className="text-base font-extrabold text-slate-900 leading-none">{repositories.length}</div>
-            <div className="text-[11px] font-medium text-slate-500 mt-1">Repositories Found</div>
+            <div className="text-lg font-black text-[#4B4453] dark:text-[#f1f5ff] leading-none">{repositories.length}</div>
+            <div className="text-[11px] font-semibold text-[#B0A8B9] mt-1">Repositories Found</div>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-lg flex-shrink-0">
+        <div className="bg-white dark:bg-[#141829] border border-[#845EC2]/20 dark:border-white/10 rounded-2xl p-4 shadow-sm flex items-center gap-3.5 hover:border-[#845EC2]/40 transition-colors">
+          <div className="w-10 h-10 rounded-xl bg-[#FF8066]/15 border border-[#FF8066]/25 flex items-center justify-center text-lg flex-shrink-0">
             🚀
           </div>
           <div>
-            <div className="text-base font-extrabold text-slate-900 leading-none">{existingProjects.length}</div>
-            <div className="text-[11px] font-medium text-slate-500 mt-1">Connected as Projects</div>
+            <div className="text-lg font-black text-[#4B4453] dark:text-[#f1f5ff] leading-none">{existingProjects.length}</div>
+            <div className="text-[11px] font-semibold text-[#B0A8B9] mt-1">Connected as Projects</div>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-purple-50 border border-purple-100 flex items-center justify-center text-lg flex-shrink-0">
+        <div className="bg-white dark:bg-[#141829] border border-[#845EC2]/20 dark:border-white/10 rounded-2xl p-4 shadow-sm flex items-center gap-3.5 hover:border-[#845EC2]/40 transition-colors">
+          <div className="w-10 h-10 rounded-xl bg-[#845EC2]/15 border border-[#845EC2]/25 flex items-center justify-center text-lg flex-shrink-0">
             👥
           </div>
           <div>
-            <div className="text-base font-extrabold text-slate-900 leading-none">{userTeams.length}</div>
-            <div className="text-[11px] font-medium text-slate-500 mt-1">Teams Assigned</div>
+            <div className="text-lg font-black text-[#4B4453] dark:text-[#f1f5ff] leading-none">{userTeams.length}</div>
+            <div className="text-[11px] font-semibold text-[#B0A8B9] mt-1">Teams Assigned</div>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-xl p-3.5 shadow-xs flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-sky-50 border border-sky-100 flex items-center justify-center text-lg flex-shrink-0">
+        <div className="bg-white dark:bg-[#141829] border border-[#845EC2]/20 dark:border-white/10 rounded-2xl p-4 shadow-sm flex items-center gap-3.5 hover:border-[#845EC2]/40 transition-colors">
+          <div className="w-10 h-10 rounded-xl bg-[#C34A36]/15 border border-[#C34A36]/25 flex items-center justify-center text-lg flex-shrink-0">
             🔀
           </div>
           <div>
-            <div className="text-base font-extrabold text-slate-900 leading-none">{monitoredBranchesCount}</div>
-            <div className="text-[11px] font-medium text-slate-500 mt-1">Monitored Branches</div>
+            <div className="text-lg font-black text-[#4B4453] dark:text-[#f1f5ff] leading-none">{monitoredBranchesCount}</div>
+            <div className="text-[11px] font-semibold text-[#B0A8B9] mt-1">Monitored Branches</div>
           </div>
         </div>
       </div>
 
       {/* Filter and Search Bar Row */}
       <div className="flex items-center justify-between mt-6">
-        <h2 className="text-sm font-bold text-slate-800">
+        <h2 className="text-sm font-extrabold text-[#4B4453] dark:text-[#f1f5ff]">
           All Repositories ({filteredRepos.length})
         </h2>
         <div className="flex items-center gap-3">
           {/* Search input */}
           <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#B0A8B9]" />
             <input 
               type="text" 
               placeholder="Search repositories..." 
@@ -599,7 +599,7 @@ export default function RepositoriesPage() {
                 setSearchQuery(e.target.value)
                 setCurrentPage(1)
               }}
-              className="w-64 pl-9 pr-4 py-2 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 shadow-sm"
+              className="w-64 pl-9 pr-4 py-2 text-xs bg-white dark:bg-[#141829] border border-[#845EC2]/20 dark:border-white/10 rounded-xl focus:outline-none focus:border-[#845EC2] text-[#4B4453] dark:text-[#f1f5ff] shadow-xs font-medium"
             />
           </div>
           {/* Filter button + Popover */}
@@ -607,24 +607,24 @@ export default function RepositoriesPage() {
             <button 
               onClick={() => setIsFilterOpen(!isFilterOpen)}
               className={cn(
-                "px-3.5 py-2 border text-xs font-semibold rounded-lg flex items-center gap-2 shadow-sm transition-all duration-150 cursor-pointer",
+                "px-3.5 py-2 border text-xs font-bold rounded-xl flex items-center gap-2 shadow-xs transition-all duration-150 cursor-pointer",
                 (selectedVisibility !== "all" || selectedLanguage !== "all")
-                  ? "border-indigo-600 bg-indigo-50/60 text-indigo-700 font-bold"
-                  : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+                  ? "border-[#845EC2] bg-[#845EC2]/15 text-[#845EC2]"
+                  : "border-[#845EC2]/30 bg-white dark:bg-[#141829] hover:bg-[#845EC2]/10 text-[#845EC2]"
               )}
             >
-              <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
+              <SlidersHorizontal className="w-3.5 h-3.5 text-[#845EC2]" />
               <span>Filter</span>
               {(selectedVisibility !== "all" || selectedLanguage !== "all") && (
-                <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                <span className="w-2 h-2 rounded-full bg-[#845EC2]"></span>
               )}
             </button>
 
             {/* Filter Popover Dropdown */}
             {isFilterOpen && (
-              <div className="absolute right-0 mt-2 w-72 bg-white border border-slate-200 shadow-xl rounded-xl p-4 z-30 space-y-4 text-left animate-in fade-in zoom-in-95 duration-150">
-                <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                  <span className="text-[11px] font-bold text-slate-800 uppercase tracking-wider">Filter Repositories</span>
+              <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-[#141829] border border-[#845EC2]/25 shadow-xl rounded-2xl p-4 z-30 space-y-4 text-left animate-in fade-in zoom-in-95 duration-150">
+                <div className="flex items-center justify-between pb-2 border-b border-[#845EC2]/10">
+                  <span className="text-[11px] font-bold text-[#4B4453] dark:text-[#f1f5ff] uppercase tracking-wider">Filter Repositories</span>
                   {(selectedVisibility !== "all" || selectedLanguage !== "all") && (
                     <button
                       onClick={() => {
@@ -632,7 +632,7 @@ export default function RepositoriesPage() {
                         setSelectedLanguage("all")
                         setCurrentPage(1)
                       }}
-                      className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800"
+                      className="text-[11px] font-bold text-[#845EC2] hover:underline"
                     >
                       Reset
                     </button>
@@ -641,8 +641,8 @@ export default function RepositoriesPage() {
 
                 {/* Visibility Filter */}
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">Visibility</label>
-                  <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-lg">
+                  <label className="text-[11px] font-bold text-[#4B4453] dark:text-[#9ca3b8] uppercase tracking-wide">Visibility</label>
+                  <div className="grid grid-cols-3 gap-1 bg-[#845EC2]/10 p-1 rounded-xl">
                     {(["all", "public", "private"] as const).map((v) => (
                       <button
                         key={v}
@@ -651,10 +651,10 @@ export default function RepositoriesPage() {
                           setCurrentPage(1)
                         }}
                         className={cn(
-                          "py-1 text-[11px] font-bold rounded-md capitalize transition-all cursor-pointer",
+                          "py-1 text-[11px] font-bold rounded-lg capitalize transition-all cursor-pointer",
                           selectedVisibility === v
-                            ? "bg-white text-indigo-600 shadow-sm"
-                            : "text-slate-500 hover:text-slate-800"
+                            ? "bg-white dark:bg-[#141829] text-[#845EC2] shadow-xs"
+                            : "text-[#6E6678] hover:text-[#4B4453]"
                         )}
                       >
                         {v}
@@ -665,14 +665,14 @@ export default function RepositoriesPage() {
 
                 {/* Language Filter */}
                 <div className="space-y-1.5">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">Language</label>
+                  <label className="text-[11px] font-bold text-[#4B4453] dark:text-[#9ca3b8] uppercase tracking-wide">Language</label>
                   <select
                     value={selectedLanguage}
                     onChange={(e) => {
                       setSelectedLanguage(e.target.value)
                       setCurrentPage(1)
                     }}
-                    className="w-full px-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 cursor-pointer font-medium"
+                    className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#141829] border border-[#845EC2]/20 rounded-xl focus:outline-none focus:border-[#845EC2] cursor-pointer font-bold text-[#4B4453] dark:text-[#f1f5ff]"
                   >
                     <option value="all">All Languages</option>
                     {availableLanguages.map((lang) => (
@@ -700,42 +700,36 @@ export default function RepositoriesPage() {
           return (
             <div 
               key={idx}
-              className="bg-white border border-slate-100 rounded-xl p-5 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.02)] flex flex-col gap-2.5 hover:shadow-md transition-shadow duration-200"
+              className="bg-white dark:bg-[#141829] border border-[#845EC2]/20 dark:border-white/10 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-[#845EC2]/40 transition-all duration-200 flex flex-col gap-2.5 group text-left relative overflow-hidden"
             >
               {/* Top Header Row: Icon + Name + Badges on left | Create Project button on top right */}
               <div className="flex items-center justify-between w-full gap-4">
                 <div className="flex items-center gap-3 text-left">
-                  <div className="w-9 h-9 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-700 flex-shrink-0">
-                    <Github className="w-4 h-4" />
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#845EC2] to-[#FF8066] text-white flex items-center justify-center shadow-xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                    <Github className="w-5 h-5" />
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-sm font-bold text-slate-900 leading-snug hover:text-indigo-600 transition-colors cursor-pointer">
+                    <h3 className="text-base font-extrabold text-[#4B4453] dark:text-[#f1f5ff] leading-snug group-hover:text-[#845EC2] transition-colors cursor-pointer">
                       {repo.name}
                     </h3>
                     
                     {/* Badges */}
                     <span className={cn(
-                      "text-[10px] font-semibold px-2 py-0.5 rounded-full border",
+                      "text-[10px] font-bold px-2.5 py-0.5 rounded-full border",
                       repo.isPrivate 
-                        ? "bg-purple-50 text-purple-600 border-purple-100/50" 
-                        : "bg-emerald-50 text-emerald-600 border-emerald-100/50"
+                        ? "bg-[#845EC2]/15 text-[#845EC2] border-[#845EC2]/30" 
+                        : "bg-[#059669]/10 text-[#059669] border-[#059669]/25"
                     )}>
                       {repo.isPrivate ? "Private" : "Public"}
                     </span>
 
-                    <span className={cn(
-                      "text-[10px] font-semibold px-2 py-0.5 rounded-full border",
-                      repo.language === "JavaScript" && "bg-amber-50 text-amber-700 border-amber-100/50",
-                      repo.language === "TypeScript" && "bg-blue-50 text-blue-600 border-blue-100/50",
-                      repo.language === "Python" && "bg-sky-50 text-sky-700 border-sky-100/50",
-                      repo.language === "Go" && "bg-cyan-50 text-cyan-600 border-cyan-100/50"
-                    )}>
-                      {repo.language}
+                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full border bg-[#845EC2]/10 text-[#845EC2] border-[#845EC2]/25">
+                      {repo.language || "General"}
                     </span>
 
                     {/* Active Project Indicator Pill */}
                     {connectedProject && (
-                      <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/90 px-2.5 py-0.5 rounded-full shadow-2xs">
+                      <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-[#845EC2] bg-gradient-to-r from-[#845EC2]/10 to-[#FF8066]/10 border border-[#845EC2]/30 px-2.5 py-0.5 rounded-full shadow-2xs">
                         <span>🚀</span>
                         <span>Connected to <strong>{connectedProject.name}</strong> (Team: {connectedProject.team || "Platform Engineering"})</span>
                       </span>
@@ -747,23 +741,23 @@ export default function RepositoriesPage() {
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <button 
                     onClick={() => handleOpenCreateModal(repo.name)}
-                    className="px-3.5 py-1.5 border border-indigo-600 text-indigo-600 hover:bg-indigo-50/50 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-all duration-150 active:scale-95 shadow-sm cursor-pointer"
+                    className="px-4 py-1.5 bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all duration-150 active:scale-95 shadow-xs cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Create Project
                   </button>
-                  <ChevronRight className="w-4 h-4 text-slate-300 ml-1 cursor-pointer hover:text-slate-400" />
+                  <ChevronRight className="w-4 h-4 text-[#B0A8B9] ml-1 cursor-pointer group-hover:text-[#845EC2] transition-colors" />
                 </div>
               </div>
 
               {/* Description - Full width below */}
-              <p className="text-xs text-slate-500 leading-relaxed text-left pl-12 pr-4">
+              <p className="text-xs text-[#6E6678] dark:text-[#9ca3b8] leading-relaxed text-left pl-13 pr-4">
                 {repo.description}
               </p>
 
               {/* Branch Metadata */}
-              <div className="flex items-center gap-2 text-[10px] text-slate-400 font-medium text-left pl-12">
-                <GitBranch className="w-3.5 h-3.5" />
+              <div className="flex items-center gap-2 text-[11px] text-[#B0A8B9] font-mono text-left pl-13">
+                <GitBranch className="w-3.5 h-3.5 text-[#B0A8B9]" />
                 <span>{repo.branch}</span>
               </div>
             </div>
@@ -773,11 +767,11 @@ export default function RepositoriesPage() {
 
       {/* Pagination Controls */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-4 border-t border-slate-200/60 mt-4">
-          <p className="text-xs text-slate-500 font-medium">
-            Showing <span className="font-semibold text-slate-700">{filteredRepos.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}</span> to{" "}
-            <span className="font-semibold text-slate-700">{Math.min(currentPage * itemsPerPage, filteredRepos.length)}</span> of{" "}
-            <span className="font-semibold text-slate-700">{filteredRepos.length}</span> repositories
+        <div className="flex items-center justify-between pt-4 border-t border-[#845EC2]/15 mt-4">
+          <p className="text-xs text-[#6E6678] dark:text-[#9ca3b8] font-medium">
+            Showing <span className="font-bold text-[#4B4453] dark:text-[#f1f5ff]">{filteredRepos.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}</span> to{" "}
+            <span className="font-bold text-[#4B4453] dark:text-[#f1f5ff]">{Math.min(currentPage * itemsPerPage, filteredRepos.length)}</span> of{" "}
+            <span className="font-bold text-[#4B4453] dark:text-[#f1f5ff]">{filteredRepos.length}</span> repositories
           </p>
 
           <div className="flex items-center gap-1.5">
@@ -785,7 +779,7 @@ export default function RepositoriesPage() {
               variant="outline"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              className="h-8 px-3 text-xs font-semibold rounded-lg border-slate-200 disabled:opacity-40"
+              className="h-8 px-3 text-xs font-bold rounded-xl border-[#845EC2]/20 bg-white dark:bg-[#141829] text-[#4B4453] dark:text-[#f1f5ff] disabled:opacity-40"
             >
               Previous
             </Button>
@@ -796,10 +790,10 @@ export default function RepositoriesPage() {
                   key={page}
                   onClick={() => setCurrentPage(page)}
                   className={cn(
-                    "w-7 h-7 text-xs font-bold rounded-md transition-all duration-150",
+                    "w-7 h-7 text-xs font-bold rounded-lg transition-all duration-150 cursor-pointer",
                     currentPage === page
-                      ? "bg-indigo-600 text-white shadow-sm"
-                      : "text-slate-600 hover:bg-slate-100"
+                      ? "bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 text-white shadow-xs"
+                      : "text-[#6E6678] hover:bg-[#845EC2]/10 bg-white dark:bg-[#141829] border border-[#845EC2]/15"
                   )}
                 >
                   {page}
@@ -811,7 +805,7 @@ export default function RepositoriesPage() {
               variant="outline"
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              className="h-8 px-3 text-xs font-semibold rounded-lg border-slate-200 disabled:opacity-40"
+              className="h-8 px-3 text-xs font-bold rounded-xl border-[#845EC2]/20 bg-white dark:bg-[#141829] text-[#4B4453] dark:text-[#f1f5ff] disabled:opacity-40"
             >
               Next
             </Button>
@@ -1153,7 +1147,7 @@ export default function RepositoriesPage() {
                   variant="brand" 
                   disabled={isCreatingProject}
                   onClick={handleCreateProject}
-                  className="h-10 text-xs font-bold bg-[#4f46e5] text-white hover:bg-[#4338ca] flex items-center gap-2 px-5 rounded-lg disabled:opacity-75 cursor-pointer"
+                  className="h-10 text-xs font-bold bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white flex items-center gap-2 px-5 rounded-lg disabled:opacity-75 cursor-pointer shadow-xs"
                 >
                   {isCreatingProject ? (
                     <>

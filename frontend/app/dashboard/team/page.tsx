@@ -422,18 +422,18 @@ export default function TeamPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 text-left">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 leading-tight">Team Management</h1>
-          <p className="text-xs text-slate-500 mt-1">Create teams, manage members, and set role-based access controls (RBAC).</p>
+          <h1 className="text-xl font-extrabold text-[#4B4453] dark:text-[#f1f5ff] leading-tight">Team Management</h1>
+          <p className="text-xs text-[#6E6678] dark:text-[#9ca3b8] mt-1">Create teams, manage members, and set role-based access controls (RBAC).</p>
         </div>
 
         <Button
           variant="brand"
           onClick={() => setIsCreateTeamModalOpen(true)}
-          className="h-10 text-xs font-bold bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-lg flex items-center gap-2 shadow-sm transition-all duration-150 cursor-pointer"
+          className="h-10 text-xs font-bold bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white rounded-xl flex items-center gap-2 shadow-xs transition-all duration-150 cursor-pointer"
         >
           <Building2 className="w-4 h-4" />
           Create New Team
@@ -441,14 +441,14 @@ export default function TeamPage() {
       </div>
 
       {successMsg && (
-        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center justify-between text-left animate-in fade-in duration-200">
+        <div className="bg-white dark:bg-[#141829] border border-[#845EC2]/25 rounded-2xl p-4 flex items-center justify-between text-left animate-in fade-in duration-200 shadow-xs">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-[#059669]/10 text-[#059669] flex items-center justify-center flex-shrink-0">
               <Check className="w-4 h-4" />
             </div>
-            <p className="text-xs font-semibold text-emerald-900">{successMsg}</p>
+            <p className="text-xs font-bold text-[#4B4453] dark:text-[#f1f5ff]">{successMsg}</p>
           </div>
-          <button onClick={() => setSuccessMsg(null)} className="text-emerald-500 hover:text-emerald-700 cursor-pointer">
+          <button onClick={() => setSuccessMsg(null)} className="text-[#B0A8B9] hover:text-[#C34A36] cursor-pointer">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -456,14 +456,14 @@ export default function TeamPage() {
 
       {/* If No Teams Exist — Empty State */}
       {teams.length === 0 ? (
-        <div className="flex flex-col items-center justify-center min-h-[55vh] p-8 border-2 border-dashed border-slate-200 rounded-2xl bg-white space-y-5 text-center">
-          <div className="w-16 h-16 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-sm">
+        <div className="flex flex-col items-center justify-center min-h-[55vh] p-8 border-2 border-dashed border-[#845EC2]/30 rounded-3xl bg-white dark:bg-[#141829] space-y-5 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#845EC2] to-[#FF8066] text-white flex items-center justify-center shadow-md">
             <Users className="w-8 h-8" />
           </div>
 
           <div className="space-y-1.5 max-w-sm">
-            <h3 className="text-base font-bold text-slate-900">No Teams Created Yet</h3>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <h3 className="text-base font-bold text-[#4B4453] dark:text-[#f1f5ff]">No Teams Created Yet</h3>
+            <p className="text-xs text-[#6E6678] dark:text-[#9ca3b8] leading-relaxed">
               Create your engineering team to collaborate on pull request risk assessments, assign RBAC roles, and share repository analysis reports.
             </p>
           </div>
@@ -471,7 +471,7 @@ export default function TeamPage() {
           <Button
             variant="brand"
             onClick={() => setIsCreateTeamModalOpen(true)}
-            className="px-6 h-11 text-xs font-bold bg-[#4f46e5] hover:bg-[#4338ca] text-white rounded-lg flex items-center gap-2 transition-all duration-150 shadow-md cursor-pointer"
+            className="px-6 h-11 text-xs font-bold bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white rounded-xl flex items-center gap-2 transition-all duration-150 shadow-sm cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Create Your First Team
@@ -481,24 +481,24 @@ export default function TeamPage() {
         /* Team Content View */
         <div className="space-y-6">
           {/* Team Switcher Selector */}
-          <div className="flex items-center justify-between bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 flex-shrink-0">
+          <div className="flex items-center justify-between bg-white dark:bg-[#141829] border border-[#845EC2]/20 dark:border-white/10 rounded-2xl p-4.5 shadow-sm">
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#845EC2] to-[#FF8066] text-white flex items-center justify-center flex-shrink-0 shadow-xs">
                 <Building2 className="w-5 h-5" />
               </div>
               <div className="text-left">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">ACTIVE TEAM</span>
+                <span className="text-[10px] font-bold text-[#B0A8B9] uppercase tracking-wider block mb-1">ACTIVE TEAM</span>
                 <div className="relative inline-flex items-center">
                   <select
                     value={activeTeamId || ""}
                     onChange={(e) => handleSelectActiveTeam(e.target.value)}
-                    className="text-xs md:text-sm font-bold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 cursor-pointer pr-8 appearance-none shadow-2xs min-w-[200px]"
+                    className="text-xs md:text-sm font-bold text-[#4B4453] dark:text-[#f1f5ff] bg-white dark:bg-[#1a1f3a] border border-[#845EC2]/20 rounded-xl px-3 py-1.5 focus:outline-none focus:border-[#845EC2] cursor-pointer pr-8 appearance-none shadow-xs min-w-[200px]"
                   >
                     {teams.map((t) => (
                       <option key={t.id} value={t.id}>{t.name}</option>
                     ))}
                   </select>
-                  <ChevronDown className="w-4 h-4 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <ChevronDown className="w-4 h-4 text-[#B0A8B9] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
             </div>
@@ -508,7 +508,7 @@ export default function TeamPage() {
               {activeTeam && (
                 <button
                   onClick={handleMemberClick}
-                  className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl border border-indigo-200 bg-indigo-50/70 hover:bg-indigo-100/70 transition-all cursor-pointer group shadow-xs"
+                  className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl border border-[#845EC2]/25 bg-[#845EC2]/10 hover:bg-[#845EC2]/15 transition-all cursor-pointer group shadow-xs"
                   title="Click to view team members"
                 >
                   <div className="flex -space-x-2 overflow-hidden">
@@ -517,19 +517,19 @@ export default function TeamPage() {
                         key={m.id}
                         className={cn(
                           "inline-flex h-6 w-6 rounded-full ring-2 ring-white text-white font-bold items-center justify-center text-[9px] shadow-xs",
-                          idx === 0 ? "bg-indigo-600" : idx === 1 ? "bg-purple-600" : idx === 2 ? "bg-blue-600" : "bg-emerald-600"
+                          idx === 0 ? "bg-[#845EC2]" : idx === 1 ? "bg-[#C34A36]" : idx === 2 ? "bg-[#FF8066]" : "bg-[#059669]"
                         )}
                       >
                         {m.name.charAt(0).toUpperCase()}
                       </div>
                     ))}
                     {activeTeam.members.length > 4 && (
-                      <div className="inline-flex h-6 w-6 rounded-full ring-2 ring-white bg-slate-200 text-slate-700 font-bold items-center justify-center text-[9px]">
+                      <div className="inline-flex h-6 w-6 rounded-full ring-2 ring-white bg-[#B0A8B9]/30 text-[#4B4453] font-bold items-center justify-center text-[9px]">
                         +{activeTeam.members.length - 4}
                       </div>
                     )}
                   </div>
-                  <span className="text-xs font-bold text-indigo-700 group-hover:underline flex items-center gap-1">
+                  <span className="text-xs font-bold text-[#845EC2] group-hover:underline flex items-center gap-1">
                     {activeTeam.members.length} Members
                   </span>
                 </button>
@@ -538,7 +538,7 @@ export default function TeamPage() {
               <Button
                 variant="outline"
                 onClick={() => setIsInviteMemberModalOpen(true)}
-                className="h-9 px-4 text-xs font-bold border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded-lg flex items-center gap-1.5 cursor-pointer"
+                className="h-9 px-4 text-xs font-bold border-[#845EC2]/30 text-[#845EC2] bg-white dark:bg-[#141829] hover:bg-[#845EC2]/10 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-xs"
               >
                 <UserPlus className="w-4 h-4" />
                 Invite Member
@@ -546,7 +546,7 @@ export default function TeamPage() {
 
               <button
                 onClick={() => activeTeamId && handleDeleteTeam(activeTeamId)}
-                className="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                className="p-2 rounded-xl text-[#B0A8B9] hover:text-[#C34A36] hover:bg-[#C34A36]/10 transition-colors cursor-pointer"
                 title="Delete Active Team"
               >
                 <Trash2 className="w-4 h-4" />
@@ -557,20 +557,22 @@ export default function TeamPage() {
           {/* Active Team Detail Card */}
           {activeTeam && (
             <div className="space-y-5">
-              <div className="bg-white border border-slate-100 rounded-xl p-5 shadow-sm space-y-4 text-left">
+              <div className="bg-white dark:bg-[#141829] border border-[#845EC2]/20 dark:border-white/10 rounded-2xl p-5 shadow-sm space-y-4 text-left">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2">
-                      <Building2 className="w-5 h-5 text-indigo-600" />
-                      <h2 className="text-base font-bold text-slate-900">{activeTeam.name}</h2>
+                      <div className="w-8 h-8 rounded-lg bg-[#845EC2]/10 text-[#845EC2] flex items-center justify-center">
+                        <Building2 className="w-4.5 h-4.5" />
+                      </div>
+                      <h2 className="text-base font-extrabold text-[#4B4453] dark:text-[#f1f5ff]">{activeTeam.name}</h2>
                     </div>
-                    <p className="text-xs text-slate-500 mt-1">{activeTeam.description}</p>
+                    <p className="text-xs text-[#6E6678] dark:text-[#9ca3b8] mt-1.5">{activeTeam.description}</p>
                   </div>
 
                   {/* Clickable Team Member Avatars Stack */}
                   <button
                     onClick={handleMemberClick}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-indigo-200 bg-indigo-50/60 hover:bg-indigo-100/70 transition-all cursor-pointer shadow-xs group"
+                    className="flex items-center gap-3 p-3 rounded-2xl border border-[#845EC2]/25 bg-[#845EC2]/10 hover:bg-[#845EC2]/15 transition-all cursor-pointer shadow-xs group"
                     title="Click to view team members modal"
                   >
                     <div className="flex -space-x-2 overflow-hidden">
@@ -579,21 +581,21 @@ export default function TeamPage() {
                           key={m.id}
                           className={cn(
                             "inline-flex h-8 w-8 rounded-full ring-2 ring-white text-white font-bold items-center justify-center text-xs shadow-sm",
-                            idx === 0 ? "bg-indigo-600" : idx === 1 ? "bg-purple-600" : idx === 2 ? "bg-blue-600" : "bg-emerald-600"
+                            idx === 0 ? "bg-[#845EC2]" : idx === 1 ? "bg-[#C34A36]" : idx === 2 ? "bg-[#FF8066]" : "bg-[#059669]"
                           )}
                         >
                           {m.name.charAt(0).toUpperCase()}
                         </div>
                       ))}
                       {activeTeam.members.length > 4 && (
-                        <div className="inline-flex h-8 w-8 rounded-full ring-2 ring-white bg-slate-200 text-slate-700 font-bold items-center justify-center text-xs">
+                        <div className="inline-flex h-8 w-8 rounded-full ring-2 ring-white bg-[#B0A8B9]/30 text-[#4B4453] font-bold items-center justify-center text-xs">
                           +{activeTeam.members.length - 4}
                         </div>
                       )}
                     </div>
                     <div className="text-left pr-1">
-                      <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block">TEAM MEMBERS</span>
-                      <span className="text-xs font-bold text-indigo-700 group-hover:underline flex items-center gap-1">
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-[#B0A8B9] block">TEAM MEMBERS</span>
+                      <span className="text-xs font-bold text-[#845EC2] group-hover:underline flex items-center gap-1">
                         {activeTeam.members.length} Members
                         <ArrowDown className="w-3.5 h-3.5" />
                       </span>
@@ -604,27 +606,27 @@ export default function TeamPage() {
 
               {/* Members Section Header */}
               <div id="team-members-section" className="flex items-center justify-between pt-2">
-                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                  <Users className="w-4 h-4 text-indigo-600" />
+                <h3 className="text-sm font-extrabold text-[#4B4453] dark:text-[#f1f5ff] flex items-center gap-2">
+                  <Users className="w-4 h-4 text-[#845EC2]" />
                   Team Members ({filteredMembers.length})
                 </h3>
                 <div className="relative">
-                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#B0A8B9]" />
                   <input
                     type="text"
                     placeholder="Filter members..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-56 pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    className="w-56 pl-8 pr-3 py-1.5 text-xs bg-white dark:bg-[#141829] border border-[#845EC2]/20 rounded-xl focus:outline-none focus:border-[#845EC2] text-[#4B4453] dark:text-[#f1f5ff] shadow-xs font-medium"
                   />
                 </div>
               </div>
 
               {/* Members Table */}
-              <div className="bg-white border border-slate-100 rounded-xl overflow-hidden shadow-sm">
+              <div className="bg-white dark:bg-[#141829] border border-[#845EC2]/20 dark:border-white/10 rounded-2xl overflow-hidden shadow-sm">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-slate-50/80 border-b border-slate-100 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    <tr className="bg-[#845EC2]/5 border-b border-[#845EC2]/15 text-[11px] font-bold text-[#845EC2] uppercase tracking-wider">
                       <th className="py-3 px-5">Member</th>
                       <th className="py-3 px-5">Role</th>
                       <th className="py-3 px-5">Status</th>
@@ -632,51 +634,51 @@ export default function TeamPage() {
                       <th className="py-3 px-5 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 text-xs">
+                  <tbody className="divide-y divide-[#845EC2]/10 text-xs">
                     {filteredMembers.map((member) => (
-                      <tr key={member.id} className="hover:bg-slate-50/60 transition-colors">
+                      <tr key={member.id} className="hover:bg-[#845EC2]/5 transition-colors">
                         <td className="py-3.5 px-5">
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-xs flex-shrink-0">
+                            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#845EC2] to-[#FF8066] text-white font-bold flex items-center justify-center text-xs flex-shrink-0 shadow-2xs">
                               {member.name.charAt(0).toUpperCase()}
                             </div>
                             <div>
-                              <p className="font-bold text-slate-900 flex items-center gap-1.5">
+                              <p className="font-extrabold text-[#4B4453] dark:text-[#f1f5ff] flex items-center gap-1.5">
                                 {member.name}
                                 {member.role === "Owner" && <Crown className="w-3.5 h-3.5 text-amber-500" />}
                               </p>
-                              <p className="text-[11px] text-slate-400">{member.email}</p>
+                              <p className="text-[11px] text-[#B0A8B9] font-mono">{member.email}</p>
                             </div>
                           </div>
                         </td>
                         <td className="py-3.5 px-5">
                           <span className={cn(
-                            "text-[10px] font-bold px-2 py-0.5 rounded-full border",
-                            member.role === "Owner" && "bg-amber-50 text-amber-700 border-amber-200",
-                            member.role === "Admin" && "bg-purple-50 text-purple-700 border-purple-200",
-                            member.role === "Maintainer" && "bg-blue-50 text-blue-700 border-blue-200",
-                            member.role === "Developer" && "bg-indigo-50 text-indigo-700 border-indigo-200",
-                            member.role === "Viewer" && "bg-slate-100 text-slate-600 border-slate-200"
+                            "text-[10px] font-bold px-2.5 py-0.5 rounded-full border",
+                            member.role === "Owner" && "bg-[#FF8066]/15 text-[#C34A36] border-[#C34A36]/30",
+                            member.role === "Admin" && "bg-[#845EC2]/15 text-[#845EC2] border-[#845EC2]/30",
+                            member.role === "Maintainer" && "bg-[#845EC2]/10 text-[#845EC2] border-[#845EC2]/25",
+                            member.role === "Developer" && "bg-[#4B4453]/10 text-[#4B4453] dark:text-[#f1f5ff] border-[#B0A8B9]/30",
+                            member.role === "Viewer" && "bg-[#B0A8B9]/15 text-[#6E6678] border-[#B0A8B9]/30"
                           )}>
                             {member.role}
                           </span>
                         </td>
                         <td className="py-3.5 px-5">
                           <span className={cn(
-                            "text-[10px] font-bold px-2 py-0.5 rounded-full",
-                            member.status === "active" ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+                            "text-[10px] font-bold px-2.5 py-0.5 rounded-full border",
+                            member.status === "active" ? "bg-[#059669]/10 text-[#059669] border-[#059669]/25" : "bg-[#FF8066]/15 text-[#FF8066] border-[#FF8066]/30"
                           )}>
                             {member.status === "active" ? "Active" : "Pending Invite"}
                           </span>
                         </td>
-                        <td className="py-3.5 px-5 text-slate-500 font-medium">
+                        <td className="py-3.5 px-5 text-[#6E6678] dark:text-[#9ca3b8] font-mono">
                           {member.joinedAt}
                         </td>
                         <td className="py-3.5 px-5 text-right">
                           {member.role !== "Owner" && (
                             <button
                               onClick={() => activeTeam && handleRemoveMember(activeTeam.id, member.id)}
-                              className="text-slate-400 hover:text-rose-600 transition-colors p-1 cursor-pointer"
+                              className="text-[#B0A8B9] hover:text-[#C34A36] transition-colors p-1 cursor-pointer"
                               title="Remove Member"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -695,63 +697,63 @@ export default function TeamPage() {
 
       {/* TEAM MEMBERS POPUP MODAL DRAWER */}
       {isMembersModalOpen && activeTeam && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-white border border-slate-200 shadow-2xl rounded-2xl w-full max-w-xl overflow-hidden flex flex-col relative animate-in fade-in zoom-in-95 duration-200 text-left">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-[#141829] border border-[#845EC2]/25 shadow-2xl rounded-2xl w-full max-w-xl overflow-hidden flex flex-col relative animate-in fade-in zoom-in-95 duration-200 text-left">
+            <div className="px-6 py-4 border-b border-[#845EC2]/15 flex items-center justify-between bg-[#845EC2]/5">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#845EC2] to-[#FF8066] text-white flex items-center justify-center shadow-xs">
                   <Users className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900">{activeTeam.name} — Members</h3>
-                  <p className="text-[11px] text-slate-500">Active roster ({activeTeam.members.length} members)</p>
+                  <h3 className="text-sm font-extrabold text-[#4B4453] dark:text-[#f1f5ff]">{activeTeam.name} — Members</h3>
+                  <p className="text-[11px] text-[#6E6678] dark:text-[#9ca3b8]">Active roster ({activeTeam.members.length} members)</p>
                 </div>
               </div>
-              <button onClick={() => setIsMembersModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-900 cursor-pointer">
+              <button onClick={() => setIsMembersModalOpen(false)} className="p-1 text-[#B0A8B9] hover:text-[#4B4453] cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-6 space-y-4 max-h-[450px] overflow-y-auto">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Team Member Roster</span>
+              <div className="flex items-center justify-between pb-2 border-b border-[#845EC2]/10">
+                <span className="text-[11px] font-bold text-[#845EC2] uppercase tracking-wider">Team Member Roster</span>
                 <Button
                   variant="outline"
                   onClick={() => {
                     setIsMembersModalOpen(false)
                     setIsInviteMemberModalOpen(true)
                   }}
-                  className="h-8 px-3 text-xs font-bold border-indigo-200 text-indigo-600 hover:bg-indigo-50 rounded-lg flex items-center gap-1.5 cursor-pointer"
+                  className="h-8 px-3 text-xs font-bold border-[#845EC2]/30 text-[#845EC2] hover:bg-[#845EC2]/10 rounded-xl flex items-center gap-1.5 cursor-pointer"
                 >
                   <UserPlus className="w-3.5 h-3.5" />
                   Invite Member
                 </Button>
               </div>
 
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-[#845EC2]/10">
                 {activeTeam.members.map((member) => (
                   <div key={member.id} className="py-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-xs flex-shrink-0">
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#845EC2] to-[#FF8066] text-white font-bold flex items-center justify-center text-xs flex-shrink-0 shadow-2xs">
                         {member.name.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <p className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                        <p className="text-xs font-extrabold text-[#4B4453] dark:text-[#f1f5ff] flex items-center gap-1.5">
                           {member.name}
                           {member.role === "Owner" && <Crown className="w-3.5 h-3.5 text-amber-500" />}
                         </p>
-                        <p className="text-[11px] text-slate-400">{member.email}</p>
+                        <p className="text-[11px] text-[#B0A8B9] font-mono">{member.email}</p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <span className={cn(
                         "text-[10px] font-bold px-2.5 py-0.5 rounded-full border",
-                        member.role === "Owner" && "bg-amber-50 text-amber-700 border-amber-200",
-                        member.role === "Admin" && "bg-purple-50 text-purple-700 border-purple-200",
-                        member.role === "Maintainer" && "bg-blue-50 text-blue-700 border-blue-200",
-                        member.role === "Developer" && "bg-indigo-50 text-indigo-700 border-indigo-200",
-                        member.role === "Viewer" && "bg-slate-100 text-slate-600 border-slate-200"
+                        member.role === "Owner" && "bg-[#FF8066]/15 text-[#C34A36] border-[#C34A36]/30",
+                        member.role === "Admin" && "bg-[#845EC2]/15 text-[#845EC2] border-[#845EC2]/30",
+                        member.role === "Maintainer" && "bg-[#845EC2]/10 text-[#845EC2] border-[#845EC2]/25",
+                        member.role === "Developer" && "bg-[#4B4453]/10 text-[#4B4453] dark:text-[#f1f5ff] border-[#B0A8B9]/30",
+                        member.role === "Viewer" && "bg-[#B0A8B9]/15 text-[#6E6678] border-[#B0A8B9]/30"
                       )}>
                         {member.role}
                       </span>
@@ -761,11 +763,11 @@ export default function TeamPage() {
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-end bg-slate-50/50">
+            <div className="px-6 py-4 border-t border-[#845EC2]/15 flex items-center justify-end bg-[#845EC2]/5">
               <Button
                 variant="outline"
                 onClick={() => setIsMembersModalOpen(false)}
-                className="h-9 px-5 text-xs font-bold border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-lg cursor-pointer"
+                className="h-9 px-5 text-xs font-bold border-[#845EC2]/30 bg-white dark:bg-[#141829] hover:bg-[#845EC2]/10 text-[#4B4453] dark:text-[#f1f5ff] rounded-xl cursor-pointer"
               >
                 Close Roster
               </Button>
@@ -776,23 +778,23 @@ export default function TeamPage() {
 
       {/* CREATE TEAM MODAL */}
       {isCreateTeamModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-white border border-slate-200 shadow-2xl rounded-2xl w-full max-w-md overflow-hidden flex flex-col relative animate-in fade-in zoom-in-95 duration-200 text-left">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-[#141829] border border-[#845EC2]/25 shadow-2xl rounded-2xl w-full max-w-md overflow-hidden flex flex-col relative animate-in fade-in zoom-in-95 duration-200 text-left">
+            <div className="px-6 py-4 border-b border-[#845EC2]/15 flex items-center justify-between bg-[#845EC2]/5">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#845EC2] to-[#FF8066] text-white flex items-center justify-center shadow-xs">
                   <Building2 className="w-4.5 h-4.5" />
                 </div>
-                <h3 className="text-sm font-bold text-slate-900">Create Engineering Team</h3>
+                <h3 className="text-sm font-extrabold text-[#4B4453] dark:text-[#f1f5ff]">Create Engineering Team</h3>
               </div>
-              <button onClick={() => setIsCreateTeamModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-900 cursor-pointer">
+              <button onClick={() => setIsCreateTeamModalOpen(false)} className="p-1 text-[#B0A8B9] hover:text-[#4B4453] cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-6 space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">
+                <label className="text-[11px] font-bold text-[#4B4453] dark:text-[#9ca3b8] uppercase tracking-wide">
                   Team Name <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -800,27 +802,27 @@ export default function TeamPage() {
                   value={teamName}
                   onChange={(e) => setTeamName(e.target.value)}
                   placeholder="e.g. Platform Engineering, Security Ops"
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  className="w-full px-3 py-2 text-xs bg-white dark:bg-[#1a1f3a] border border-[#845EC2]/20 rounded-xl focus:outline-none focus:border-[#845EC2] text-[#4B4453] dark:text-[#f1f5ff] font-medium"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">Description</label>
+                <label className="text-[11px] font-bold text-[#4B4453] dark:text-[#9ca3b8] uppercase tracking-wide">Description</label>
                 <textarea
                   value={teamDescription}
                   onChange={(e) => setTeamDescription(e.target.value)}
                   placeholder="Describe your team's mission or scope..."
                   rows={3}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none"
+                  className="w-full px-3 py-2 text-xs bg-white dark:bg-[#1a1f3a] border border-[#845EC2]/20 rounded-xl focus:outline-none focus:border-[#845EC2] text-[#4B4453] dark:text-[#f1f5ff] resize-none font-medium"
                 />
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <Button variant="outline" onClick={() => setIsCreateTeamModalOpen(false)} className="h-9 px-4 text-xs font-semibold cursor-pointer">
+            <div className="px-6 py-4 border-t border-[#845EC2]/15 flex items-center justify-between bg-[#845EC2]/5">
+              <Button variant="outline" onClick={() => setIsCreateTeamModalOpen(false)} className="h-9 px-4 text-xs font-bold border-[#845EC2]/30 text-[#4B4453] dark:text-[#f1f5ff] rounded-xl cursor-pointer">
                 Cancel
               </Button>
-              <Button variant="brand" onClick={handleCreateTeam} className="h-9 px-5 text-xs font-bold bg-[#4f46e5] text-white hover:bg-[#4338ca] cursor-pointer">
+              <Button variant="brand" onClick={handleCreateTeam} className="h-9 px-5 text-xs font-bold bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white rounded-xl cursor-pointer shadow-xs">
                 Create Team
               </Button>
             </div>
@@ -830,23 +832,23 @@ export default function TeamPage() {
 
       {/* INVITE MEMBER MODAL */}
       {isInviteMemberModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-white border border-slate-200 shadow-2xl rounded-2xl w-full max-w-md overflow-hidden flex flex-col relative animate-in fade-in zoom-in-95 duration-200 text-left">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-[#141829] border border-[#845EC2]/25 shadow-2xl rounded-2xl w-full max-w-md overflow-hidden flex flex-col relative animate-in fade-in zoom-in-95 duration-200 text-left">
+            <div className="px-6 py-4 border-b border-[#845EC2]/15 flex items-center justify-between bg-[#845EC2]/5">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#845EC2] to-[#FF8066] text-white flex items-center justify-center shadow-xs">
                   <UserPlus className="w-4.5 h-4.5" />
                 </div>
-                <h3 className="text-sm font-bold text-slate-900">Invite Team Member</h3>
+                <h3 className="text-sm font-extrabold text-[#4B4453] dark:text-[#f1f5ff]">Invite Team Member</h3>
               </div>
-              <button onClick={() => setIsInviteMemberModalOpen(false)} className="p-1 text-slate-400 hover:text-slate-900 cursor-pointer">
+              <button onClick={() => setIsInviteMemberModalOpen(false)} className="p-1 text-[#B0A8B9] hover:text-[#4B4453] cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-6 space-y-4">
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">
+                <label className="text-[11px] font-bold text-[#4B4453] dark:text-[#9ca3b8] uppercase tracking-wide">
                   Email Address <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -854,53 +856,56 @@ export default function TeamPage() {
                   value={inviteEmail}
                   onChange={(e) => setInviteEmail(e.target.value)}
                   placeholder="colleague@company.com"
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  className="w-full px-3 py-2 text-xs bg-white dark:bg-[#1a1f3a] border border-[#845EC2]/20 rounded-xl focus:outline-none focus:border-[#845EC2] text-[#4B4453] dark:text-[#f1f5ff] font-medium"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">Full Name (optional)</label>
+                <label className="text-[11px] font-bold text-[#4B4453] dark:text-[#9ca3b8] uppercase tracking-wide">Full Name</label>
                 <input
                   type="text"
                   value={inviteName}
                   onChange={(e) => setInviteName(e.target.value)}
-                  placeholder="e.g. Alex Johnson"
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  placeholder="e.g. Alex Morgan"
+                  className="w-full px-3 py-2 text-xs bg-white dark:bg-[#1a1f3a] border border-[#845EC2]/20 rounded-xl focus:outline-none focus:border-[#845EC2] text-[#4B4453] dark:text-[#f1f5ff] font-medium"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">Assign RBAC Role</label>
+                <label className="text-[11px] font-bold text-[#4B4453] dark:text-[#9ca3b8] uppercase tracking-wide">Role Assignment</label>
                 <select
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value as any)}
-                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white cursor-pointer"
+                  className="w-full px-3 py-2 text-xs bg-white dark:bg-[#1a1f3a] border border-[#845EC2]/20 rounded-xl focus:outline-none focus:border-[#845EC2] text-[#4B4453] dark:text-[#f1f5ff] font-bold cursor-pointer"
                 >
-                  <option value="Admin">Admin (Full project & analysis management)</option>
-                  <option value="Maintainer">Maintainer (Manage projects & triggers)</option>
-                  <option value="Developer">Developer (Run analyses & view reports)</option>
-                  <option value="Viewer">Viewer (Read-only access)</option>
+                  <option value="Admin">Admin &mdash; Manage projects, scans &amp; members</option>
+                  <option value="Maintainer">Maintainer &mdash; Trigger &amp; approve deployment scans</option>
+                  <option value="Developer">Developer &mdash; Trigger scans &amp; view PR checklists</option>
+                  <option value="Viewer">Viewer &mdash; Read-only access to risk reports</option>
                 </select>
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <Button variant="outline" onClick={() => setIsInviteMemberModalOpen(false)} className="h-9 px-4 text-xs font-semibold cursor-pointer">
+            <div className="px-6 py-4 border-t border-[#845EC2]/15 flex items-center justify-between bg-[#845EC2]/5">
+              <Button variant="outline" onClick={() => setIsInviteMemberModalOpen(false)} className="h-9 px-4 text-xs font-bold border-[#845EC2]/30 text-[#4B4453] dark:text-[#f1f5ff] rounded-xl cursor-pointer">
                 Cancel
               </Button>
-              <Button 
-                variant="brand" 
-                disabled={isSendingEmail}
-                onClick={handleInviteMember} 
-                className="h-9 px-5 text-xs font-bold bg-[#4f46e5] text-white hover:bg-[#4338ca] cursor-pointer flex items-center gap-2 disabled:opacity-75"
+              <Button
+                variant="brand"
+                disabled={isSendingEmail || !inviteEmail.trim()}
+                onClick={handleInviteMember}
+                className="h-9 px-5 text-xs font-bold bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 hover:opacity-95 text-white rounded-xl cursor-pointer shadow-xs disabled:opacity-75 flex items-center gap-2"
               >
                 {isSendingEmail ? (
                   <>
                     <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Sending Email...</span>
+                    <span>Sending Invite...</span>
                   </>
                 ) : (
-                  <span>Send Invitation</span>
+                  <>
+                    <Mail className="w-3.5 h-3.5" />
+                    <span>Send Invite</span>
+                  </>
                 )}
               </Button>
             </div>

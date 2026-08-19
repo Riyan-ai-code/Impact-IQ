@@ -14,14 +14,14 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const Comp = asChild ? Slot : "button"
     
     const variants = {
-      default: "bg-primary text-primary-foreground hover:bg-primary/90",
-      destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-      outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-      secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-      ghost: "hover:bg-accent hover:text-accent-foreground",
-      link: "text-primary underline-offset-4 hover:underline",
-      brand: "bg-brand text-white hover:bg-brand-hover shadow-sm transition-colors",
-      brandOutline: "border border-brand/30 bg-transparent text-brand hover:bg-brand/10 transition-colors"
+      default: "bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 text-white hover:opacity-95 shadow-xs transition-all",
+      destructive: "bg-[#C34A36] text-white hover:opacity-90 shadow-xs",
+      outline: "border border-[var(--border-color)] bg-[var(--surface-1)] text-[var(--text-primary)] hover:bg-[var(--surface-2)] transition-colors",
+      secondary: "bg-[var(--surface-2)] text-[var(--text-primary)] hover:bg-[var(--surface-3)] transition-colors",
+      ghost: "hover:bg-[var(--surface-2)] text-[var(--text-primary)] transition-colors",
+      link: "text-[#845EC2] dark:text-indigo-400 underline-offset-4 hover:underline",
+      brand: "bg-gradient-to-r from-[#845EC2] via-[#C34A36] to-[#FF8066] dark:from-indigo-600 dark:to-indigo-700 text-white hover:opacity-95 shadow-xs transition-all",
+      brandOutline: "border border-[#845EC2]/30 bg-transparent text-[#845EC2] dark:text-indigo-400 hover:bg-[#845EC2]/10 transition-colors"
     }
 
     const sizes = {
@@ -34,7 +34,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <Comp
         className={cn(
-          "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+          "inline-flex items-center justify-center whitespace-nowrap rounded-xl text-sm font-bold transition-all focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 cursor-pointer",
           variants[variant],
           sizes[size],
           className

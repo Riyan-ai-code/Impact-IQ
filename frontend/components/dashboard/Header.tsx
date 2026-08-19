@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation"
 import { Menu, Sun, Moon, Bell, ChevronDown, LogOut, User, ShieldCheck, Github } from "lucide-react"
 import { useState, useEffect } from "react"
-import { nhostGetUser, nhostSignOut } from "@/services/nhostAuthService"
+import { nhostSignOut } from "@/services/nhostAuthService"
 import { githubTokenService } from "@/services/githubTokenService"
 
 interface HeaderProps {
@@ -32,32 +32,18 @@ export default function Header({ onMenuClick }: HeaderProps) {
   })
 
   useEffect(() => {
+    // Check initial dark mode
+    const isDarkMode = document.documentElement.classList.contains("dark")
+    setIsDark(isDarkMode)
+
     // 1. Auto-refresh GitHub token after 14 minutes
     githubTokenService.refreshTokenIfNeeded()
     const refreshInterval = setInterval(() => {
       githubTokenService.refreshTokenIfNeeded()
-    }, 60000) // check every minute
+    }, 60000)
 
     const fetchUserProfile = async () => {
-      // 1. Check custom saved user in ImpactIQ
-      const savedUser = localStorage.getItem("impact_iq_user")
-      if (savedUser) {
-        try {
-          const parsed = JSON.parse(savedUser)
-          if (parsed.name || parsed.displayName) {
-            setUserProfile({
-              isConnected: !parsed.isGuest,
-              name: parsed.name || parsed.displayName,
-              email: parsed.email || (parsed.isGuest ? "guest@impactiq.dev" : "dev@impactiq.dev"),
-              avatar: parsed.avatar || `https://github.com/${(parsed.githubUsername || parsed.email || "dev").split("@")[0]}.png`,
-              role: parsed.role || (parsed.isGuest ? "Guest User" : "Owner & Lead")
-            })
-            return
-          }
-        } catch (e) {}
-      }
-
-      // 2. Check GitHub token / connected user
+      // 1. Check real GitHub token & connected user first
       const ghToken = localStorage.getItem("github_token") || localStorage.getItem("github_connected")
       const ghSaved = localStorage.getItem("github_connected_user")
 
@@ -77,7 +63,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
         } catch (e) {}
       }
 
-      if (ghToken) {
+      if (ghToken && !ghToken.startsWith("guest") && ghToken !== "true") {
         try {
           const res = await fetch(`http://localhost:8000/api/auth/github/user?token=${ghToken}`)
           if (res.ok) {
@@ -97,13 +83,41 @@ export default function Header({ onMenuClick }: HeaderProps) {
         }
       }
 
+      // 2. Check custom saved non-guest user
+      const savedUser = localStorage.getItem("impact_iq_user")
+      if (savedUser) {
+        try {
+          const parsed = JSON.parse(savedUser)
+          if (parsed && !parsed.isGuest && (parsed.name || parsed.displayName)) {
+            setUserProfile({
+              isConnected: true,
+              name: parsed.name || parsed.displayName,
+              email: parsed.email || "dev@impactiq.dev",
+              avatar: parsed.avatar || "",
+              role: parsed.role || "Owner & Lead"
+            })
+            return
+          }
+          if (parsed && parsed.isGuest) {
+            setUserProfile({
+              isConnected: false,
+              name: parsed.name || "Guest Developer",
+              email: parsed.email || "guest@impactiq.dev",
+              avatar: "",
+              role: "Guest User"
+            })
+            return
+          }
+        } catch (e) {}
+      }
+
       // Default to Not Connected
       setUserProfile({
         isConnected: false,
-        name: "Guest",
-        email: "",
+        name: "Guest Developer",
+        email: "guest@impactiq.dev",
         avatar: "",
-        role: ""
+        role: "Guest User"
       })
     }
 
@@ -115,8 +129,21 @@ export default function Header({ onMenuClick }: HeaderProps) {
     return () => {
       window.removeEventListener("impact_iq_user_updated", fetchUserProfile)
       window.removeEventListener("storage", fetchUserProfile)
+      clearInterval(refreshInterval)
     }
   }, [])
+
+  const handleToggleTheme = () => {
+    const nextDark = !isDark
+    setIsDark(nextDark)
+    if (nextDark) {
+      document.documentElement.classList.add("dark")
+      document.documentElement.classList.remove("light")
+    } else {
+      document.documentElement.classList.remove("dark")
+      document.documentElement.classList.add("light")
+    }
+  }
 
   // Map route path to human-readable page name
   const getPageTitle = () => {
@@ -129,18 +156,18 @@ export default function Header({ onMenuClick }: HeaderProps) {
   }
 
   return (
-    <header className="h-[4.5rem] border-b border-gray-200 bg-white px-6 flex items-center justify-between flex-shrink-0 select-none relative z-40">
+    <header className="h-[4.5rem] border-b border-border bg-surface-1 px-6 flex items-center justify-between flex-shrink-0 select-none relative z-40 text-content-primary transition-colors duration-150">
       {/* Left section: Hamburger menu & Title */}
       <div className="flex items-center gap-4">
-        <button className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer">
+        <button className="p-2 rounded-lg text-content-secondary hover:bg-surface-2 hover:text-content-primary transition-colors cursor-pointer">
           <Menu className="w-5 h-5" />
         </button>
         <div className="flex flex-col text-left justify-center">
-          <h1 className="text-lg font-bold text-gray-900 tracking-tight leading-tight">
+          <h1 className="text-lg font-bold text-content-primary tracking-tight leading-tight">
             {getPageTitle()}
           </h1>
           {pathname === "/dashboard/repositories" && (
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="text-xs text-content-muted mt-0.5">
               Select a repository to create a project
             </p>
           )}
@@ -151,21 +178,21 @@ export default function Header({ onMenuClick }: HeaderProps) {
       <div className="flex items-center gap-4">
         {/* Theme Toggle */}
         <button 
-          onClick={() => setIsDark(!isDark)}
-          className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors cursor-pointer"
+          onClick={handleToggleTheme}
+          className="p-2 rounded-lg text-content-secondary hover:bg-surface-2 hover:text-content-primary transition-colors cursor-pointer"
           title="Toggle Theme"
         >
-          {isDark ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+          {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>
 
         {/* Notifications Button */}
         <button 
           onClick={() => router.push("/dashboard/notifications")}
-          className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors relative mr-1 cursor-pointer" 
+          className="p-2 rounded-lg text-content-secondary hover:bg-surface-2 hover:text-content-primary transition-colors relative mr-1 cursor-pointer" 
           title="Notifications"
         >
           <Bell className="w-5 h-5" />
-          <span className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 rounded-full bg-rose-500 text-[9px] text-white flex items-center justify-center font-bold border-2 border-white shadow-sm">
+          <span className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 rounded-full bg-rose-500 text-[9px] text-white flex items-center justify-center font-bold border-2 border-surface-1 shadow-xs">
             3
           </span>
         </button>
@@ -174,57 +201,62 @@ export default function Header({ onMenuClick }: HeaderProps) {
         <div className="relative">
           <div 
             onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-            className="flex items-center gap-2.5 pl-3 border-l border-gray-200 hover:opacity-90 transition-opacity cursor-pointer"
+            className="flex items-center gap-2.5 pl-3 border-l border-border hover:opacity-90 transition-opacity cursor-pointer"
           >
-              <div className="w-8 h-8 rounded-full overflow-hidden border border-indigo-200 bg-indigo-50 flex items-center justify-center text-indigo-700 font-bold text-xs">
-                {Boolean(userProfile.avatar) && (
-                  <img 
-                    src={userProfile.avatar} 
-                    alt={userProfile.name}
-                    className="w-full h-full object-cover" 
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none'
-                    }}
-                  />
-                )}
-                <span className="text-xs font-bold text-indigo-700">{userProfile.name.charAt(0)}</span>
-              </div>
-              <div className="flex flex-col text-left leading-tight">
-                <span className="text-xs font-bold text-gray-900">{userProfile.name}</span>
-                <span className="text-[10px] text-gray-500">{userProfile.role}</span>
-              </div>
-              <ChevronDown className="w-3.5 h-3.5 text-gray-400" />
+            <div className="w-8 h-8 rounded-full overflow-hidden border border-border bg-surface-2 flex items-center justify-center text-brand font-bold text-xs">
+              {Boolean(userProfile.avatar) && (
+                <img 
+                  src={userProfile.avatar} 
+                  alt={userProfile.name}
+                  className="w-full h-full object-cover" 
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none'
+                  }}
+                />
+              )}
+              <span className="text-xs font-bold text-brand">{userProfile.name.charAt(0)}</span>
             </div>
-
-            {/* Profile Dropdown Menu */}
-            {isProfileMenuOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-xl py-2 text-left z-50 animate-in fade-in duration-150">
-                <div className="px-4 py-2.5 border-b border-gray-100 space-y-0.5">
-                  <p className="text-xs font-bold text-gray-900">{userProfile.name}</p>
-                  <p className="text-[11px] text-gray-500 truncate">{userProfile.email}</p>
-                </div>
-
-                <div className="py-1">
-                  <button
-                    onClick={() => { setIsProfileMenuOpen(false); router.push("/dashboard/settings?tab=account"); }}
-                    className="w-full px-4 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50 flex items-center gap-2 cursor-pointer"
-                  >
-                    <User className="w-4 h-4 text-gray-400" />
-                    Account Settings
-                  </button>
-                  
-                  <button
-                    onClick={() => { setIsProfileMenuOpen(false); nhostSignOut(); }}
-                    className="w-full px-4 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2 cursor-pointer"
-                  >
-                    <LogOut className="w-4 h-4 text-rose-500" />
-                    Sign Out
-                  </button>
-                </div>
-              </div>
-            )}
+            <div className="flex flex-col text-left leading-tight">
+              <span className="text-xs font-bold text-content-primary">{userProfile.name}</span>
+              <span className="text-[10px] text-content-muted">{userProfile.role}</span>
+            </div>
+            <ChevronDown className="w-3.5 h-3.5 text-content-muted" />
           </div>
 
+          {/* Profile Dropdown Menu */}
+          {isProfileMenuOpen && (
+            <div className="absolute right-0 mt-2 w-56 bg-surface-1 border border-border rounded-xl shadow-xl py-2 text-left z-50 animate-fadeIn">
+              <div className="px-4 py-2.5 border-b border-border space-y-0.5">
+                <p className="text-xs font-bold text-content-primary">{userProfile.name}</p>
+                <p className="text-[11px] text-content-muted truncate">{userProfile.email}</p>
+              </div>
+
+              <div className="py-1">
+                <button
+                  onClick={() => { setIsProfileMenuOpen(false); router.push("/dashboard/settings?tab=account"); }}
+                  className="w-full px-4 py-2 text-xs font-semibold text-content-secondary hover:bg-surface-2 hover:text-content-primary flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <User className="w-4 h-4 text-content-muted" />
+                  Account Settings
+                </button>
+                
+                <button
+                  onClick={() => { 
+                    setIsProfileMenuOpen(false); 
+                    localStorage.removeItem("github_token");
+                    localStorage.removeItem("github_connected_user");
+                    localStorage.removeItem("impact_iq_user");
+                    window.location.href = "/";
+                  }}
+                  className="w-full px-4 py-2 text-xs font-semibold text-rose-500 hover:bg-rose-500/10 flex items-center gap-2 cursor-pointer transition-colors"
+                >
+                  <LogOut className="w-4 h-4 text-rose-500" />
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   )
