@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Header, Query, status
+from fastapi import APIRouter, HTTPException, Header, Query, Request, status
 from fastapi.responses import RedirectResponse
 from typing import Optional
 import os
@@ -6,10 +6,14 @@ import os
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 @router.get("/github/login")
-def github_login():
+def github_login(request: Request):
     # Load OAuth app credentials from .env
     client_id = os.getenv("GITHUB_CLIENT_ID")
     redirect_uri = os.getenv("GITHUB_REDIRECT_URI")
+    
+    # Auto-detect host if running on cloud / Render
+    if not redirect_uri or ("localhost" in redirect_uri and "onrender.com" in str(request.base_url)):
+        redirect_uri = f"{str(request.base_url).rstrip('/')}/api/auth/github/callback"
     
     # Build GitHub authorization URL with user:email scope
     url = f"https://github.com/login/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&scope=repo,read:user,user:email"
