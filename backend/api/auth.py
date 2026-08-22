@@ -6,7 +6,7 @@ import os
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 @router.get("/github/login")
-def github_login(request: Request):
+def github_login(request: Request, redirect_to: Optional[str] = None):
     # Load OAuth app credentials from .env
     client_id = os.getenv("GITHUB_CLIENT_ID")
     redirect_uri = os.getenv("GITHUB_REDIRECT_URI")
@@ -15,22 +15,25 @@ def github_login(request: Request):
     if not redirect_uri or ("localhost" in redirect_uri and "onrender.com" in str(request.base_url)):
         redirect_uri = f"{str(request.base_url).rstrip('/')}/api/auth/github/callback"
     
-    # Build GitHub authorization URL with user:email scope
-    url = f"https://github.com/login/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&scope=repo,read:user,user:email"
+    # Preserve frontend target in OAuth state parameter
+    target_frontend = redirect_to or os.getenv("FRONTEND_URL", "http://localhost:3000")
+    
+    # Build GitHub authorization URL with user:email scope & state
+    url = f"https://github.com/login/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&scope=repo,read:user,user:email&state={target_frontend}"
     
     # Send user to GitHub login & authorization page
     return RedirectResponse(url)
 
 
 @router.get("/github/callback")
-async def github_callback(code: str = "", error: Optional[str] = None):
+async def github_callback(code: str = "", state: Optional[str] = None, error: Optional[str] = None):
     # GitHub sends a temporary `code` in the query params after user approves
     import httpx
     
     # Load credentials from .env
     client_id = os.getenv("GITHUB_CLIENT_ID")
     client_secret = os.getenv("GITHUB_CLIENT_SECRET")
-    frontend_url = os.getenv("FRONTEND_URL")
+    frontend_url = state or os.getenv("FRONTEND_URL", "http://localhost:3000")
 
     # If GitHub OAuth returned an error
     if error:

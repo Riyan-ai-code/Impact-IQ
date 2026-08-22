@@ -26,7 +26,8 @@ export default function LoginPage() {
     if (token) {
       router.push("/dashboard")
     } else {
-      window.location.href = getApiUrl("/api/auth/github/login")
+      const origin = typeof window !== "undefined" ? window.location.origin : ""
+      window.location.href = getApiUrl(`/api/auth/github/login?redirect_to=${encodeURIComponent(origin)}`)
     }
   }, [router])
 
