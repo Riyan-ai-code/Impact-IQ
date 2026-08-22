@@ -1,4 +1,5 @@
 import { nhost } from "@/lib/nhost"
+import { getApiUrl } from "@/lib/api"
 
 export interface NhostUser {
   id: string
@@ -87,7 +88,7 @@ export async function nhostSignOut() {
   localStorage.removeItem("impact_iq_active_team_id")
 
   try {
-    await fetch("http://localhost:8000/api/auth/logout", { method: "POST" })
+    await fetch(getApiUrl("/api/auth/logout"), { method: "POST" })
   } catch (e) {}
 
   window.dispatchEvent(new Event("impact_iq_teams_updated"))

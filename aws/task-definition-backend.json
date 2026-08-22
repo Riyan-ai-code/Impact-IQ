@@ -1,0 +1,48 @@
+{
+  "family": "impactiq-backend-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "impactiq-backend",
+      "image": "ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/impactiq-backend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "hostPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "DEBUG", "value": "False" },
+        { "name": "PORT", "value": "8000" },
+        { "name": "FRONTEND_URL", "value": "https://your-frontend.vercel.app" }
+      ],
+      "secrets": [
+        { "name": "SECRET_KEY", "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:impactiq/secret_key" },
+        { "name": "GITHUB_CLIENT_ID", "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:impactiq/github_client_id" },
+        { "name": "GITHUB_CLIENT_SECRET", "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:impactiq/github_client_secret" },
+        { "name": "DATABASE_URL", "valueFrom": "arn:aws:secretsmanager:REGION:ACCOUNT_ID:secret:impactiq/database_url" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/impactiq-backend",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "backend"
+        }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/api/health\")' || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 10
+      }
+    }
+  ]
+}

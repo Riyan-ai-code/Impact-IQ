@@ -52,6 +52,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { getScopedItem, setScopedItem, isGuestMode } from "@/lib/storageScope"
 import { ROLE_DEFINITIONS, canUser, RoleType, RoleChangeRequest } from "@/lib/rbac"
+import { getApiUrl } from "@/lib/api"
 
 interface Setting {
   id: string
@@ -390,7 +391,7 @@ function SettingsContent() {
 
     // If token exists, refresh live profile from backend to get latest primary email
     if (ghToken) {
-      fetch(`http://localhost:8000/api/auth/github/user?token=${ghToken}`)
+      fetch(getApiUrl(`/api/auth/github/user?token=${ghToken}`))
         .then(res => res.ok ? res.json() : null)
         .then(gh => {
           if (gh && gh.login) {
@@ -1157,7 +1158,7 @@ function SettingsContent() {
                     onClick={() => {
                       const ghToken = localStorage.getItem("github_token")
                       if (ghToken) {
-                        fetch(`http://localhost:8000/api/auth/github/user?token=${ghToken}`)
+                        fetch(getApiUrl(`/api/auth/github/user?token=${ghToken}`))
                           .then(res => res.ok ? res.json() : null)
                           .then(gh => {
                             if (gh && gh.email) {

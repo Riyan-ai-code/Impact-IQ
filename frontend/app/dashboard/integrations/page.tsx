@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { getScopedItem, setScopedItem } from "@/lib/storageScope"
+import { getApiUrl } from "@/lib/api"
 
 interface IntegrationConfig {
   id: string
@@ -302,7 +303,7 @@ export default function IntegrationsPage() {
                   variant="brand"
                   onClick={() => {
                     localStorage.setItem("post_login_redirect", "/dashboard/integrations")
-                    window.location.href = "http://localhost:8000/api/auth/github/login"
+                    window.location.href = getApiUrl("/api/auth/github/login")
                   }}
                   className="w-full h-11 text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
                 >

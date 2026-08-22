@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { nhostSignIn, nhostSignUp, nhostSignInWithGithub } from "@/services/nhostAuthService"
+import { getApiUrl } from "@/lib/api"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -25,7 +26,7 @@ export default function LoginPage() {
     if (token) {
       router.push("/dashboard")
     } else {
-      window.location.href = "http://localhost:8000/api/auth/github/login"
+      window.location.href = getApiUrl("/api/auth/github/login")
     }
   }, [router])
 

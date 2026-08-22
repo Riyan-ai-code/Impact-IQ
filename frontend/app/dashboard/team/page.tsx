@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { getApiUrl } from "@/lib/api"
 
 interface TeamMember {
   id: string
@@ -110,7 +111,7 @@ export default function TeamPage() {
       const ghToken = localStorage.getItem("github_token")
       if (ghToken) {
         try {
-          const res = await fetch("http://localhost:8000/api/teams")
+          const res = await fetch(getApiUrl("/api/teams"))
           if (res.ok) {
             const data = await res.json()
             if (Array.isArray(data) && data.length > 0) {
@@ -263,7 +264,7 @@ export default function TeamPage() {
     const isGuest = isGuestMode()
     if (!isGuest) {
       try {
-        await fetch("http://localhost:8000/api/teams", {
+        await fetch(getApiUrl("/api/teams"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -305,7 +306,7 @@ export default function TeamPage() {
     }
 
     try {
-      await fetch(`http://localhost:8000/api/teams/${activeTeamId}/members`, {
+      await fetch(getApiUrl(`/api/teams/${activeTeamId}/members`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -363,7 +364,7 @@ export default function TeamPage() {
 
   const handleRemoveMember = async (teamId: string, memberId: string) => {
     try {
-      await fetch(`http://localhost:8000/api/teams/${teamId}/members/${memberId}`, {
+      await fetch(getApiUrl(`/api/teams/${teamId}/members/${memberId}`), {
         method: "DELETE"
       })
     } catch (err) {
@@ -384,7 +385,7 @@ export default function TeamPage() {
 
   const handleDeleteTeam = async (teamId: string) => {
     try {
-      await fetch(`http://localhost:8000/api/teams/${teamId}`, { method: "DELETE" })
+      await fetch(getApiUrl(`/api/teams/${teamId}`), { method: "DELETE" })
     } catch (err) {
       console.warn("Backend team delete notice:", err)
     }

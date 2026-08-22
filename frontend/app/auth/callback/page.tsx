@@ -3,6 +3,7 @@
 import { useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { githubTokenService } from "@/services/githubTokenService"
+import { getApiUrl } from "@/lib/api"
 
 function CallbackHandler() {
   const router = useRouter()
@@ -21,7 +22,7 @@ function CallbackHandler() {
 
         try {
           // Fetch real GitHub profile info
-          const res = await fetch(`http://localhost:8000/api/auth/github/user?token=${token}`)
+          const res = await fetch(getApiUrl(`/api/auth/github/user?token=${token}`))
           if (res.ok) {
             const userData = await res.json()
             localStorage.setItem("github_connected_user", JSON.stringify(userData))

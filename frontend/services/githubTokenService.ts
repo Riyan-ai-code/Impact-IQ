@@ -3,6 +3,7 @@
  * Manages GitHub Access Tokens (15 min lifespan) and Refresh Tokens.
  * Automatically refreshes tokens after 14 minutes so user sessions stay active.
  */
+import { getApiUrl } from "@/lib/api"
 
 export const githubTokenService = {
   saveTokens: (accessToken: string, refreshToken?: string, expiresInSeconds: number = 900) => {
@@ -47,7 +48,7 @@ export const githubTokenService = {
     // If token is expiring after 14 mins and we have a refresh token, refresh via API
     if (githubTokenService.isTokenExpiringSoon() && refreshToken) {
       try {
-        const res = await fetch("http://localhost:8000/api/auth/github/refresh", {
+        const res = await fetch(getApiUrl("/api/auth/github/refresh"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ refresh_token: refreshToken })

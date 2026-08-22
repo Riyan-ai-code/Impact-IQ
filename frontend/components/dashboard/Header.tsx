@@ -5,6 +5,7 @@ import { Menu, Sun, Moon, Bell, ChevronDown, LogOut, User, ShieldCheck, Github }
 import { useState, useEffect } from "react"
 import { nhostSignOut } from "@/services/nhostAuthService"
 import { githubTokenService } from "@/services/githubTokenService"
+import { getApiUrl } from "@/lib/api"
 
 interface HeaderProps {
   onMenuClick?: () => void
@@ -65,7 +66,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
 
       if (ghToken && !ghToken.startsWith("guest") && ghToken !== "true") {
         try {
-          const res = await fetch(`http://localhost:8000/api/auth/github/user?token=${ghToken}`)
+          const res = await fetch(getApiUrl(`/api/auth/github/user?token=${ghToken}`))
           if (res.ok) {
             const data = await res.json()
             localStorage.setItem("github_connected_user", JSON.stringify(data))

@@ -4,6 +4,7 @@ import Link from "next/link"
 import { ShieldCheck, Moon, Sun, ArrowRight, User, LogOut, LayoutDashboard, ChevronDown, Github, Lock, X, KeyRound, AlertCircle } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
+import { getApiUrl } from "@/lib/api"
 
 export default function Header() {
   const [isDark, setIsDark] = useState(true)
@@ -330,7 +331,7 @@ export default function Header() {
 
             {/* GitHub OAuth Button */}
             <button
-              onClick={() => window.location.href = "http://localhost:8000/api/auth/github/login"}
+              onClick={() => window.location.href = getApiUrl("/api/auth/github/login")}
               className="w-full bg-[#161b22] hover:bg-[#1f242c] border border-white/10 text-white text-xs font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2.5 shadow transition-all cursor-pointer mb-4"
             >
               <Github className="w-4 h-4" />

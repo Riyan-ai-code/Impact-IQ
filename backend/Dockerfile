@@ -21,8 +21,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy source code
 COPY . .
 
-# Expose port
+# Expose port (default 8000, overridable by Render/AWS App Runner PORT env)
+ENV PORT=8000
 EXPOSE 8000
 
-# Start server
-CMD ["python", "-m", "fastapi", "run", "main.py", "--port", "8000", "--host", "0.0.0.0"]
+# Start server using uvicorn with dynamic PORT support
+CMD ["sh", "-c", "python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+

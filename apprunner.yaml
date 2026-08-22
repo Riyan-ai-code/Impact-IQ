@@ -1,0 +1,22 @@
+# ==============================================================================
+# AWS App Runner Configuration File
+# Docs: https://docs.aws.amazon.com/apprunner/latest/dg/config-file.html
+# ==============================================================================
+version: 1.0
+runtime: python3
+build:
+  commands:
+    build:
+      - cd backend
+      - pip install --upgrade pip
+      - pip install -r requirements.txt
+run:
+  command: cd backend && python -m uvicorn main:app --host 0.0.0.0 --port 8000
+  network:
+    port: 8000
+    env: APP_PORT
+  env:
+    - name: DEBUG
+      value: "False"
+    - name: PORT
+      value: "8000"

@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { createProjectInNhost, fetchProjectsFromNhost, fetchTeamsFromNhost } from "@/services/nhostService"
 import { getScopedItem, setScopedItem } from "@/lib/storageScope"
+import { getApiUrl } from "@/lib/api"
 
 interface Repository {
   name: string
@@ -77,7 +78,7 @@ export default function RepositoriesPage() {
     if (!savedToken) return
     setLoadingBranches(true)
     try {
-      const response = await fetch(`http://localhost:8000/api/auth/github/repos/${ownerName}/${repoName}/branches`, {
+      const response = await fetch(getApiUrl(`/api/auth/github/repos/${ownerName}/${repoName}/branches`), {
         headers: {
           "Authorization": `Bearer ${savedToken}`
         }
@@ -122,7 +123,7 @@ export default function RepositoriesPage() {
     async function loadRepos() {
       if (savedToken) {
         try {
-          const res = await fetch("http://localhost:8000/api/auth/github/repos", {
+          const res = await fetch(getApiUrl("/api/auth/github/repos"), {
             headers: { Authorization: `Bearer ${savedToken}` }
           })
           if (res.ok) {
@@ -156,7 +157,7 @@ export default function RepositoriesPage() {
     async function loadTeams() {
       let loadedTeams: TeamOption[] = []
       try {
-        const res = await fetch("http://localhost:8000/api/teams")
+        const res = await fetch(getApiUrl("/api/teams"))
         if (res.ok) {
           const apiTeams = await res.json()
           if (Array.isArray(apiTeams) && apiTeams.length > 0) {
@@ -299,7 +300,7 @@ export default function RepositoriesPage() {
       setLoading(true)
       setError(null)
       try {
-        const response = await fetch("http://localhost:8000/api/auth/github/repos", {
+        const response = await fetch(getApiUrl("/api/auth/github/repos"), {
           headers: {
             "Authorization": `Bearer ${token}`,
           },
@@ -442,7 +443,7 @@ export default function RepositoriesPage() {
 
   const handleConnectGithub = () => {
     localStorage.setItem("post_login_redirect", "/dashboard/repositories")
-    window.location.href = "http://localhost:8000/api/auth/github/login"
+    window.location.href = getApiUrl("/api/auth/github/login")
   }
 
   const monitoredBranchesCount = useMemo(() => {

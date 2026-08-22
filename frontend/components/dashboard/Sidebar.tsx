@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
+import { getApiUrl } from "@/lib/api"
 import { 
   ShieldCheck, 
   LayoutDashboard, 
@@ -72,7 +73,7 @@ export default function Sidebar() {
 
       if (ghToken && !ghToken.startsWith("guest") && ghToken !== "true") {
         try {
-          const res = await fetch(`http://localhost:8000/api/auth/github/user?token=${ghToken}`)
+          const res = await fetch(getApiUrl(`/api/auth/github/user?token=${ghToken}`))
           if (res.ok) {
             const data = await res.json()
             localStorage.setItem("github_connected_user", JSON.stringify(data))
@@ -143,7 +144,7 @@ export default function Sidebar() {
     let loaded: any[] = []
 
     try {
-      const res = await fetch("http://localhost:8000/api/teams")
+      const res = await fetch(getApiUrl("/api/teams"))
       if (res.ok) {
         const data = await res.json()
         if (Array.isArray(data) && data.length > 0) {

@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Impact-IQ CloudFormation Stack - AWS App Runner & ECR Setup'
+
+Parameters:
+  ServiceName:
+    Type: String
+    Default: impactiq-api
+    Description: Name of the App Runner service
+
+  GitHubClientId:
+    Type: String
+    NoEcho: true
+    Description: GitHub OAuth Client ID
+
+  GitHubClientSecret:
+    Type: String
+    NoEcho: true
+    Description: GitHub OAuth Client Secret
+
+  FrontendUrl:
+    Type: String
+    Default: 'https://impact-iq.vercel.app'
+    Description: Vercel frontend production URL
+
+Resources:
+  # ECR Repository for Backend
+  BackendECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: impactiq-backend
+      ImageScanningConfiguration:
+        ScanOnPush: true
+
+  # IAM Role for App Runner Access to ECR
+  AppRunnerECRAccessRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: ImpactIQ-AppRunner-ECRAccessRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: build.apprunner.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSAppRunnerServicePolicyForECRAccess
+
+  # App Runner Service (FastAPI Backend)
+  AppRunnerService:
+    Type: AWS::AppRunner::Service
+    Properties:
+      ServiceName: !Ref ServiceName
+      SourceConfiguration:
+        AuthenticationConfiguration:
+          AccessRoleArn: !GetAtt AppRunnerECRAccessRole.Arn
+        AutoDeploymentsEnabled: true
+        ImageRepository:
+          ImageIdentifier: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/impactiq-backend:latest'
+          ImageRepositoryType: ECR
+          ImageConfiguration:
+            Port: '8000'
+            RuntimeEnvironmentVariables:
+              - Name: DEBUG
+                Value: 'False'
+              - Name: FRONTEND_URL
+                Value: !Ref FrontendUrl
+              - Name: GITHUB_CLIENT_ID
+                Value: !Ref GitHubClientId
+              - Name: GITHUB_CLIENT_SECRET
+                Value: !Ref GitHubClientSecret
+      InstanceConfiguration:
+        Cpu: '1 vCPU'
+        Memory: '2 GB'
+
+Outputs:
+  ServiceUrl:
+    Description: App Runner Service URL for Impact-IQ API
+    Value: !GetAtt AppRunnerService.ServiceUrl
+  ECRRepoUri:
+    Description: ECR Repository URI
+    Value: !GetAtt BackendECRRepository.RepositoryUri

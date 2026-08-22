@@ -1,0 +1,26 @@
+name: Deploy to Render
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  trigger-render-deploy:
+    name: Trigger Render Deploy Hook
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Backend Deploy
+        if: env.RENDER_BACKEND_DEPLOY_HOOK != ''
+        env:
+          RENDER_BACKEND_DEPLOY_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
+        run: |
+          curl -X POST "$RENDER_BACKEND_DEPLOY_HOOK"
+
+      - name: Trigger Frontend Deploy
+        if: env.RENDER_FRONTEND_DEPLOY_HOOK != ''
+        env:
+          RENDER_FRONTEND_DEPLOY_HOOK: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}
+        run: |
+          curl -X POST "$RENDER_FRONTEND_DEPLOY_HOOK"

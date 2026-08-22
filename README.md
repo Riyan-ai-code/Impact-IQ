@@ -62,6 +62,22 @@ npm run dev
 
 ---
 
+## 🌐 Production Cloud Deployment
+
+Impact-IQ is fully configured for continuous deployment across:
+
+| Provider | Purpose | Configuration File |
+| :--- | :--- | :--- |
+| **▲ Vercel** | Frontend (Next.js 15) | [`frontend/vercel.json`](frontend/vercel.json) |
+| **🟣 Render** | Backend (FastAPI) & Fullstack | [`render.yaml`](render.yaml) |
+| **☁️ AWS App Runner** | Managed Container Backend | [`apprunner.yaml`](apprunner.yaml) |
+| **☁️ AWS ECS / EC2** | Production Docker & Nginx Stack | [`docker-compose.prod.yml`](docker-compose.prod.yml) & [`nginx/nginx.conf`](nginx/nginx.conf) |
+
+👉 **Read the complete step-by-step deployment instructions in [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).**
+
+---
+
 ## 📖 Architecture & Diagrams
 
 For full technical specifications, sequence flows, and entity-relationship diagrams, see [ARCHITECTURE.md](ARCHITECTURE.md).
+

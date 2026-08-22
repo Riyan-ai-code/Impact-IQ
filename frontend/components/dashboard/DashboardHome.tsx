@@ -23,6 +23,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { getScopedItem } from "@/lib/storageScope"
+import { getApiUrl } from "@/lib/api"
 
 interface Project {
   id: string
@@ -172,7 +173,7 @@ export default function DashboardHome() {
                 <Button
                   onClick={() => {
                     localStorage.setItem("post_login_redirect", "/dashboard")
-                    window.location.href = "http://localhost:8000/api/auth/github/login"
+                    window.location.href = getApiUrl("/api/auth/github/login")
                   }}
                   className="h-11 px-4 text-xs font-bold bg-black/20 hover:bg-black/30 border border-white/20 text-white rounded-xl flex items-center gap-2 transition-all cursor-pointer"
                 >

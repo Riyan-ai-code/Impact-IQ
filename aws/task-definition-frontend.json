@@ -1,0 +1,37 @@
+{
+  "family": "impactiq-frontend-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "impactiq-frontend",
+      "image": "ACCOUNT_ID.dkr.ecr.REGION.amazonaws.com/impactiq-frontend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "hostPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "PORT", "value": "3000" },
+        { "name": "NEXT_PUBLIC_NHOST_SUBDOMAIN", "value": "ieoqkrnezzpfxpsugifg" },
+        { "name": "NEXT_PUBLIC_NHOST_REGION", "value": "ap-south-1" },
+        { "name": "NEXT_PUBLIC_NHOST_GRAPHQL_URL", "value": "https://ieoqkrnezzpfxpsugifg.graphql.ap-south-1.nhost.run/v1/graphql" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/impactiq-frontend",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "frontend"
+        }
+      }
+    }
+  ]
+}
