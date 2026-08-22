@@ -55,8 +55,18 @@ app.include_router(teams_router)
 app.include_router(settings_router)
 
 # =============================================================
-# Health Check
+# Root & Health Checks
 # =============================================================
+@app.get("/", tags=["Root"])
+def root():
+    return {
+        "service": "Impact-IQ API",
+        "status": "online",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/api/health"
+    }
+
 @app.get("/api/health", tags=["Health"])
 def health_check():
     return {"status": "healthy", "message": "Impact-IQ API is running!"}
