@@ -1,5 +1,5 @@
 # ==============================================================================
-# Impact-IQ — Render Blueprint (Infrastructure as Code)
+# Impact-IQ — Render Blueprint Specification
 # Docs: https://render.com/docs/blueprint-spec
 # ==============================================================================
 
@@ -9,12 +9,12 @@ services:
   # ----------------------------------------------------------------------------
   - type: web
     name: impactiq-backend
-    runtime: python
+    env: python
     region: oregon
     plan: free
     rootDir: backend
-    buildCommand: pip install --no-cache-dir -r requirements.txt
-    startCommand: python -m uvicorn main:app --host 0.0.0.0 --port $PORT
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:
@@ -35,39 +35,4 @@ services:
       - key: FRONTEND_URL
         sync: false
       - key: ALLOWED_ORIGINS
-        sync: false
-
-  # ----------------------------------------------------------------------------
-  # Next.js Frontend Web Service (Optional: If hosting frontend on Render)
-  # ----------------------------------------------------------------------------
-  - type: web
-    name: impactiq-frontend
-    runtime: node
-    region: oregon
-    plan: free
-    rootDir: frontend
-    buildCommand: npm install && npm run build
-    startCommand: npm run start -- -p $PORT
-    autoDeploy: true
-    envVars:
-      - key: NODE_VERSION
-        value: 18.20.0
-      - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: web
-          name: impactiq-backend
-          property: host
-      - key: NEXT_PUBLIC_NHOST_SUBDOMAIN
-        value: ieoqkrnezzpfxpsugifg
-      - key: NEXT_PUBLIC_NHOST_REGION
-        value: ap-south-1
-      - key: NEXT_PUBLIC_NHOST_GRAPHQL_URL
-        value: https://ieoqkrnezzpfxpsugifg.graphql.ap-south-1.nhost.run/v1/graphql
-      - key: SMTP_HOST
-        value: smtp.gmail.com
-      - key: SMTP_PORT
-        value: "587"
-      - key: SMTP_USER
-        sync: false
-      - key: SMTP_PASS
         sync: false
